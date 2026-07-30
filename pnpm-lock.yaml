@@ -20,6 +20,9 @@ importers:
       oxlint:
         specifier: ^1.76.0
         version: 1.76.0
+      ts-essentials:
+        specifier: ^10.2.1
+        version: 10.2.1(typescript@7.0.2)
       tsdown:
         specifier: ^0.22.5
         version: 0.22.14(typescript@7.0.2)
@@ -1091,6 +1094,14 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
 
+  ts-essentials@10.2.1:
+    resolution: {integrity: sha512-+Id1fRkuir+CsgK2x04/icS2b4V1hQmq7ObzIrDjhN0ozfRYivnP7aaKMVJfLApQm0trjR39A6NIMVchiB9Erw==}
+    peerDependencies:
+      typescript: '>=4.5.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   tsdown@0.22.14:
     resolution: {integrity: sha512-ule7Y+fsAN2iZbLDoo7C4KYljFJNJJ+fLshyn+9gozeTspVersWHxwdGB+Dm2hzA38s6muFnUTl0jK3vJm9ifQ==}
     engines: {node: ^22.18.0 || >=24.11.0}
@@ -1965,6 +1976,10 @@ snapshots:
   tinyrainbow@3.1.1: {}
 
   tree-kill@1.2.2: {}
+
+  ts-essentials@10.2.1(typescript@7.0.2):
+    optionalDependencies:
+      typescript: 7.0.2
 
   tsdown@0.22.14(typescript@7.0.2):
     dependencies:

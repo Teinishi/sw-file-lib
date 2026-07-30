@@ -50,6 +50,8 @@ describe("mesh roundtrip", () => {
   test.skipIf(process.env.CI)(
     "integration with actual stormworks asset",
     async () => {
+      process.loadEnvFile(".env.test.local");
+
       const rom_path = process.env.STORMWORKS_ROM_PATH;
 
       if (!rom_path) {
