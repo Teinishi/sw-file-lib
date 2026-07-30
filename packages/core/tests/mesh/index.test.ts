@@ -1,7 +1,13 @@
 import { describe, expect, test } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { meshDataToBytes, parseMesh, parseMeshOrPhys, parsePhys, physDataToBytes } from "../src";
+import {
+  meshDataFromBytes,
+  meshDataToBytes,
+  meshOrPhysDataFromBytes,
+  physDataFromBytes,
+  physDataToBytes,
+} from "../../src";
 
 async function searchFiles(dirPath: string, extensions: string[]) {
   const allDirents = await fs.readdir(dirPath, { withFileTypes: true });
@@ -26,7 +32,7 @@ describe("mesh roundtrip", () => {
     const buf = await fs.readFile(binPath);
     const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));
 
-    const data = parseMesh(buf);
+    const data = meshDataFromBytes(buf);
     expect(data).toEqual(expected);
 
     const bytes = meshDataToBytes(data);
@@ -40,7 +46,7 @@ describe("mesh roundtrip", () => {
     const buf = await fs.readFile(binPath);
     const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));
 
-    const data = parsePhys(buf);
+    const data = physDataFromBytes(buf);
     expect(data).toEqual(expected);
 
     const bytes = physDataToBytes(data);
@@ -62,7 +68,7 @@ describe("mesh roundtrip", () => {
 
       for (const file of files) {
         const buf = await fs.readFile(file);
-        const data = parseMeshOrPhys(buf);
+        const data = meshOrPhysDataFromBytes(buf);
         let bytes;
         if (data.kind === "mesh") {
           bytes = meshDataToBytes(data);

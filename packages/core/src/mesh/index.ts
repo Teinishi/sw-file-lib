@@ -1,3 +1,3 @@
 export * from "./types";
-export * from "./MeshReader";
-export * from "./MeshWriter";
+export * from "./fromBytes";
+export * from "./toBytes";

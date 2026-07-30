@@ -15,7 +15,7 @@ import type {
  * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
  * Unexected file signatures throw an error.
  */
-export function parseMeshOrPhys(input: BinaryReaderInput): MeshData | PhysData {
+export function meshOrPhysDataFromBytes(input: BinaryReaderInput): MeshData | PhysData {
   return new MeshReader(input).parseMeshOrPhys();
 }
 
@@ -25,7 +25,7 @@ export function parseMeshOrPhys(input: BinaryReaderInput): MeshData | PhysData {
  * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
  * Unexected file signatures throw an error.
  */
-export function parseMesh(input: BinaryReaderInput): MeshData {
+export function meshDataFromBytes(input: BinaryReaderInput): MeshData {
   return new MeshReader(input).parseMesh();
 }
 
@@ -35,7 +35,7 @@ export function parseMesh(input: BinaryReaderInput): MeshData {
  * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
  * Unexected file signatures throw an error.
  */
-export function parsePhys(input: BinaryReaderInput): PhysData {
+export function physDataFromBytes(input: BinaryReaderInput): PhysData {
   return new MeshReader(input).parsePhys();
 }
 
