@@ -1,7 +1,7 @@
 {
   "name": "sw-file-lib",
   "private": true,
-  "description": "A set of low-level utility libraries for Stormworks tools.",
+  "description": "A monorepo containing libraries and tools for working with Stormworks files.",
   "homepage": "https://github.com/Teinishi/sw-file-lib#readme",
   "bugs": {
     "url": "https://github.com/Teinishi/sw-file-lib/issues"
@@ -20,7 +20,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "test": "vitest",
+    "test": "node --env-file-if-exists=.env.test.local ./node_modules/vitest/vitest.mjs",
     "typecheck": "tsc --noEmit",
     "check": "oxlint && oxfmt --check && tsc --noEmit && vitest run",
     "release": "bumpp",
