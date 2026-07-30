@@ -62,15 +62,35 @@ export class BinaryReader {
     return new Uint8Array(bytes);
   }
 
-  readAscii(length: number): string {
+  readBytesUntilZero(): Uint8Array {
+    const bytes = [];
+    while (true) {
+      const byte = this.readU8();
+      if (byte === 0) break;
+      bytes.push(byte);
+    }
+    return new Uint8Array(bytes);
+  }
+
+  readAscii(length?: number): string {
     let text = "";
-    for (let i = 0; i < length; i++) {
-      text += String.fromCharCode(this.readU8());
+    if (length !== undefined) {
+      for (let i = 0; i < length; i++) {
+        text += String.fromCharCode(this.readU8());
+      }
+    } else {
+      while (true) {
+        const byte = this.readU8();
+        if (byte === 0) break;
+        text += String.fromCharCode(byte);
+      }
     }
     return text;
   }
 
-  readUtf8(length: number): string {
-    return this.textDecoder.decode(this.readBytes(length));
+  readUtf8(length?: number): string {
+    return this.textDecoder.decode(
+      length !== undefined ? this.readBytes(length) : this.readBytesUntilZero(),
+    );
   }
 }
