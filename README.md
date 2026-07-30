@@ -10,11 +10,11 @@ The project is organized as a pnpm workspace, allowing each package to remain fo
 
 ## Packages
 
-| Package                 | Description                                                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `@sw-file-lib/core`    | Core data structures, binary/XML serialization, math utilities, and geometry generation. No runtime dependencies. |
-| `@sw-file-lib/three`   | Integration with three.js, including geometry conversion and Stormworks-style materials.                          |
-| `@sw-file-lib/node`    | Node.js utilities such as file I/O and archive handling.                                                          |
+| Package              | Description                                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `@sw-file-lib/core`  | Core data structures, binary/XML serialization, math utilities, and geometry generation. No runtime dependencies. |
+| `@sw-file-lib/three` | Integration with three.js, including geometry conversion and Stormworks-style materials.                          |
+| `@sw-file-lib/node`  | Node.js utilities such as file I/O and archive handling.                                                          |
 
 Additional packages may be added as the project grows.
 
@@ -29,8 +29,8 @@ packages/
 
 ## Requirements
 
-* Node.js 24+
-* pnpm
+- Node.js 24+
+- pnpm
 
 ## Installation
 
@@ -66,11 +66,11 @@ pnpm fmt
 
 ## Design Goals
 
-* Zero runtime dependencies in the core package.
-* Browser and Node.js support.
-* three.js integration provided as a separate package.
-* Strongly typed APIs.
-* Reusable components for future Stormworks tools.
+- Zero runtime dependencies in the core package.
+- Browser and Node.js support.
+- three.js integration provided as a separate package.
+- Strongly typed APIs.
+- Reusable components for future Stormworks tools.
 
 ## License
 
