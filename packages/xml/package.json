@@ -1,0 +1,16 @@
+{
+  "name": "@sw-file-lib/xml",
+  "version": "0.1.0",
+  "description": "TypeScript library for reading and writing Stormworks XML file formats.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  }
+}

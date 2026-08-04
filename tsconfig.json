@@ -14,7 +14,12 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@core": ["./packages/core/src"],
+      "@xml": ["./packages/xml/src"],
+      "@internalUtils": ["./packages/internalUtils/src"]
+    }
   },
   "include": ["packages/*/src", "packages/*/tests"]
 }
