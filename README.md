@@ -1,5 +1,7 @@
 # sw-file-lib
 
+**THIS IS WIP**
+
 A monorepo containing libraries and tools for working with Stormworks files.
 
 ## Overview
@@ -10,11 +12,11 @@ The project is organized as a pnpm workspace, allowing each package to remain fo
 
 ## Packages
 
-| Package              | Description                                                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `@sw-file-lib/core`  | Core data structures, binary/XML serialization, math utilities, and geometry generation. No runtime dependencies. |
-| `@sw-file-lib/three` | Integration with three.js, including geometry conversion and Stormworks-style materials.                          |
-| `@sw-file-lib/node`  | Node.js utilities such as file I/O and archive handling.                                                          |
+| Package              | Description                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `@sw-file-lib/core`  | Binary parse and serialization, geometry generation. No runtime dependencies.                             |
+| `@sw-file-lib/xml`   | XML parse and serialization, math utilities, and geometry generation. Depends on fast-xml-parser and zod. |
+| `@sw-file-lib/three` | Integration with three.js, including Stormworks-style materials and geometry conversion.                  |
 
 Additional packages may be added as the project grows.
 
@@ -23,8 +25,8 @@ Additional packages may be added as the project grows.
 ```text
 packages/
 ├── core/
-├── three/
-└── node/
+├── xml/
+└── three/
 ```
 
 ## Requirements

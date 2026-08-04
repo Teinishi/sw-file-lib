@@ -1,7 +1,7 @@
 {
   "name": "@sw-file-lib/core",
   "version": "0.1.0",
-  "description": "TypeScript library for reading and writing Stormworks binary and XML file formats.",
+  "description": "TypeScript library for reading and writing Stormworks binary file formats.",
   "keywords": [],
   "license": "MIT",
   "author": "",
