@@ -7,7 +7,7 @@ import {
   meshOrPhysDataFromBytes,
   physDataFromBytes,
   physDataToBytes,
-} from "../../src";
+} from "@core";
 
 async function searchFiles(dirPath: string, extensions: string[]) {
   const allDirents = await fs.readdir(dirPath, { withFileTypes: true });

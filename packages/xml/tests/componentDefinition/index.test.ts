@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ComponentDefinitionBuilder } from "@xml";
+import { ComponentDefinitionBuilder, parseComponentDefinitionXml } from "@xml";
 
 describe("component definition", () => {
   test("ComponentDefinitionBuilder", async () => {
@@ -42,5 +42,16 @@ describe("component definition", () => {
     ]);
 
     expect(builder.toXml({ indentString: "\t", pretty: true })).toBe(xml);
+  });
+
+  test("parse", async () => {
+    const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
+    const jsonPath = path.join(__dirname, "data/test_cube_1.json");
+    const xml = await fs.readFile(xmlPath, "utf8");
+    const json = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+
+    const parsed = parseComponentDefinitionXml(xml);
+
+    expect(parsed).toEqual(json);
   });
 });

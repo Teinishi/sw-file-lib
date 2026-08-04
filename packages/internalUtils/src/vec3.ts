@@ -4,6 +4,14 @@ export interface Vec3 {
   z: number;
 }
 
+export function partialToFullVec3(val?: Partial<Readonly<Vec3>>): Vec3 {
+  return {
+    x: val?.x ?? 0,
+    y: val?.y ?? 0,
+    z: val?.z ?? 0,
+  };
+}
+
 export function minVec3(a: Vec3, b: Vec3) {
   return {
     x: Math.min(a.x, b.x),

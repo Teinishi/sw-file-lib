@@ -1,0 +1,35 @@
+{
+  "attributes": {
+    "name": "(M) Test Cube 1",
+    "category": "0",
+    "type": "0",
+    "mass": "1",
+    "value": "2",
+    "flags": "0",
+    "tags": "basic",
+    "mesh_data_name": "test_cube_1.mesh"
+  },
+  "surfaces": [
+    { "orientation": 0, "shape": 0, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 1, "shape": 0, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 2, "shape": 0, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 3, "shape": 0, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 4, "shape": 0, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 5, "shape": 0, "position": { "x": 0, "y": 0, "z": 0 } }
+  ],
+  "buoyancySurfaces": [
+    { "orientation": 0, "shape": 1, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 1, "shape": 1, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 2, "shape": 1, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 3, "shape": 1, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 4, "shape": 1, "position": { "x": 0, "y": 0, "z": 0 } },
+    { "orientation": 5, "shape": 1, "position": { "x": 0, "y": 0, "z": 0 } }
+  ],
+  "voxels": [
+    {
+      "flags": 1,
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "physicsShapeRotation": [1, 0, 0, 0, 1, 0, 0, 0, 1]
+    }
+  ]
+}
