@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ComponentDefinitionBuilder, parseComponentDefinitionXml } from "@xml";
+import { ComponentDefinitionBuilder, parseSwXml, SwXmlNode, SwXmlNodeList } from "@xml";
 
 describe("component definition", () => {
   test("ComponentDefinitionBuilder", async () => {
@@ -44,14 +44,46 @@ describe("component definition", () => {
     expect(builder.toXml({ indentString: "\t", pretty: true })).toBe(xml);
   });
 
-  test("parse", async () => {
-    const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
-    const jsonPath = path.join(__dirname, "data/test_cube_1.json");
-    const xml = await fs.readFile(xmlPath, "utf8");
-    const json = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+  test("parse 1", () => {
+    const tree = parseSwXml(
+      '<root abc="def" 01="23">hello<position x="1" y="2" z="3"/><empty></empty></root>',
+    );
 
-    const parsed = parseComponentDefinitionXml(xml);
+    expect(tree).toEqual(
+      new SwXmlNodeList([
+        new SwXmlNode(
+          "root",
+          new Map([
+            ["abc", "def"],
+            ["01", "23"],
+          ]),
+          [
+            new SwXmlNode(
+              "position",
+              new Map([
+                ["x", "1"],
+                ["y", "2"],
+                ["z", "3"],
+              ]),
+              [],
+            ),
+            new SwXmlNode("empty", new Map(), []),
+          ],
+        ),
+      ]),
+    );
 
-    expect(parsed).toEqual(json);
+    expect(tree.getRawTree("root")).toEqual({
+      abc: "def",
+      "01": "23",
+      position: { x: "1", y: "2", z: "3" },
+      empty: null,
+    });
+  });
+
+  test("parse 2", () => {
+    const tree = parseSwXml('<list><item id="0"/><item id="1"/><item id="2"/></list>');
+
+    expect(tree.getRawTree("list")).toEqual([{ id: "0" }, { id: "1" }, { id: "2" }]);
   });
 });

@@ -1,5 +1,5 @@
 import type { DeepReadonly, StrictOmit } from "ts-essentials";
-import { type Vec3, maxVec3, minVec3, vec3ToMap } from "@internalUtils";
+import { type Vec3, maxVec3, minVec3, vec3ToMap } from "@core";
 import {
   XmlWriter,
   type XmlAttributes,
