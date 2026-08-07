@@ -14,13 +14,20 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 
   // 定義済みのキーは型付き、未知のキーはそのまま残してパース
   parse(value: RawXmlTreeValue | undefined, options?: SchemaParseOptions): InferShape<T> {
+    if (value === null) {
+      value = {};
+    }
+
     if (!isRecord(value)) {
       throw new Error("todo: error message");
     }
 
     // shape で定義済みのキーをパース
     const parsed = Object.fromEntries(
-      Object.entries(this.shape).map(([k, s]) => [k, s.parse(value[k], options)]),
+      // todo: フィールドの parse 時のエラーをキャッチして、フィールド名とともに投げ直す
+      Object.entries(this.shape)
+        .filter(([k, _]) => k in value)
+        .map(([k, s]) => [k, s.parse(value[k], options)]),
     );
 
     if (!options?.omitUnknownField) {

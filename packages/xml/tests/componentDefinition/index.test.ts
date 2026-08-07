@@ -5,9 +5,11 @@ import {
   ComponentDefinitionBuilder,
   parseComponentDefinitionXml,
   parseSwXml,
+  RawXmlTreeList,
   SwXmlNode,
   SwXmlNodeList,
 } from "@xml";
+import { searchRom } from "../../../internalUtils/src/testUtils";
 
 describe("component definition", () => {
   test("ComponentDefinitionBuilder", async () => {
@@ -91,7 +93,9 @@ describe("component definition", () => {
   test("parse 2", () => {
     const tree = parseSwXml('<list><item id="0"/><item id="1"/><item id="2"/></list>');
 
-    expect(tree.getRawTree("list")).toEqual([{ id: "0" }, { id: "1" }, { id: "2" }]);
+    expect(tree.getRawTree("list")).toEqual(
+      new RawXmlTreeList("item", [{ id: "0" }, { id: "1" }, { id: "2" }]),
+    );
   });
 
   test("parse test_cube_1.xml", async () => {
@@ -112,5 +116,32 @@ describe("component definition", () => {
 
     const unknownAttr = definition.unknown_attr;
     expect(unknownAttr).toBe("anything");
+
+    expect(definition.surfaces).toEqual([
+      { orientation: 0, shape: 0, position: { x: 0, y: 0, z: 0 } },
+      { orientation: 1, shape: 0, position: { x: 0, y: 0, z: 0 } },
+      { orientation: 2, shape: 0, position: { x: 0, y: 0, z: 0 } },
+      { orientation: 3, shape: 0, position: { x: 0, y: 0, z: 0 } },
+      { orientation: 4, shape: 0, position: { x: 0, y: 0, z: 0 } },
+      { orientation: 5, shape: 0, position: { x: 0, y: 0, z: 0 } },
+    ]);
   });
+
+  test.skipIf(process.env.CI)(
+    "integration with actual stormworks asset",
+    async () => {
+      const files = await searchRom("data/definitions", [".xml"]);
+
+      for (const file of files) {
+        const buf = await fs.readFile(file);
+        try {
+          parseComponentDefinitionXml(buf, { noDuplicateElement: false });
+        } catch (e) {
+          console.error(file);
+          throw e;
+        }
+      }
+    },
+    60000,
+  );
 });

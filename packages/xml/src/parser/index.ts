@@ -3,8 +3,23 @@ import { isRecord, isStringRecord } from "@core";
 
 // XMl のツリーを扱いやすく整形
 
-export type RawXmlTreeValue = string | null | RawXmlTreeRecord | RawXmlTreeValue[];
+export type RawXmlTreeValue = string | null | RawXmlTreeRecord | RawXmlTreeList;
 export interface RawXmlTreeRecord extends Record<string, RawXmlTreeValue> {}
+
+export class RawXmlTreeList {
+  constructor(
+    readonly itemTag: string,
+    readonly items: RawXmlTreeValue[],
+  ) {}
+
+  map<U>(fn: (v: RawXmlTreeValue) => U): U[] {
+    return this.items.map(fn);
+  }
+
+  [Symbol.iterator]() {
+    return this.items[Symbol.iterator]();
+  }
+}
 
 export class SwXmlNodeList {
   constructor(public nodes: SwXmlNode[]) {}
@@ -72,22 +87,36 @@ export class SwXmlNode extends SwXmlNodeList {
     return obj;
   }
 
-  asRawTreeList(strict = true): RawXmlTreeValue[] {
-    return this.asNodeList().map((c) => c.asRawTree(strict));
+  asRawTreeList(strict = true): RawXmlTreeList {
+    if (this.childTags().length !== 1) {
+      throw new Error(
+        `Expected list of single tags at <${this.tag}>, got zero or multiple child tags: <${this.childTags().join(">, <")}>`,
+      );
+    }
+    const nodeList = this.asNodeList();
+    const itemTag = nodeList[0]?.tag;
+    if (itemTag === undefined)
+      throw new Error(`Expected list of single tags, got none at <${this.tag}>`);
+    return new RawXmlTreeList(
+      itemTag,
+      nodeList.map((c) => c.asRawTree(strict)),
+    );
   }
 
   asRawTree(strict = true): RawXmlTreeValue {
-    const uniqueChildTags = this.childTags().length;
-    if (this.attrs.size === 0 && uniqueChildTags === 0) return null;
+    const hasNoAttr = this.attrs.size === 0;
+    const uniqueItemTags = this.childTags().length;
 
-    if (uniqueChildTags >= 2 || this.attrs.size > 0) {
-      if (uniqueChildTags === this.nodes.length) {
-        return this.asRawTreeRecord(strict);
-      } else {
-        throw new Error(`Cannot determine whether <${this.tag}> is a record or a list.`);
-      }
-    } else {
+    if (this.attrs.size === 0 && uniqueItemTags === 0) return null;
+
+    if (uniqueItemTags === 1 && hasNoAttr) {
       return this.asRawTreeList(strict);
+    } else if (uniqueItemTags >= 2 || !hasNoAttr) {
+      return this.asRawTreeRecord(strict);
+    } else if (hasNoAttr && uniqueItemTags === 0) {
+      return null;
+    } else {
+      throw new Error(`Cannot determine whether <${this.tag}> is a record or a list.`);
     }
   }
 }
