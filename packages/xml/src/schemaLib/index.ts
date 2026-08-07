@@ -1,8 +1,7 @@
-import type { RawXmlTreeValue } from "../parser";
 import { SwXmlSchemaError } from "./errors";
 import { number } from "./number";
 import { object } from "./object";
-import type { Schema, SchemaParseOptions, SchemaSafeParseResult } from "./types";
+import type { Schema, SchemaInput, SchemaParseOptions, SchemaSafeParseResult } from "./types";
 
 export * from "./types";
 export * from "./errors";
@@ -18,7 +17,7 @@ export * from "./list";
  */
 export function safeParseSchema<T>(
   schema: Pick<Schema<T>, "parse">,
-  value: RawXmlTreeValue | undefined,
+  value: SchemaInput,
   options?: SchemaParseOptions,
 ): SchemaSafeParseResult<T> {
   try {

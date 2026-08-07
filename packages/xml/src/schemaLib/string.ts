@@ -1,20 +1,21 @@
 import {
   createSwXmlIssue,
-  describeRawXmlValue,
+  describeSchemaInput,
   OptionalSchema,
   safeParseSchema,
   SwXmlSchemaError,
   type Schema,
+  type SchemaInput,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
-import type { RawXmlTreeValue } from "../parser";
+import type { SwXmlNode } from "../parser";
 
 /**
  * A schema that parses XML text values as strings.
  */
 export class StringSchema implements Schema<string> {
-  parse(value: RawXmlTreeValue | undefined, _options?: SchemaParseOptions): string {
+  parse(value: SchemaInput, _options?: SchemaParseOptions): string {
     if (typeof value === "string") {
       return value;
     } else {
@@ -24,18 +25,19 @@ export class StringSchema implements Schema<string> {
           message:
             value === undefined ? "Required string field is missing." : "Expected a string value.",
           expected: "string",
-          received: describeRawXmlValue(value),
+          received: describeSchemaInput(value),
           value,
         }),
       ]);
     }
   }
 
-  safeParse(
-    value: RawXmlTreeValue | undefined,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<string> {
+  safeParse(value: SchemaInput, options?: SchemaParseOptions): SchemaSafeParseResult<string> {
     return safeParseSchema(this, value, options);
+  }
+
+  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): string {
+    return this.parse(parent.attr(key), options);
   }
 
   serialize(value: string): unknown {

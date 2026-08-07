@@ -1,7 +1,6 @@
-import { isRecord } from "@core";
 import {
   createSwXmlIssue,
-  describeRawXmlValue,
+  describeSchemaInput,
   OptionalSchema,
   prependSwXmlIssuePath,
   safeParseSchema,
@@ -9,40 +8,39 @@ import {
   type InferShape,
   type PartialShape,
   type Schema,
+  type SchemaInput,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type Shape,
   type SwXmlIssue,
 } from ".";
-import { RawXmlTreeList, type RawXmlTreeValue } from "../parser";
+import { SwXmlNode } from "../parser";
 
 /**
- * A schema that parses XML records as JavaScript objects.
+ * A schema that parses XML record elements as JavaScript objects.
  */
 export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
   constructor(public readonly shape: T) {}
 
   /**
-   * Parses a raw XML record.
+   * Parses an XML element as a record.
    *
-   * Known fields are parsed with the configured field schemas. Unknown fields
-   * are preserved unless {@link SchemaParseOptions.omitUnknownField} is true.
+   * Known fields are parsed with the configured field schemas. Primitive fields
+   * read attributes, while object and list fields read child elements. Unknown
+   * fields are preserved unless {@link SchemaParseOptions.omitUnknownField} is
+   * true.
    *
    * @throws {@link SwXmlSchemaError} when the value does not match the schema.
    */
-  parse(value: RawXmlTreeValue | undefined, options?: SchemaParseOptions): InferShape<T> {
-    if (value === null) {
-      value = {};
-    }
-
-    if (!isRecord(value) || value instanceof RawXmlTreeList) {
+  parse(value: SchemaInput, options?: SchemaParseOptions): InferShape<T> {
+    if (!(value instanceof SwXmlNode)) {
       throw new SwXmlSchemaError([
         createSwXmlIssue({
           code: value === undefined ? "missing_required_field" : "invalid_type",
           message:
-            value === undefined ? "Required object field is missing." : "Expected an object value.",
-          expected: "record",
-          received: describeRawXmlValue(value),
+            value === undefined ? "Required object field is missing." : "Expected an XML element.",
+          expected: "XML element",
+          received: describeSchemaInput(value),
           value,
         }),
       ]);
@@ -53,8 +51,8 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 
     for (const [key, schema] of Object.entries(this.shape)) {
       try {
-        const parsedValue = schema.parse(value[key], options);
-        if (parsedValue !== undefined || key in value) {
+        const parsedValue = schema.parseField(value, key, options);
+        if (parsedValue !== undefined || hasField(value, key)) {
           parsed[key] = parsedValue;
         }
       } catch (error) {
@@ -71,9 +69,14 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
     }
 
     if (!options?.omitUnknownField) {
-      for (const [key, fieldValue] of Object.entries(value)) {
+      for (const [key, fieldValue] of value.attrs) {
         if (key in parsed) continue;
         parsed[key] = fieldValue;
+      }
+
+      for (const child of value.nodes) {
+        if (child.tag in parsed) continue;
+        parsed[child.tag] = child.asRawTree(false);
       }
     }
 
@@ -81,10 +84,14 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
   }
 
   safeParse(
-    value: RawXmlTreeValue | undefined,
+    value: SchemaInput,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<InferShape<T>> {
     return safeParseSchema(this, value, options);
+  }
+
+  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): InferShape<T> {
+    return this.parse(getRecordChild(parent, key, options), options);
   }
 
   serialize(value: InferShape<T>): unknown {
@@ -109,8 +116,20 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 }
 
 /**
- * Creates a schema that parses XML records as JavaScript objects.
+ * Creates a schema that parses XML record elements as JavaScript objects.
  */
 export function object<T extends Shape>(shape: T): ObjectSchema<T> {
   return new ObjectSchema(shape);
+}
+
+function hasField(parent: SwXmlNode, key: string): boolean {
+  return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
+}
+
+function getRecordChild(
+  parent: SwXmlNode,
+  key: string,
+  options?: SchemaParseOptions,
+): SwXmlNode | undefined {
+  return options?.noDuplicateElement === false ? parent.lastChild(key) : parent.child(key);
 }

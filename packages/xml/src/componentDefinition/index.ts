@@ -15,8 +15,8 @@ export function parseComponentDefinitionXml(
   input: string | Uint8Array<ArrayBuffer>,
   options: ParseOptions = {},
 ) {
-  return ComponentDefinition.parse(
-    parseSwXml(input).child("definition")?.asRawTreeRecord(options.noDuplicateElement),
-    options,
-  );
+  const tree = parseSwXml(input);
+  const definition =
+    options.noDuplicateElement === false ? tree.lastChild("definition") : tree.child("definition");
+  return ComponentDefinition.parse(definition, options);
 }

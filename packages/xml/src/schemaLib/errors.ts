@@ -1,4 +1,5 @@
-import type { RawXmlTreeValue } from "../parser";
+import type { SwXmlNode } from "../parser";
+import type { SchemaInput } from "./types";
 
 /**
  * A path segment in a parsed Stormworks XML value.
@@ -114,16 +115,17 @@ export function prependSwXmlIssuePath(
 }
 
 /**
- * Returns a short type description for a raw Stormworks XML value.
+ * Returns a short type description for a schema input value.
  */
-export function describeRawXmlValue(value: RawXmlTreeValue | undefined): string {
+export function describeSchemaInput(value: SchemaInput): string {
   if (value === undefined) return "undefined";
-  if (value === null) return "null";
   if (typeof value === "string") return "string";
-  if (Array.isArray(value)) return "array";
-  if (typeof value === "object" && "itemTag" in value && "items" in value) return "list";
-  if (typeof value === "object") return "record";
+  if (isSwXmlNode(value)) return `<${value.tag}>`;
   return typeof value;
+}
+
+function isSwXmlNode(value: SchemaInput): value is SwXmlNode {
+  return typeof value === "object" && value !== null && "tag" in value && "attrs" in value;
 }
 
 function formatSwXmlIssues(issues: readonly SwXmlIssue[]): string {

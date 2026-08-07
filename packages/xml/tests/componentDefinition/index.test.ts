@@ -10,6 +10,7 @@ import {
   SwXmlNodeList,
   SwXmlSchemaError,
   formatSwXmlPath,
+  list,
   object,
   number,
   string,
@@ -142,13 +143,10 @@ describe("component definition", () => {
       }),
     });
 
-    const result = schema.safeParse({
-      name: "Test",
-      mass: "heavy",
-      position: {
-        x: "1",
-      },
-    });
+    const node = parseSwXml('<root name="Test" mass="heavy"><position x="1"/></root>').child(
+      "root",
+    );
+    const result = schema.safeParse(node);
 
     expect(result.success).toBe(false);
     if (result.success) throw new Error("Unexpected parse success");
@@ -165,6 +163,31 @@ describe("component definition", () => {
       },
     ]);
     expect(formatSwXmlPath(result.error.issues[1]!.path)).toBe("position.y");
+  });
+
+  test("schema parsing uses schema context for single-child records", () => {
+    const schema = object({
+      surfaces: list(
+        "surface",
+        object({
+          position: object({
+            x: number(),
+            y: number(),
+            z: number(),
+          }),
+        }),
+      ),
+    });
+
+    const node = parseSwXml(
+      '<root><surfaces><surface><position x="1" y="2" z="3"/></surface></surfaces></root>',
+    ).child("root");
+
+    expect(schema.parse(node).surfaces).toEqual([
+      {
+        position: { x: 1, y: 2, z: 3 },
+      },
+    ]);
   });
 
   test.skipIf(process.env.CI)(

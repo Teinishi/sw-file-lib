@@ -3,16 +3,27 @@ import { XMLParser } from "fast-xml-parser";
 
 /**
  * A raw XML value after normalizing Stormworks list and record elements.
+ *
+ * This representation is provided as a convenience utility for ad-hoc
+ * inspection. Prefer schema parsing for library and application code, because
+ * some Stormworks XML elements can only be interpreted correctly with schema
+ * context.
  */
 export type RawXmlTreeValue = string | null | RawXmlTreeRecord | RawXmlTreeList;
 
 /**
  * A raw XML record where attributes and unique child elements are represented as fields.
+ *
+ * Prefer schema parsing when you need reliable typed data. This utility format
+ * intentionally trades some XML structure for a simpler JavaScript object.
  */
 export interface RawXmlTreeRecord extends Record<string, RawXmlTreeValue> {}
 
 /**
  * A raw XML list whose items originally shared the same XML tag name.
+ *
+ * Prefer schema parsing when the element could be either a list container or a
+ * record with a single child element.
  */
 export class RawXmlTreeList {
   constructor(
@@ -76,6 +87,9 @@ export class SwXmlNodeList {
 
   /**
    * Returns a child node converted to a raw XML tree value.
+   *
+   * This is useful for quick inspection, but schema parsing is preferred for
+   * tools that need reliable behavior across Stormworks XML edge cases.
    */
   getRawTree(tag: string, strict = true): RawXmlTreeValue | undefined {
     const c = this.child(tag);
@@ -112,6 +126,8 @@ export class SwXmlNode extends SwXmlNodeList {
 
   /**
    * Converts this node to a raw XML record.
+   *
+   * Prefer schema parsing for typed library and application code.
    */
   asRawTreeRecord(strict = true): RawXmlTreeRecord {
     const obj: RawXmlTreeRecord = Object.fromEntries(this.attrs.entries());
@@ -127,6 +143,8 @@ export class SwXmlNode extends SwXmlNodeList {
 
   /**
    * Converts this node to a raw XML list.
+   *
+   * Prefer schema parsing when the expected shape is known.
    */
   asRawTreeList(strict = true): RawXmlTreeList {
     if (this.childTags().length !== 1) {
@@ -146,6 +164,10 @@ export class SwXmlNode extends SwXmlNodeList {
 
   /**
    * Converts this node to a raw XML tree value.
+   *
+   * This schema-free conversion is convenient, but it can misclassify elements
+   * whose list or record shape depends on the schema. Prefer schema parsing for
+   * CLI and GUI tools.
    */
   asRawTree(strict = true): RawXmlTreeValue {
     const hasNoAttr = this.attrs.size === 0;

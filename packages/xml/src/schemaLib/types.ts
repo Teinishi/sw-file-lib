@@ -1,5 +1,13 @@
-import type { SwXmlSchemaError } from ".";
-import type { RawXmlTreeValue } from "../parser";
+import type { SwXmlNode } from "../parser";
+import type { SwXmlSchemaError } from "./errors";
+
+/**
+ * A value accepted by schemas.
+ *
+ * Top-level schemas usually receive an {@link SwXmlNode}. Primitive schemas may
+ * receive an attribute string when they are used as fields in an object schema.
+ */
+export type SchemaInput = SwXmlNode | string | undefined;
 
 /**
  * The result returned by {@link Schema.safeParse}.
@@ -38,26 +46,39 @@ export interface SchemaParseOptions {
    * Allows numeric fields to parse to NaN.
    */
   allowNaN?: boolean;
+
+  /**
+   * Requires record child elements to be unique.
+   *
+   * When false, object fields use the last matching child element.
+   */
+  noDuplicateElement?: boolean;
 }
 
 /**
- * A schema that parses a raw Stormworks XML tree value into a typed value.
+ * A schema that parses a Stormworks XML node into a typed value.
  */
 export interface Schema<T> {
   /**
-   * Parses a raw Stormworks XML tree value.
+   * Parses a Stormworks XML node or attribute value.
    *
    * @throws {@link SwXmlSchemaError} when the value does not match the schema.
    */
-  parse(value: RawXmlTreeValue | undefined, options?: SchemaParseOptions): T;
+  parse(value: SchemaInput, options?: SchemaParseOptions): T;
 
   /**
-   * Parses a raw Stormworks XML tree value without throwing schema errors.
+   * Parses a Stormworks XML node or attribute value without throwing schema errors.
    */
-  safeParse(
-    value: RawXmlTreeValue | undefined,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<T>;
+  safeParse(value: SchemaInput, options?: SchemaParseOptions): SchemaSafeParseResult<T>;
+
+  /**
+   * Parses one field from an XML record node.
+   *
+   * Primitive schemas read attributes. Object and list schemas read child
+   * elements. This lets schemas decide how to interpret XML structure instead
+   * of relying on a schema-free record/list guess.
+   */
+  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T;
 
   /**
    * Serializes a typed value into a raw XML-compatible value.
@@ -74,7 +95,7 @@ export type PartialShape<T extends Shape> = {
   [K in keyof T]: Schema<(T[K] extends Schema<infer U> ? U : never) | undefined>;
 };
 
-export type UnknownValue = string | UnknownObject | UnknownValue[];
+export type UnknownValue = string | null | UnknownObject | UnknownValue[];
 
 export interface UnknownObject {
   [key: string]: UnknownValue;

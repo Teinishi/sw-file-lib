@@ -1,7 +1,8 @@
-import type { RawXmlTreeValue } from "../parser";
+import type { SwXmlNode } from "../parser";
 import {
   safeParseSchema,
   type Schema,
+  type SchemaInput,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
@@ -12,7 +13,7 @@ import {
 export class OptionalSchema<T> implements Schema<T | undefined> {
   constructor(private readonly inner: Schema<T>) {}
 
-  parse(value: RawXmlTreeValue | undefined, options?: SchemaParseOptions): T | undefined {
+  parse(value: SchemaInput, options?: SchemaParseOptions): T | undefined {
     if (value === undefined) {
       return undefined;
     }
@@ -20,10 +21,17 @@ export class OptionalSchema<T> implements Schema<T | undefined> {
   }
 
   safeParse(
-    value: RawXmlTreeValue | undefined,
+    value: SchemaInput,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<T | undefined> {
     return safeParseSchema(this, value, options);
+  }
+
+  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T | undefined {
+    if (!hasField(parent, key)) {
+      return undefined;
+    }
+    return this.inner.parseField(parent, key, options);
   }
 
   serialize(value: T | undefined): unknown {
@@ -36,4 +44,8 @@ export class OptionalSchema<T> implements Schema<T | undefined> {
   optional(): Schema<T | undefined> {
     return this;
   }
+}
+
+function hasField(parent: SwXmlNode, key: string): boolean {
+  return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
 }
