@@ -14,7 +14,6 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.10.1",
-    "zod": "^4.4.3"
+    "fast-xml-parser": "^5.10.1"
   }
 }

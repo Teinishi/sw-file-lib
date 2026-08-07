@@ -1,17 +1,28 @@
-import { XMLParser } from "fast-xml-parser";
 import { isRecord, isStringRecord } from "@core";
+import { XMLParser } from "fast-xml-parser";
 
-// XMl のツリーを扱いやすく整形
-
+/**
+ * A raw XML value after normalizing Stormworks list and record elements.
+ */
 export type RawXmlTreeValue = string | null | RawXmlTreeRecord | RawXmlTreeList;
+
+/**
+ * A raw XML record where attributes and unique child elements are represented as fields.
+ */
 export interface RawXmlTreeRecord extends Record<string, RawXmlTreeValue> {}
 
+/**
+ * A raw XML list whose items originally shared the same XML tag name.
+ */
 export class RawXmlTreeList {
   constructor(
     readonly itemTag: string,
     readonly items: RawXmlTreeValue[],
   ) {}
 
+  /**
+   * Maps each raw list item.
+   */
   map<U>(fn: (v: RawXmlTreeValue) => U): U[] {
     return this.items.map(fn);
   }
@@ -21,10 +32,15 @@ export class RawXmlTreeList {
   }
 }
 
+/**
+ * A list of parsed Stormworks XML nodes.
+ */
 export class SwXmlNodeList {
   constructor(public nodes: SwXmlNode[]) {}
 
-  // list として使う (全要素が同じタグ名であることを期待)
+  /**
+   * Returns the nodes as a list and requires all child tags to be the same.
+   */
   asNodeList(): SwXmlNode[] {
     const tags = new Set(this.nodes.map((c) => c.tag));
     if (tags.size > 1) {
@@ -33,7 +49,9 @@ export class SwXmlNodeList {
     return this.nodes;
   }
 
-  // record として使う (タグ名で一意に引ける)
+  /**
+   * Returns a unique child node by tag name.
+   */
   child(tag: string): SwXmlNode | undefined {
     const matches = this.nodes.filter((c) => c.tag === tag);
     if (matches.length > 1) {
@@ -42,15 +60,23 @@ export class SwXmlNodeList {
     return matches[0];
   }
 
-  // 同名要素がないはずなのに複数ある場合エラーにならず最後のものを取得する (getChild でどうしてもエラーになるときの回避用、基本は getChild の使用を推奨)
+  /**
+   * Returns the last child node with the given tag name.
+   */
   lastChild(tag: string): SwXmlNode | undefined {
     return this.nodes.findLast((c) => c.tag === tag);
   }
 
+  /**
+   * Returns the unique child tag names in this node list.
+   */
   childTags(): string[] {
     return [...new Set(this.nodes.map((c) => c.tag))];
   }
 
+  /**
+   * Returns a child node converted to a raw XML tree value.
+   */
   getRawTree(tag: string, strict = true): RawXmlTreeValue | undefined {
     const c = this.child(tag);
     if (!c) return;
@@ -58,6 +84,9 @@ export class SwXmlNodeList {
   }
 }
 
+/**
+ * A parsed Stormworks XML element.
+ */
 export class SwXmlNode extends SwXmlNodeList {
   constructor(
     readonly tag: string,
@@ -67,14 +96,23 @@ export class SwXmlNode extends SwXmlNodeList {
     super(children);
   }
 
+  /**
+   * Returns an attribute value by name.
+   */
   attr(name: string): string | undefined {
     return this.attrs.get(name);
   }
 
+  /**
+   * Sets an attribute value by name.
+   */
   setAttr(name: string, value: string): void {
     this.attrs.set(name, value);
   }
 
+  /**
+   * Converts this node to a raw XML record.
+   */
   asRawTreeRecord(strict = true): RawXmlTreeRecord {
     const obj: RawXmlTreeRecord = Object.fromEntries(this.attrs.entries());
     for (const child of this.nodes) {
@@ -87,6 +125,9 @@ export class SwXmlNode extends SwXmlNodeList {
     return obj;
   }
 
+  /**
+   * Converts this node to a raw XML list.
+   */
   asRawTreeList(strict = true): RawXmlTreeList {
     if (this.childTags().length !== 1) {
       throw new Error(
@@ -103,6 +144,9 @@ export class SwXmlNode extends SwXmlNodeList {
     );
   }
 
+  /**
+   * Converts this node to a raw XML tree value.
+   */
   asRawTree(strict = true): RawXmlTreeValue {
     const hasNoAttr = this.attrs.size === 0;
     const uniqueItemTags = this.childTags().length;
@@ -122,22 +166,22 @@ export class SwXmlNode extends SwXmlNodeList {
 }
 
 function formatXmlElement(value: unknown): SwXmlNode | null {
-  if (!isRecord(value)) throw new TypeError("Unexpected error occured while parsing XML.");
+  if (!isRecord(value)) throw new TypeError("Unexpected error occurred while parsing XML.");
 
   if ("#text" in value) return null;
 
   const dynamicKeys = Object.keys(value).filter((k) => k !== ":@");
-  if (dynamicKeys.length !== 1) throw new TypeError("Unexpected error occured while parsing XML.");
+  if (dynamicKeys.length !== 1) throw new TypeError("Unexpected error occurred while parsing XML.");
 
   const name = dynamicKeys[0]!;
 
   const attributes = value[":@"] ?? {};
   if (!isStringRecord(attributes))
-    throw new TypeError("Unexpected error occured while parsing XML.");
+    throw new TypeError("Unexpected error occurred while parsing XML.");
 
   const rawChildren = value[name] ?? [];
   if (!Array.isArray(rawChildren))
-    throw new TypeError("Unexpected error occured while parsing XML.");
+    throw new TypeError("Unexpected error occurred while parsing XML.");
 
   const children = formatSwXmlElements(rawChildren);
 
@@ -145,7 +189,7 @@ function formatXmlElement(value: unknown): SwXmlNode | null {
 }
 
 function formatSwXmlElements(value: unknown): SwXmlNode[] {
-  if (!Array.isArray(value)) throw new TypeError("Unexpected error occured while parsing XML.");
+  if (!Array.isArray(value)) throw new TypeError("Unexpected error occurred while parsing XML.");
 
   return value.map(formatXmlElement).filter((v) => v !== null);
 }
@@ -157,7 +201,9 @@ const parser = new XMLParser({
   attributeNamePrefix: "",
 });
 
-// Stormworks 用の XML ではテキストノードは出現しないため無視してツリーを構築
+/**
+ * Parses a Stormworks XML document into a node tree.
+ */
 export function parseSwXml(input: string | Uint8Array<ArrayBufferLike>): SwXmlNodeList {
   return new SwXmlNodeList(formatSwXmlElements(parser.parse(input)));
 }

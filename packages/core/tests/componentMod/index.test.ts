@@ -20,8 +20,8 @@ describe("component mod roundtrip", () => {
     expect(data.name).toBe("test_cube_1");
     expect(data.definition).toBe(definition);
     expect(data.assets.length).toBe(1);
-    expect(data.assets[0].name).toBe("test_cube_1.mesh");
-    expect(meshBuf.equals(data.assets[0].data)).toBe(true);
+    expect(data.assets[0]?.name).toBe("test_cube_1.mesh");
+    expect(data.assets[0] && meshBuf.equals(data.assets[0].data)).toBe(true);
 
     const bytes = componentModToBytes(data);
 

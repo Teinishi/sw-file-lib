@@ -8,6 +8,11 @@ import {
   RawXmlTreeList,
   SwXmlNode,
   SwXmlNodeList,
+  SwXmlSchemaError,
+  formatSwXmlPath,
+  object,
+  number,
+  string,
 } from "@xml";
 import { searchRom } from "../../../internalUtils/src/testUtils";
 
@@ -127,6 +132,41 @@ describe("component definition", () => {
     ]);
   });
 
+  test("schema safeParse returns path-aware issues", () => {
+    const schema = object({
+      name: string(),
+      mass: number(),
+      position: object({
+        x: number(),
+        y: number(),
+      }),
+    });
+
+    const result = schema.safeParse({
+      name: "Test",
+      mass: "heavy",
+      position: {
+        x: "1",
+      },
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error("Unexpected parse success");
+
+    expect(result.error).toBeInstanceOf(SwXmlSchemaError);
+    expect(result.error.issues).toMatchObject([
+      {
+        code: "invalid_number",
+        path: ["mass"],
+      },
+      {
+        code: "missing_required_field",
+        path: ["position", "y"],
+      },
+    ]);
+    expect(formatSwXmlPath(result.error.issues[1]!.path)).toBe("position.y");
+  });
+
   test.skipIf(process.env.CI)(
     "integration with actual stormworks asset",
     async () => {
@@ -138,6 +178,7 @@ describe("component definition", () => {
           parseComponentDefinitionXml(buf, { noDuplicateElement: false });
         } catch (e) {
           console.error(file);
+          console.error(parseSwXml(buf).child("definition")?.child("surfaces")?.asRawTree());
           throw e;
         }
       }
