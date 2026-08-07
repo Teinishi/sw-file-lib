@@ -198,7 +198,7 @@ describe("component definition", () => {
       for (const file of files) {
         const buf = await fs.readFile(file);
         try {
-          parseComponentDefinitionXml(buf, { noDuplicateElement: false });
+          parseComponentDefinitionXml(buf, { duplicateChildElement: "last" });
         } catch (e) {
           console.error(file);
           console.error(parseSwXml(buf).child("definition")?.child("surfaces")?.asRawTree());

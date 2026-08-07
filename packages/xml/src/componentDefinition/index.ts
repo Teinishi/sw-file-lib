@@ -16,7 +16,6 @@ export function parseComponentDefinitionXml(
   options: ParseOptions = {},
 ) {
   const tree = parseSwXml(input);
-  const definition =
-    options.noDuplicateElement === false ? tree.lastChild("definition") : tree.child("definition");
+  const definition = tree.selectChild("definition", options.duplicateChildElement);
   return ComponentDefinition.parse(definition, options);
 }

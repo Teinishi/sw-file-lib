@@ -72,7 +72,7 @@ export class ListSchema<T> implements Schema<T[]> {
   }
 
   parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T[] {
-    return this.parse(getRecordChild(parent, key, options), options);
+    return this.parse(parent.selectChild(key, options?.duplicateChildElement), options);
   }
 
   serialize(value: T[]): unknown {
@@ -90,12 +90,4 @@ export class ListSchema<T> implements Schema<T[]> {
  */
 export function list<T>(itemTag: string, itemSchema: Schema<T>): ListSchema<T> {
   return new ListSchema(itemTag, itemSchema);
-}
-
-function getRecordChild(
-  parent: SwXmlNode,
-  key: string,
-  options?: SchemaParseOptions,
-): SwXmlNode | undefined {
-  return options?.noDuplicateElement === false ? parent.lastChild(key) : parent.child(key);
 }

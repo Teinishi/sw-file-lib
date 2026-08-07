@@ -1,4 +1,4 @@
-import type { SwXmlNode } from "../parser";
+import type { DuplicateChildElementMode, SwXmlNode } from "../parser";
 import type { SwXmlSchemaError } from "./errors";
 
 /**
@@ -48,11 +48,11 @@ export interface SchemaParseOptions {
   allowNaN?: boolean;
 
   /**
-   * Requires record child elements to be unique.
+   * Controls how duplicate child elements in XML records are handled.
    *
-   * When false, object fields use the last matching child element.
+   * The default is "error", which requires record child elements to be unique.
    */
-  noDuplicateElement?: boolean;
+  duplicateChildElement?: DuplicateChildElementMode;
 }
 
 /**

@@ -91,7 +91,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
   }
 
   parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): InferShape<T> {
-    return this.parse(getRecordChild(parent, key, options), options);
+    return this.parse(parent.selectChild(key, options?.duplicateChildElement), options);
   }
 
   serialize(value: InferShape<T>): unknown {
@@ -124,12 +124,4 @@ export function object<T extends Shape>(shape: T): ObjectSchema<T> {
 
 function hasField(parent: SwXmlNode, key: string): boolean {
   return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
-}
-
-function getRecordChild(
-  parent: SwXmlNode,
-  key: string,
-  options?: SchemaParseOptions,
-): SwXmlNode | undefined {
-  return options?.noDuplicateElement === false ? parent.lastChild(key) : parent.child(key);
 }

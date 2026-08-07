@@ -41,11 +41,4 @@ export interface Voxel {
 /**
  * Options used when parsing Stormworks XML files.
  */
-export interface ParseOptions extends SchemaParseOptions {
-  /**
-   * Requires record child elements to be unique.
-   *
-   * When false, duplicate child elements are resolved by keeping the last value.
-   */
-  noDuplicateElement?: boolean;
-}
+export type ParseOptions = SchemaParseOptions;
