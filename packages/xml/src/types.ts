@@ -1,6 +1,5 @@
-import type { Vec3 } from "@internalUtils";
-
-export type { Vec3 } from "@internalUtils";
+import type { Vec3 } from "@core";
+import type { SchemaParseOptions } from "./schemaLib";
 
 export interface Surface {
   position?: Vec3;
@@ -28,4 +27,8 @@ export interface Voxel {
   flags?: number;
   physicsShape?: number;
   buoyPipes?: number;
+}
+
+export interface ParseOptions extends SchemaParseOptions {
+  noDuplicateElement?: boolean;
 }

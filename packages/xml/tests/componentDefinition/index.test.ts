@@ -1,7 +1,13 @@
 import { describe, expect, test } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ComponentDefinitionBuilder, parseSwXml, SwXmlNode, SwXmlNodeList } from "@xml";
+import {
+  ComponentDefinitionBuilder,
+  parseComponentDefinitionXml,
+  parseSwXml,
+  SwXmlNode,
+  SwXmlNodeList,
+} from "@xml";
 
 describe("component definition", () => {
   test("ComponentDefinitionBuilder", async () => {
@@ -18,6 +24,7 @@ describe("component definition", () => {
     builder.addAttribute("flags", 0);
     builder.addAttribute("tags", "basic");
     builder.addAttribute("mesh_data_name", "test_cube_1.mesh");
+    builder.addAttribute("unknown_attr", "anything");
 
     builder.addSurfacesCuboid({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, [0, 1, 2, 3, 4, 5], {
       shape: 0,
@@ -85,5 +92,25 @@ describe("component definition", () => {
     const tree = parseSwXml('<list><item id="0"/><item id="1"/><item id="2"/></list>');
 
     expect(tree.getRawTree("list")).toEqual([{ id: "0" }, { id: "1" }, { id: "2" }]);
+  });
+
+  test("parse test_cube_1.xml", async () => {
+    const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
+    const xml = await fs.readFile(xmlPath, "utf8");
+
+    const definition = parseComponentDefinitionXml(xml);
+    if (!definition) throw new Error("Unexpected error");
+
+    const name: string | undefined = definition.name;
+    expect(name).toBe("(M) Test Cube 1");
+
+    const category: number | undefined = definition.category;
+    expect(category).toBe(0);
+
+    const type: number | undefined = definition.type;
+    expect(type).toBe(0);
+
+    const unknownAttr = definition.unknown_attr;
+    expect(unknownAttr).toBe("anything");
   });
 });

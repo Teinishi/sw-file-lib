@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definition name="(M) Test Cube 1" category="0" type="0" mass="1" value="2" flags="0" tags="basic" mesh_data_name="test_cube_1.mesh">
+<definition name="(M) Test Cube 1" category="0" type="0" mass="1" value="2" flags="0" tags="basic" mesh_data_name="test_cube_1.mesh" unknown_attr="anything">
 	<surfaces>
 		<surface orientation="0" shape="0">
 			<position x="0" y="0" z="0"/>

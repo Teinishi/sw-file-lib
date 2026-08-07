@@ -1,8 +1,11 @@
-export function isRecord(val: unknown): val is Record<PropertyKey, unknown> {
-  return val !== null && typeof val === "object";
+export function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
+  return value !== null && typeof value === "object";
+}
+
+export function isStringKeyRecord(value: unknown): value is Record<string, unknown> {
+  return isRecord(value) && Object.keys(value).every((k) => typeof k === "string");
 }
 
 export function isStringRecord(value: unknown): value is Record<string, string> {
-  if (typeof value !== "object" || value === null) return false;
-  return Object.values(value).every((v) => typeof v === "string");
+  return isStringKeyRecord(value) && Object.values(value).every((v) => typeof v === "string");
 }
