@@ -14,6 +14,7 @@ import {
   object,
   number,
   string,
+  safeParseComponentDefinitionXml,
 } from "@xml";
 import { searchRom } from "../../../internalUtils/src/testUtils";
 
@@ -197,12 +198,11 @@ describe("component definition", () => {
 
       for (const file of files) {
         const buf = await fs.readFile(file);
-        try {
-          parseComponentDefinitionXml(buf, { duplicateChildElement: "last" });
-        } catch (e) {
+
+        const result = safeParseComponentDefinitionXml(buf, { duplicateChildElement: "last" });
+        if (!result.success) {
           console.error(file);
-          console.error(parseSwXml(buf).child("definition")?.child("surfaces")?.asRawTree());
-          throw e;
+          throw result.error;
         }
       }
     },

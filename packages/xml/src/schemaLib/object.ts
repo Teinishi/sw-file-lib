@@ -76,7 +76,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 
       for (const child of value.nodes) {
         if (child.tag in parsed) continue;
-        parsed[child.tag] = child.asRawTree(false);
+        parsed[child.tag] = child.asRawTree(options?.duplicateChildElement ?? "last");
       }
     }
 

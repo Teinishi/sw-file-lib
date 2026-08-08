@@ -1,6 +1,7 @@
 import { parseSwXml } from "../parser";
+import type { SchemaSafeParseResult } from "../schemaLib";
 import type { ParseOptions } from "../types";
-import { ComponentDefinition } from "./schema";
+import { ComponentDefinitionSchema, type ComponentDefinition } from "./schema";
 
 export * from "./ComponentDefinitionBuilder";
 export * from "./schema";
@@ -14,8 +15,20 @@ export * from "./schema";
 export function parseComponentDefinitionXml(
   input: string | Uint8Array<ArrayBuffer>,
   options: ParseOptions = {},
-) {
+): ComponentDefinition {
   const tree = parseSwXml(input);
   const definition = tree.selectChild("definition", options.duplicateChildElement);
-  return ComponentDefinition.parse(definition, options);
+  return ComponentDefinitionSchema.parse(definition, options);
+}
+
+/**
+ * Parses a Stormworks component definition XML document without throwing schema errors.
+ */
+export function safeParseComponentDefinitionXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): SchemaSafeParseResult<ComponentDefinition> {
+  const tree = parseSwXml(input);
+  const definition = tree.selectChild("definition", options.duplicateChildElement);
+  return ComponentDefinitionSchema.safeParse(definition, options);
 }

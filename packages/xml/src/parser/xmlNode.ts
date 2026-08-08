@@ -4,6 +4,7 @@ import {
   type RawXmlTreeRecord,
   type RawXmlTreeValue,
 } from ".";
+import { SwXmlStructureError } from "./errors";
 
 /**
  * A list of parsed Stormworks XML nodes.
@@ -17,7 +18,11 @@ export class SwXmlNodeList {
   asNodeList(): SwXmlNode[] {
     const tags = new Set(this.nodes.map((c) => c.tag));
     if (tags.size > 1) {
-      throw new Error(`Expected list of the same tags, got tags: ${[...tags]}`);
+      throw new SwXmlStructureError(
+        "invalid_list_shape",
+        `Expected list of the same tags, got tags: ${[...tags]}`,
+        { childTags: [...tags] },
+      );
     }
     return this.nodes;
   }
@@ -28,7 +33,11 @@ export class SwXmlNodeList {
   child(tag: string): SwXmlNode | undefined {
     const matches = this.nodes.filter((c) => c.tag === tag);
     if (matches.length > 1) {
-      throw new Error(`Expected record of unique tags, got ${matches.length} of <${tag}>`);
+      throw new SwXmlStructureError(
+        "duplicate_child_element",
+        `Expected record of unique tags, got ${matches.length} of <${tag}>.`,
+        { childTag: tag, duplicateChildElement: "error" },
+      );
     }
     return matches[0];
   }
@@ -75,10 +84,13 @@ export class SwXmlNodeList {
    * This is useful for quick inspection, but schema parsing is preferred for
    * tools that need reliable behavior across Stormworks XML edge cases.
    */
-  getRawTree(tag: string, strict = true): RawXmlTreeValue | undefined {
-    const c = this.child(tag);
+  getRawTree(
+    tag: string,
+    duplicateChildElement: DuplicateChildElementMode = "error",
+  ): RawXmlTreeValue | undefined {
+    const c = this.selectChild(tag, duplicateChildElement);
     if (!c) return;
-    return c.asRawTree(strict);
+    return c.asRawTree(duplicateChildElement);
   }
 }
 
@@ -113,13 +125,26 @@ export class SwXmlNode extends SwXmlNodeList {
    *
    * Prefer schema parsing for typed library and application code.
    */
-  asRawTreeRecord(strict = true): RawXmlTreeRecord {
+  asRawTreeRecord(duplicateChildElement: DuplicateChildElementMode = "error"): RawXmlTreeRecord {
     const obj: RawXmlTreeRecord = Object.fromEntries(this.attrs.entries());
     for (const child of this.nodes) {
-      if (strict && child.tag in obj) {
-        throw new Error(`Expected record of unique tags, got more than one of <${child.tag}>`);
+      if (child.tag in obj) {
+        if (duplicateChildElement === "error") {
+          throw new SwXmlStructureError(
+            "duplicate_child_element",
+            `Expected record of unique tags, got more than one of <${child.tag}>.`,
+            {
+              tag: this.tag,
+              childTag: child.tag,
+              duplicateChildElement,
+            },
+          );
+        }
+        if (duplicateChildElement === "first") {
+          continue;
+        }
       }
-      const c = child.asRawTree(strict);
+      const c = child.asRawTree(duplicateChildElement);
       obj[child.tag] = c;
     }
     return obj;
@@ -130,19 +155,37 @@ export class SwXmlNode extends SwXmlNodeList {
    *
    * Prefer schema parsing when the expected shape is known.
    */
-  asRawTreeList(strict = true): RawXmlTreeList {
-    if (this.childTags().length !== 1) {
-      throw new Error(
-        `Expected list of single tags at <${this.tag}>, got zero or multiple child tags: <${this.childTags().join(">, <")}>`,
+  asRawTreeList(duplicateChildElement: DuplicateChildElementMode = "error"): RawXmlTreeList {
+    const childTags = this.childTags();
+    if (childTags.length === 0) {
+      throw new SwXmlStructureError(
+        "empty_list",
+        `Expected list of single tags, got none at <${this.tag}>.`,
+        { tag: this.tag },
+      );
+    }
+    if (childTags.length !== 1) {
+      throw new SwXmlStructureError(
+        "invalid_list_shape",
+        `Expected list of single tags at <${this.tag}>, got multiple child tags: <${childTags.join(">, <")}>`,
+        {
+          tag: this.tag,
+          childTags,
+        },
       );
     }
     const nodeList = this.asNodeList();
     const itemTag = nodeList[0]?.tag;
-    if (itemTag === undefined)
-      throw new Error(`Expected list of single tags, got none at <${this.tag}>`);
+    if (itemTag === undefined) {
+      throw new SwXmlStructureError(
+        "empty_list",
+        `Expected list of single tags, got none at <${this.tag}>.`,
+        { tag: this.tag },
+      );
+    }
     return new RawXmlTreeList(
       itemTag,
-      nodeList.map((c) => c.asRawTree(strict)),
+      nodeList.map((c) => c.asRawTree(duplicateChildElement)),
     );
   }
 
@@ -153,20 +196,24 @@ export class SwXmlNode extends SwXmlNodeList {
    * whose list or record shape depends on the schema. Prefer schema parsing for
    * CLI and GUI tools.
    */
-  asRawTree(strict = true): RawXmlTreeValue {
+  asRawTree(duplicateChildElement: DuplicateChildElementMode = "error"): RawXmlTreeValue {
     const hasNoAttr = this.attrs.size === 0;
     const uniqueItemTags = this.childTags().length;
 
     if (this.attrs.size === 0 && uniqueItemTags === 0) return null;
 
     if (uniqueItemTags === 1 && hasNoAttr) {
-      return this.asRawTreeList(strict);
+      return this.asRawTreeList(duplicateChildElement);
     } else if (uniqueItemTags >= 2 || !hasNoAttr) {
-      return this.asRawTreeRecord(strict);
+      return this.asRawTreeRecord(duplicateChildElement);
     } else if (hasNoAttr && uniqueItemTags === 0) {
       return null;
     } else {
-      throw new Error(`Cannot determine whether <${this.tag}> is a record or a list.`);
+      throw new SwXmlStructureError(
+        "unknown_node_shape",
+        `Cannot determine whether <${this.tag}> is a record or a list.`,
+        { tag: this.tag },
+      );
     }
   }
 }

@@ -1,6 +1,6 @@
 import * as x from "../schemaLib";
 
-export const ComponentDefinitionSurface = x
+export const ComponentDefinitionSurfaceSchema = x
   .object({
     orientation: x.number(),
     rotation: x.number(),
@@ -13,7 +13,7 @@ export const ComponentDefinitionSurface = x
   })
   .partial();
 
-export const ComponentDefinition = x
+export const ComponentDefinitionSchema = x
   .object({
     name: x.string(),
     category: x.number(),
@@ -162,8 +162,8 @@ export const ComponentDefinition = x
         })
         .partial(),
     ),
-    surfaces: x.list("surfaces", ComponentDefinitionSurface),
-    buoyancy_surfaces: x.list("buoyancy_surfaces", ComponentDefinitionSurface),
+    surfaces: x.list("surfaces", ComponentDefinitionSurfaceSchema),
+    buoyancy_surfaces: x.list("buoyancy_surfaces", ComponentDefinitionSurfaceSchema),
     logic_nodes: x.list(
       "logic_nodes",
       x
@@ -288,3 +288,5 @@ export const ComponentDefinition = x
     rope_hook_offset: x.vec3(),
   })
   .partial();
+
+export type ComponentDefinition = x.InferShape<typeof ComponentDefinitionSchema.shape>;
