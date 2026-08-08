@@ -6,6 +6,7 @@ import type { Schema, SchemaInput, SchemaParseOptions, SchemaSafeParseResult } f
 export * from "./types";
 export * from "./errors";
 export * from "./optional";
+export * from "./union";
 export * from "./boolean";
 export * from "./number";
 export * from "./string";
@@ -38,5 +39,57 @@ export function vec3() {
     x: number(),
     y: number(),
     z: number(),
+  }).partial();
+}
+
+/**
+ * Creates a schema for Stormworks RGBA color records with optional r, g, b, a fields.
+ */
+export function rgba() {
+  return object({
+    x: number(),
+    y: number(),
+    z: number(),
+  }).partial();
+}
+
+/**
+ * Creates a schema for Stormworks 3x3 matrix records with optional "00" to "22" fields.
+ */
+export function mat3() {
+  return object({
+    "00": number(),
+    "01": number(),
+    "02": number(),
+    "10": number(),
+    "11": number(),
+    "12": number(),
+    "20": number(),
+    "21": number(),
+    "22": number(),
+  }).partial();
+}
+
+/**
+ * Creates a schema for Stormworks 4x4 matrix records with optional "00" to "33" fields.
+ */
+export function mat4() {
+  return object({
+    "00": number(),
+    "01": number(),
+    "02": number(),
+    "03": number(),
+    "10": number(),
+    "11": number(),
+    "12": number(),
+    "13": number(),
+    "20": number(),
+    "21": number(),
+    "22": number(),
+    "23": number(),
+    "30": number(),
+    "31": number(),
+    "32": number(),
+    "33": number(),
   }).partial();
 }

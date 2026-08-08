@@ -1,3 +1,4 @@
+import type { StrictOmit } from "ts-essentials";
 import type { SwXmlNode } from "../parser";
 import type { SchemaInput } from "./types";
 
@@ -34,42 +35,65 @@ export function formatSwXmlPath(path: SwXmlPath): string {
 /**
  * A machine-readable validation issue produced while parsing a schema.
  */
-export interface SwXmlIssue {
-  /**
-   * The kind of schema validation failure.
-   */
-  code:
-    | "invalid_type"
-    | "invalid_value"
-    | "invalid_number"
-    | "missing_required_field"
-    | "invalid_list_item_tag";
+export type SwXmlIssue =
+  | {
+      /**
+       * The kind of schema validation failure.
+       */
+      code:
+        | "invalid_type"
+        | "invalid_value"
+        | "invalid_number"
+        | "missing_required_field"
+        | "invalid_list_item_tag";
 
-  /**
-   * The path to the value that caused the issue.
-   */
-  path: SwXmlPath;
+      /**
+       * The path to the value that caused the issue.
+       */
+      path: SwXmlPath;
 
-  /**
-   * A human-readable description of the issue.
-   */
-  message: string;
+      message: string;
 
-  /**
-   * The expected value type or shape, when applicable.
-   */
-  expected?: string;
+      /**
+       * The expected value type or shape, when applicable.
+       */
+      expected?: string;
 
-  /**
-   * The received value type or shape, when applicable.
-   */
-  received?: string;
+      /**
+       * The received value type or shape, when applicable.
+       */
+      received?: string;
 
-  /**
-   * The original value that caused the issue, when useful for diagnostics.
-   */
-  value?: unknown;
-}
+      /**
+       * The original value that caused the issue, when useful for diagnostics.
+       */
+      value?: unknown;
+    }
+  | {
+      /**
+       * The kind of schema validation failure.
+       */
+      code: "invalid_union";
+
+      /**
+       * The path to the value that caused the issue.
+       */
+      path: SwXmlPath;
+
+      message: string;
+
+      unionErrors: readonly SwXmlSchemaError[];
+
+      /**
+       * The received value type or shape, when applicable.
+       */
+      received?: string;
+
+      /**
+       * The original value that caused the issue, when useful for diagnostics.
+       */
+      value?: unknown;
+    };
 
 /**
  * An error thrown when a Stormworks XML value does not match a schema.
@@ -91,7 +115,7 @@ export class SwXmlSchemaError extends Error {
  * Creates a schema issue.
  */
 export function createSwXmlIssue(
-  issue: Omit<SwXmlIssue, "path"> & { path?: SwXmlPath },
+  issue: StrictOmit<SwXmlIssue, "path"> & { path?: SwXmlPath },
 ): SwXmlIssue {
   return {
     ...issue,
