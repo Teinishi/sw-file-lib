@@ -32,6 +32,16 @@ export function safeParseSchema<T>(
 }
 
 /**
+ * Creates a schema for Stormworks 2D vector records with optional x and y fields.
+ */
+export function vec2() {
+  return object({
+    x: number(),
+    y: number(),
+  }).partial();
+}
+
+/**
  * Creates a schema for Stormworks 3D vector records with optional x, y, and z fields.
  */
 export function vec3() {
@@ -43,13 +53,13 @@ export function vec3() {
 }
 
 /**
- * Creates a schema for Stormworks RGBA color records with optional r, g, b, a fields.
+ * Creates a schema for Stormworks RGB color records with optional r, g, and b fields.
  */
-export function rgba() {
+export function rgb() {
   return object({
-    x: number(),
-    y: number(),
-    z: number(),
+    r: number(),
+    g: number(),
+    b: number(),
   }).partial();
 }
 
@@ -67,29 +77,5 @@ export function mat3() {
     "20": number(),
     "21": number(),
     "22": number(),
-  }).partial();
-}
-
-/**
- * Creates a schema for Stormworks 4x4 matrix records with optional "00" to "33" fields.
- */
-export function mat4() {
-  return object({
-    "00": number(),
-    "01": number(),
-    "02": number(),
-    "03": number(),
-    "10": number(),
-    "11": number(),
-    "12": number(),
-    "13": number(),
-    "20": number(),
-    "21": number(),
-    "22": number(),
-    "23": number(),
-    "30": number(),
-    "31": number(),
-    "32": number(),
-    "33": number(),
   }).partial();
 }

@@ -16,38 +16,39 @@ export type SchemaTuple = readonly Schema<any>[];
 
 export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 
+function unionParse<T extends SchemaTuple>(
+  schemas: T,
+  value: SchemaInput,
+  _options?: SchemaParseOptions,
+): { success: true; data: InferUnion<T> } | { success: false; errors: SwXmlSchemaError[] } {
+  const errors: SwXmlSchemaError[] = [];
+
+  for (const schema of schemas) {
+    try {
+      return {
+        success: true,
+        data: schema.parse(value),
+      };
+    } catch (error) {
+      if (error instanceof SwXmlSchemaError) {
+        errors.push(error);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  return {
+    success: false,
+    errors,
+  };
+}
+
 class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
   constructor(public readonly schemas: T) {}
 
-  private unionParse(
-    value: SchemaInput,
-    _options?: SchemaParseOptions,
-  ): { success: true; data: InferUnion<T> } | { success: false; errors: SwXmlSchemaError[] } {
-    const errors: SwXmlSchemaError[] = [];
-
-    for (const schema of this.schemas) {
-      try {
-        return {
-          success: true,
-          data: schema.parse(value),
-        };
-      } catch (error) {
-        if (error instanceof SwXmlSchemaError) {
-          errors.push(error);
-        } else {
-          throw error;
-        }
-      }
-    }
-
-    return {
-      success: false,
-      errors,
-    };
-  }
-
   parse(value: SchemaInput, options?: SchemaParseOptions): InferUnion<T> {
-    const result = this.unionParse(value, options);
+    const result = unionParse(this.schemas, value, options);
 
     if (result.success) {
       return result.data;
@@ -87,7 +88,7 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
     const errors = [];
 
     const attrValue = parent.attr(key);
-    const attrResult = this.unionParse(attrValue, options);
+    const attrResult = unionParse(this.schemas, attrValue, options);
     if (attrResult.success) {
       return attrResult.data;
     } else if (attrValue !== undefined) {

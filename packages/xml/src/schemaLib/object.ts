@@ -122,6 +122,13 @@ export function object<T extends Shape>(shape: T): ObjectSchema<T> {
   return new ObjectSchema(shape);
 }
 
+/**
+ * Shorthand for x.object(...).partial()
+ */
+export function partialObject<T extends Shape>(shape: T): ObjectSchema<PartialShape<T>> {
+  return object(shape).partial();
+}
+
 function hasField(parent: SwXmlNode, key: string): boolean {
   return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
 }

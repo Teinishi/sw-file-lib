@@ -1,10 +1,9 @@
 import { parseSwXml } from "../parser";
 import type { SchemaSafeParseResult } from "../schemaLib";
 import type { ParseOptions } from "../types";
-import { ComponentDefinitionSchema, type ComponentDefinition } from "./schema";
+import { ComponentDefinitionSchema, type ComponentDefinition } from "../schemas";
 
 export * from "./ComponentDefinitionBuilder";
-export * from "./schema";
 
 /**
  * Parses a Stormworks component definition XML document.
