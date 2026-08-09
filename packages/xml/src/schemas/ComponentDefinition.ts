@@ -1,4 +1,7 @@
+import { parseSwXml } from "../parser";
+import type { SchemaSafeParseResult } from "../schemaLib";
 import * as x from "../schemaLib";
+import type { ParseOptions } from "../types";
 
 export const ComponentDefinitionSfxLayerSchema = x.partialObject({
   sfx_filename_start: x.string(),
@@ -262,3 +265,30 @@ export const ComponentDefinitionSchema = x.partialObject({
   rope_hook_offset: x.vec3(),
 });
 export type ComponentDefinition = x.InferShape<typeof ComponentDefinitionSchema.shape>;
+
+/**
+ * Parses a Stormworks component definition XML document.
+ *
+ * @throws {@link import("../schemaLib").SwXmlSchemaError} when the XML content
+ * does not match the component definition schema.
+ */
+export function parseComponentDefinitionXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): ComponentDefinition {
+  const tree = parseSwXml(input);
+  const root = tree.selectChild("definition", options.duplicateChildElement);
+  return ComponentDefinitionSchema.parse(root, options);
+}
+
+/**
+ * Parses a Stormworks component definition XML document without throwing schema errors.
+ */
+export function safeParseComponentDefinitionXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): SchemaSafeParseResult<ComponentDefinition> {
+  const tree = parseSwXml(input);
+  const root = tree.selectChild("definition", options.duplicateChildElement);
+  return ComponentDefinitionSchema.safeParse(root, options);
+}

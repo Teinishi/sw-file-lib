@@ -1,5 +1,5 @@
 import type { StrictOmit } from "ts-essentials";
-import type { SwXmlNode } from "../parser";
+import type { SwXmlNode, SwXmlStructureError } from "../parser";
 import type { SchemaInput } from "./types";
 
 /**
@@ -93,6 +93,18 @@ export type SwXmlIssue =
        * The original value that caused the issue, when useful for diagnostics.
        */
       value?: unknown;
+    }
+  | {
+      code: "structure_error";
+
+      /**
+       * The path to the value that caused the issue.
+       */
+      path: SwXmlPath;
+
+      message: string;
+
+      structureError: SwXmlStructureError;
     };
 
 /**

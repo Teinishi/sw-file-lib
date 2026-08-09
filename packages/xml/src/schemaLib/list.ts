@@ -12,6 +12,7 @@ import {
   type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
+import { schemaSelectChild } from "./internal";
 
 /**
  * A schema that parses XML list elements as JavaScript arrays.
@@ -72,7 +73,7 @@ export class ListSchema<T> implements Schema<T[]> {
   }
 
   parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T[] {
-    return this.parse(parent.selectChild(key, options?.duplicateChildElement), options);
+    return this.parse(schemaSelectChild(parent, key, options), options);
   }
 
   serialize(value: T[]): unknown {

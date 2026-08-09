@@ -15,6 +15,7 @@ import {
   type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
+import { schemaSelectChild } from "./internal";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
@@ -91,7 +92,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
   }
 
   parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): InferShape<T> {
-    return this.parse(parent.selectChild(key, options?.duplicateChildElement), options);
+    return this.parse(schemaSelectChild(parent, key, options), options);
   }
 
   serialize(value: InferShape<T>): unknown {

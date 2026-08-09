@@ -3,7 +3,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   ComponentDefinitionBuilder,
-  parseComponentDefinitionXml,
   parseSwXml,
   RawXmlTreeList,
   SwXmlNode,
@@ -14,6 +13,7 @@ import {
   object,
   number,
   string,
+  parseComponentDefinitionXml,
   safeParseComponentDefinitionXml,
 } from "@xml";
 import { searchRom } from "../../../internalUtils/src/testUtils";

@@ -16,14 +16,17 @@ async function searchFiles(dirPath: string, extensions: string[]) {
   return files.flat();
 }
 
-export async function searchRom(dirPath: string, extensions: string[]) {
+export async function searchEnvPath(envVar: string, dirPath: string, extensions: string[]) {
   process.loadEnvFile(".env.test.local");
 
-  const rom_path = process.env.STORMWORKS_ROM_PATH;
-
-  if (!rom_path) {
-    throw new Error("The environment variable STORMWORKS_ROM_PATH is not defined");
+  const envPath = process.env[envVar];
+  if (!envPath) {
+    throw new Error(`Environment variable ${envVar} is not defined.`);
   }
 
-  return await searchFiles(path.join(rom_path, dirPath), extensions);
+  return await searchFiles(path.join(envPath, dirPath), extensions);
+}
+
+export async function searchRom(dirPath: string, extensions: string[]) {
+  return await searchEnvPath("STORMWORKS_ROM_PATH", dirPath, extensions);
 }

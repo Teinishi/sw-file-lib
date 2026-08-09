@@ -1,4 +1,7 @@
+import { parseSwXml } from "../parser";
+import type { SchemaSafeParseResult } from "../schemaLib";
 import * as x from "../schemaLib";
+import type { ParseOptions } from "../types";
 
 export const TextValuePairSchema = x.partialObject({
   text: x.string(),
@@ -154,3 +157,30 @@ export const MicrocontrollerSchema = x.partialObject({
   }),
 });
 export type Microcontroller = x.InferShape<typeof MicrocontrollerSchema.shape>;
+
+/**
+ * Parses a Stormworks microcontroller XML document.
+ *
+ * @throws {@link import("../schemaLib").SwXmlSchemaError} when the XML content
+ * does not match the microcontroller schema.
+ */
+export function parseMicrocontrollerXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): Microcontroller {
+  const tree = parseSwXml(input);
+  const root = tree.selectChild("microprocessor", options.duplicateChildElement);
+  return MicrocontrollerSchema.parse(root, options);
+}
+
+/**
+ * Parses a Stormworks microcontroller XML document without throwing schema errors.
+ */
+export function safeParseMicrocontrollerXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): SchemaSafeParseResult<Microcontroller> {
+  const tree = parseSwXml(input);
+  const root = tree.selectChild("microprocessor", options.duplicateChildElement);
+  return MicrocontrollerSchema.safeParse(root, options);
+}

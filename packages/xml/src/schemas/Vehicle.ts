@@ -1,5 +1,8 @@
-import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
+import { parseSwXml } from "../parser";
+import type { SchemaSafeParseResult } from "../schemaLib";
 import * as x from "../schemaLib";
+import type { ParseOptions } from "../types";
+import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
 
 export const VehicleAuthorSchema = x.partialObject({
   steam_id: x.number(),
@@ -23,10 +26,16 @@ export const VehicleComponentDisplaySchema = x.partialObject({
   col: x.rgb(),
   min: TextValuePairSchema,
   max: TextValuePairSchema,
-  col_extra: x.partialObject({
+  /*col_extra: x.partialObject({
     size: x.number(),
     c: x.list("value", x.rgb()),
-  }),
+  }),*/
+  col_extra: x.list(
+    "c",
+    x.partialObject({
+      value: x.rgb(),
+    }),
+  ),
 });
 export type VehicleComponentDisplay = x.InferShape<typeof VehicleComponentDisplaySchema.shape>;
 
@@ -190,3 +199,30 @@ export const VehicleSchema = x.partialObject({
   logic_node_links: x.list("logic_node_link", VehicelLogicNodeLinkSchema),
 });
 export type Vehicle = x.InferShape<typeof VehicleSchema.shape>;
+
+/**
+ * Parses a Stormworks vehicle XML document.
+ *
+ * @throws {@link import("../schemaLib").SwXmlSchemaError} when the XML content
+ * does not match the vehicle schema.
+ */
+export function parseVehicleXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): Vehicle {
+  const tree = parseSwXml(input);
+  const root = tree.selectChild("vehicle", options.duplicateChildElement);
+  return VehicleSchema.parse(root, options);
+}
+
+/**
+ * Parses a Stormworks vehicle XML document without throwing schema errors.
+ */
+export function safeParseVehicleXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options: ParseOptions = {},
+): SchemaSafeParseResult<Vehicle> {
+  const tree = parseSwXml(input);
+  const root = tree.selectChild("vehicle", options.duplicateChildElement);
+  return VehicleSchema.safeParse(root, options);
+}
