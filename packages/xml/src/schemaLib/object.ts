@@ -72,6 +72,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
     }
 
     if (!options?.omitUnknownField) {
+      // todo: unknown なデータの扱いは再考
       for (const [key, fieldValue] of value.attrs) {
         if (key in parsed) continue;
         parsed[key] = fieldValue;

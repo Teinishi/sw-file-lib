@@ -28,6 +28,23 @@ export class SwXmlNodeList {
   }
 
   /**
+   * Returns the number of child node. If a tag name is given, only children that have the same tag name counts.
+   */
+  countChild(tag?: string): number {
+    if (tag !== undefined) {
+      let count = 0;
+      for (const child of this.nodes) {
+        if (child.tag === tag) {
+          count++;
+        }
+      }
+      return count;
+    } else {
+      return this.nodes.length;
+    }
+  }
+
+  /**
    * Returns a unique child node and its index by tag name.
    */
   child(tag: string): { index: number; value: SwXmlNode } | undefined {

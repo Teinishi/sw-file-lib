@@ -36,11 +36,15 @@ export function selectChild(
       newCtx: SchemaParseContext;
     }
   | undefined {
-  const mode = evaluateDuplicateChildElementMode(tag, ctx, options);
-
   let result;
+
   try {
-    result = nodeList.selectChild(tag, mode);
+    if (nodeList.countChild(tag) === 1) {
+      result = nodeList.child(tag);
+    } else {
+      const mode = evaluateDuplicateChildElementMode(tag, ctx, options);
+      result = nodeList.selectChild(tag, mode);
+    }
   } catch (e) {
     if (e instanceof SwXmlStructureError) {
       throw new SwXmlSchemaError([

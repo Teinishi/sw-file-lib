@@ -14,19 +14,7 @@ describe("schemaLib", () => {
 
     const tree = parseSwXml('<root name="Test" mass="heavy"><position x="1"/></root>');
 
-    const duplicateChildElementArgs: [{ index: number; tag: string }[], string][] = [];
-
-    const result = x.safeParseTree(schema, tree, "root", {
-      duplicateChildElement(ctx, target) {
-        duplicateChildElementArgs.push([ctx.path, target]);
-        return "first";
-      },
-    });
-
-    expect(duplicateChildElementArgs).toEqual([
-      [[], "root"],
-      [[{ index: 0, tag: "root" }], "position"],
-    ]);
+    const result = x.safeParseTree(schema, tree, "root");
 
     expect(result.success).toBe(false);
     if (result.success) throw new Error("Unexpected parse success");
@@ -81,7 +69,6 @@ describe("schemaLib", () => {
     });
 
     expect(duplicateChildElementArgs).toEqual([
-      [[], "root"],
       [[{ index: 0, tag: "root" }], "surfaces"],
       [
         [

@@ -14,7 +14,7 @@ describe("vehicle", () => {
 
         try {
           parseVehicleXml(buf, {
-            duplicateChildElement(_path, target) {
+            duplicateChildElement(_ctx, target) {
               // bodies[*].components[*].o.microprocessor_definition.group.components[*].object.out1
               return target === "out1" ? "last" : "error";
             },
