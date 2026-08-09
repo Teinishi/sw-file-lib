@@ -2,20 +2,21 @@ import {
   createSwXmlIssue,
   describeSchemaInput,
   OptionalSchema,
-  safeParseSchema,
   SwXmlSchemaError,
   type Schema,
   type SchemaInput,
+  type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
+import { safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML text values as numbers.
  */
 export class NumberSchema implements Schema<number> {
-  parse(value: SchemaInput, options?: SchemaParseOptions): number {
+  parse(value: SchemaInput, _ctx?: SchemaParseContext, options?: SchemaParseOptions): number {
     if (typeof value !== "string") {
       throw new SwXmlSchemaError([
         createSwXmlIssue({
@@ -43,12 +44,21 @@ export class NumberSchema implements Schema<number> {
     return parsed;
   }
 
-  safeParse(value: SchemaInput, options?: SchemaParseOptions): SchemaSafeParseResult<number> {
-    return safeParseSchema(this, value, options);
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<number> {
+    return safeParseSchema(this, value, ctx, options);
   }
 
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): number {
-    return this.parse(parent.attr(key), options);
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): number {
+    return this.parse(parent.attr(key), ctx, options);
   }
 
   serialize(value: number): unknown {

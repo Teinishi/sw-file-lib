@@ -2,15 +2,16 @@ import {
   createSwXmlIssue,
   describeSchemaInput,
   OptionalSchema,
-  safeParseSchema,
   SwXmlSchemaError,
   type Infer,
   type Schema,
   type SchemaInput,
+  type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
+import { safeParseSchema } from "./internal";
 
 export type SchemaTuple = readonly Schema<any>[];
 
@@ -19,7 +20,6 @@ export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 function unionParse<T extends SchemaTuple>(
   schemas: T,
   value: SchemaInput,
-  _options?: SchemaParseOptions,
 ): { success: true; data: InferUnion<T> } | { success: false; errors: SwXmlSchemaError[] } {
   const errors: SwXmlSchemaError[] = [];
 
@@ -47,8 +47,12 @@ function unionParse<T extends SchemaTuple>(
 class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
   constructor(public readonly schemas: T) {}
 
-  parse(value: SchemaInput, options?: SchemaParseOptions): InferUnion<T> {
-    const result = unionParse(this.schemas, value, options);
+  parse(
+    value: SchemaInput,
+    _ctx?: SchemaParseContext,
+    _options?: SchemaParseOptions,
+  ): InferUnion<T> {
+    const result = unionParse(this.schemas, value);
 
     if (result.success) {
       return result.data;
@@ -79,28 +83,30 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
 
   safeParse(
     value: SchemaInput,
+    ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<InferUnion<T>> {
-    return safeParseSchema(this, value, options);
+    return safeParseSchema(this, value, ctx, options);
   }
 
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): InferUnion<T> {
-    const errors = [];
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): InferUnion<T> {
+    const errors: SwXmlSchemaError[] = [];
 
-    const attrValue = parent.attr(key);
-    const attrResult = unionParse(this.schemas, attrValue, options);
-    if (attrResult.success) {
-      return attrResult.data;
-    } else if (attrValue !== undefined) {
-      errors.push(...attrResult.errors);
-    }
-
-    const childValue = parent.selectChild(key, options?.duplicateChildElement);
-    const childResult = this.safeParse(childValue, options);
-    if (childResult.success) {
-      return childResult.data;
-    } else if (childValue !== undefined) {
-      errors.push(...attrResult.errors);
+    for (const schema of this.schemas) {
+      try {
+        return schema.parseField(parent, key, ctx, options);
+      } catch (e) {
+        if (e instanceof SwXmlSchemaError) {
+          errors.push(e);
+        } else {
+          throw e;
+        }
+      }
     }
 
     if (errors.length === 0) {

@@ -1,11 +1,12 @@
 import type { SwXmlNode } from "../parser";
 import {
-  safeParseSchema,
   type Schema,
   type SchemaInput,
+  type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
+import { safeParseSchema } from "./internal";
 
 /**
  * A schema wrapper that accepts undefined values.
@@ -13,25 +14,31 @@ import {
 export class OptionalSchema<T> implements Schema<T | undefined> {
   constructor(private readonly inner: Schema<T>) {}
 
-  parse(value: SchemaInput, options?: SchemaParseOptions): T | undefined {
+  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T | undefined {
     if (value === undefined) {
       return undefined;
     }
-    return this.inner.parse(value, options);
+    return this.inner.parse(value, ctx, options);
   }
 
   safeParse(
     value: SchemaInput,
+    ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<T | undefined> {
-    return safeParseSchema(this, value, options);
+    return safeParseSchema(this, value, ctx, options);
   }
 
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T | undefined {
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): T | undefined {
     if (!hasField(parent, key)) {
       return undefined;
     }
-    return this.inner.parseField(parent, key, options);
+    return this.inner.parseField(parent, key, ctx, options);
   }
 
   serialize(value: T | undefined): unknown {

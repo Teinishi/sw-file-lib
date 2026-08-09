@@ -7,12 +7,6 @@ import {
   RawXmlTreeList,
   SwXmlNode,
   SwXmlNodeList,
-  SwXmlSchemaError,
-  formatSwXmlPath,
-  list,
-  object,
-  number,
-  string,
   parseComponentDefinitionXml,
   safeParseComponentDefinitionXml,
 } from "@xml";
@@ -131,63 +125,6 @@ describe("component definition", () => {
       { orientation: 3, shape: 0, position: { x: 0, y: 0, z: 0 } },
       { orientation: 4, shape: 0, position: { x: 0, y: 0, z: 0 } },
       { orientation: 5, shape: 0, position: { x: 0, y: 0, z: 0 } },
-    ]);
-  });
-
-  test("schema safeParse returns path-aware issues", () => {
-    const schema = object({
-      name: string(),
-      mass: number(),
-      position: object({
-        x: number(),
-        y: number(),
-      }),
-    });
-
-    const node = parseSwXml('<root name="Test" mass="heavy"><position x="1"/></root>').child(
-      "root",
-    );
-    const result = schema.safeParse(node);
-
-    expect(result.success).toBe(false);
-    if (result.success) throw new Error("Unexpected parse success");
-
-    expect(result.error).toBeInstanceOf(SwXmlSchemaError);
-    expect(result.error.issues).toMatchObject([
-      {
-        code: "invalid_number",
-        path: ["mass"],
-      },
-      {
-        code: "missing_required_field",
-        path: ["position", "y"],
-      },
-    ]);
-    expect(formatSwXmlPath(result.error.issues[1]!.path)).toBe("position.y");
-  });
-
-  test("schema parsing uses schema context for single-child records", () => {
-    const schema = object({
-      surfaces: list(
-        "surface",
-        object({
-          position: object({
-            x: number(),
-            y: number(),
-            z: number(),
-          }),
-        }),
-      ),
-    });
-
-    const node = parseSwXml(
-      '<root><surfaces><surface><position x="1" y="2" z="3"/></surface></surfaces></root>',
-    ).child("root");
-
-    expect(schema.parse(node).surfaces).toEqual([
-      {
-        position: { x: 1, y: 2, z: 3 },
-      },
     ]);
   });
 

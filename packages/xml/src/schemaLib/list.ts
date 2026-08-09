@@ -1,18 +1,20 @@
 import {
   createSwXmlIssue,
   describeSchemaInput,
+  newSchemaParseContext,
   OptionalSchema,
   prependSwXmlIssuePath,
-  safeParseSchema,
+  selectChild,
   SwXmlSchemaError,
   type Schema,
   type SchemaInput,
+  type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
-import { schemaSelectChild } from "./internal";
+import { safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML list elements as JavaScript arrays.
@@ -32,7 +34,11 @@ export class ListSchema<T> implements Schema<T[]> {
    *
    * @throws {@link SwXmlSchemaError} when the value does not match the schema.
    */
-  parse(value: SchemaInput, options?: SchemaParseOptions): T[] {
+  parse(
+    value: SchemaInput,
+    ctx: SchemaParseContext = newSchemaParseContext(),
+    options?: SchemaParseOptions,
+  ): T[] {
     if (!(value instanceof SwXmlNode)) {
       throw new SwXmlSchemaError([
         createSwXmlIssue({
@@ -50,8 +56,13 @@ export class ListSchema<T> implements Schema<T[]> {
     const issues: SwXmlIssue[] = [];
 
     for (const [index, item] of value.nodes.entries()) {
+      const newCtx: SchemaParseContext = {
+        ...ctx,
+        path: ctx.path.concat({ index, tag: item.tag }),
+      };
+
       try {
-        parsed.push(this.itemSchema.parse(item, options));
+        parsed.push(this.itemSchema.parse(item, newCtx, options));
       } catch (error) {
         if (error instanceof SwXmlSchemaError) {
           issues.push(...prependSwXmlIssuePath(error, [index]).issues);
@@ -68,12 +79,22 @@ export class ListSchema<T> implements Schema<T[]> {
     return parsed;
   }
 
-  safeParse(value: SchemaInput, options?: SchemaParseOptions): SchemaSafeParseResult<T[]> {
-    return safeParseSchema(this, value, options);
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<T[]> {
+    return safeParseSchema(this, value, ctx, options);
   }
 
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T[] {
-    return this.parse(schemaSelectChild(parent, key, options), options);
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): T[] {
+    const child = selectChild(parent, key, ctx, options);
+    return this.parse(child?.value, child?.newCtx ?? ctx, options);
   }
 
   serialize(value: T[]): unknown {

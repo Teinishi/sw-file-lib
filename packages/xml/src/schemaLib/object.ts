@@ -1,21 +1,23 @@
 import {
   createSwXmlIssue,
   describeSchemaInput,
+  evaluateDuplicateChildElementMode,
   OptionalSchema,
   prependSwXmlIssuePath,
-  safeParseSchema,
+  selectChild,
   SwXmlSchemaError,
   type InferShape,
   type PartialShape,
   type Schema,
   type SchemaInput,
+  type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type Shape,
   type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
-import { schemaSelectChild } from "./internal";
+import { safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
@@ -33,7 +35,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
    *
    * @throws {@link SwXmlSchemaError} when the value does not match the schema.
    */
-  parse(value: SchemaInput, options?: SchemaParseOptions): InferShape<T> {
+  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferShape<T> {
     if (!(value instanceof SwXmlNode)) {
       throw new SwXmlSchemaError([
         createSwXmlIssue({
@@ -52,7 +54,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 
     for (const [key, schema] of Object.entries(this.shape)) {
       try {
-        const parsedValue = schema.parseField(value, key, options);
+        const parsedValue = schema.parseField(value, key, ctx, options);
         if (parsedValue !== undefined || hasField(value, key)) {
           parsed[key] = parsedValue;
         }
@@ -77,7 +79,8 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 
       for (const child of value.nodes) {
         if (child.tag in parsed) continue;
-        parsed[child.tag] = child.asRawTree(options?.duplicateChildElement ?? "last");
+        const mode = evaluateDuplicateChildElementMode(child.tag, ctx, options);
+        parsed[child.tag] = child.asRawTree(mode);
       }
     }
 
@@ -86,13 +89,20 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
 
   safeParse(
     value: SchemaInput,
+    ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<InferShape<T>> {
-    return safeParseSchema(this, value, options);
+    return safeParseSchema(this, value, ctx, options);
   }
 
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): InferShape<T> {
-    return this.parse(schemaSelectChild(parent, key, options), options);
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): InferShape<T> {
+    const child = selectChild(parent, key, ctx, options);
+    return this.parse(child?.value, child?.newCtx ?? ctx, options);
   }
 
   serialize(value: InferShape<T>): unknown {

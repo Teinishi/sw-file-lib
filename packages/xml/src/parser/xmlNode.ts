@@ -28,10 +28,12 @@ export class SwXmlNodeList {
   }
 
   /**
-   * Returns a unique child node by tag name.
+   * Returns a unique child node and its index by tag name.
    */
-  child(tag: string): SwXmlNode | undefined {
-    const matches = this.nodes.filter((c) => c.tag === tag);
+  child(tag: string): { index: number; value: SwXmlNode } | undefined {
+    const matches = this.nodes
+      .map((value, index) => (value.tag === tag ? { index, value } : null))
+      .filter((v) => v !== null);
     if (matches.length > 1) {
       throw new SwXmlStructureError(
         "duplicate_child_element",
@@ -43,17 +45,25 @@ export class SwXmlNodeList {
   }
 
   /**
-   * Returns the first child node with the given tag name.
+   * Returns the first child node and its index with the given tag name.
    */
-  firstChild(tag: string): SwXmlNode | undefined {
-    return this.nodes.find((c) => c.tag === tag);
+  firstChild(tag: string): { index: number; value: SwXmlNode } | undefined {
+    const index = this.nodes.findIndex((c) => c.tag === tag);
+    if (index === -1) {
+      return;
+    }
+    return { index, value: this.nodes[index]! };
   }
 
   /**
-   * Returns the last child node with the given tag name.
+   * Returns the last child node and its index with the given tag name.
    */
-  lastChild(tag: string): SwXmlNode | undefined {
-    return this.nodes.findLast((c) => c.tag === tag);
+  lastChild(tag: string): { index: number; value: SwXmlNode } | undefined {
+    const index = this.nodes.findLastIndex((c) => c.tag === tag);
+    if (index === -1) {
+      return;
+    }
+    return { index, value: this.nodes[index]! };
   }
 
   /**
@@ -65,7 +75,7 @@ export class SwXmlNodeList {
   selectChild(
     tag: string,
     duplicateChildElement?: DuplicateChildElementMode,
-  ): SwXmlNode | undefined {
+  ): { index: number; value: SwXmlNode } | undefined {
     if (duplicateChildElement === "first") return this.firstChild(tag);
     if (duplicateChildElement === "last") return this.lastChild(tag);
     return this.child(tag);
@@ -90,7 +100,7 @@ export class SwXmlNodeList {
   ): RawXmlTreeValue | undefined {
     const c = this.selectChild(tag, duplicateChildElement);
     if (!c) return;
-    return c.asRawTree(duplicateChildElement);
+    return c.value.asRawTree(duplicateChildElement);
   }
 }
 

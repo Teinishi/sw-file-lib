@@ -1,36 +1,6 @@
 import type { StrictOmit } from "ts-essentials";
 import type { SwXmlNode, SwXmlStructureError } from "../parser";
-import type { SchemaInput } from "./types";
-
-/**
- * A path segment in a parsed Stormworks XML value.
- *
- * String segments represent object fields. Number segments represent list item
- * indexes.
- */
-export type SwXmlPathSegment = string | number;
-
-/**
- * A path to a value in a parsed Stormworks XML value.
- */
-export type SwXmlPath = readonly SwXmlPathSegment[];
-
-/**
- * Formats a schema path for human-readable diagnostics.
- */
-export function formatSwXmlPath(path: SwXmlPath): string {
-  if (path.length === 0) return "<root>";
-
-  let formatted = "";
-  for (const segment of path) {
-    if (typeof segment === "number") {
-      formatted += `[${segment}]`;
-    } else {
-      formatted += formatted.length === 0 ? segment : `.${segment}`;
-    }
-  }
-  return formatted;
-}
+import { type SchemaInput, type SwXmlPath, type SwXmlPathSegment } from "./types";
 
 /**
  * A machine-readable validation issue produced while parsing a schema.
@@ -170,4 +140,21 @@ function formatSwXmlIssues(issues: readonly SwXmlIssue[]): string {
   const first = issues[0]!;
   const suffix = issues.length === 1 ? "" : ` (${issues.length} issues total)`;
   return `${formatSwXmlPath(first.path)}: ${first.message}${suffix}`;
+}
+
+/**
+ * Formats a schema path for human-readable diagnostics.
+ */
+export function formatSwXmlPath(path: SwXmlPath): string {
+  if (path.length === 0) return "<root>";
+
+  let formatted = "";
+  for (const segment of path) {
+    if (typeof segment === "number") {
+      formatted += `[${segment}]`;
+    } else {
+      formatted += formatted.length === 0 ? segment : `.${segment}`;
+    }
+  }
+  return formatted;
 }

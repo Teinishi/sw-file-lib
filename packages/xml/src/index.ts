@@ -1,5 +1,5 @@
 export * from "./componentDefinition";
 export * from "./parser";
-export * from "./schemaLib";
-export * from "./schemas"
+export * as x from "./schemaLib";
+export * from "./schemas";
 export * from "./types";

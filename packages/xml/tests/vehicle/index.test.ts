@@ -1,7 +1,7 @@
 import { describe, test } from "vitest";
 import fs from "node:fs/promises";
 import { searchEnvPath } from "../../../internalUtils/src/testUtils";
-import { safeParseVehicleXml } from "@xml";
+import { parseVehicleXml } from "@xml";
 
 describe("vehicle", () => {
   test.skipIf(process.env.CI)(
@@ -12,10 +12,16 @@ describe("vehicle", () => {
       for (const file of files) {
         const buf = await fs.readFile(file);
 
-        const result = safeParseVehicleXml(buf, { duplicateChildElement: "error" });
-        if (!result.success) {
+        try {
+          parseVehicleXml(buf, {
+            duplicateChildElement(_path, target) {
+              // bodies[*].components[*].o.microprocessor_definition.group.components[*].object.out1
+              return target === "out1" ? "last" : "error";
+            },
+          });
+        } catch (e) {
           console.error(file);
-          throw result.error;
+          throw e;
         }
       }
     },

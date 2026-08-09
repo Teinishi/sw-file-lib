@@ -2,20 +2,21 @@ import {
   createSwXmlIssue,
   describeSchemaInput,
   OptionalSchema,
-  safeParseSchema,
   SwXmlSchemaError,
   type Schema,
   type SchemaInput,
+  type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
+import { safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML text values as strings.
  */
 export class StringSchema implements Schema<string> {
-  parse(value: SchemaInput, _options?: SchemaParseOptions): string {
+  parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): string {
     if (typeof value === "string") {
       return value;
     } else {
@@ -32,12 +33,21 @@ export class StringSchema implements Schema<string> {
     }
   }
 
-  safeParse(value: SchemaInput, options?: SchemaParseOptions): SchemaSafeParseResult<string> {
-    return safeParseSchema(this, value, options);
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<string> {
+    return safeParseSchema(this, value, ctx, options);
   }
 
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): string {
-    return this.parse(parent.attr(key), options);
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): string {
+    return this.parse(parent.attr(key), ctx, options);
   }
 
   serialize(value: string): unknown {

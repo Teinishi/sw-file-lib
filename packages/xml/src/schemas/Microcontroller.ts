@@ -169,8 +169,7 @@ export function parseMicrocontrollerXml(
   options: ParseOptions = {},
 ): Microcontroller {
   const tree = parseSwXml(input);
-  const root = tree.selectChild("microprocessor", options.duplicateChildElement);
-  return MicrocontrollerSchema.parse(root, options);
+  return x.parseTree(MicrocontrollerSchema, tree, "microprocessor", options);
 }
 
 /**
@@ -181,6 +180,5 @@ export function safeParseMicrocontrollerXml(
   options: ParseOptions = {},
 ): SchemaSafeParseResult<Microcontroller> {
   const tree = parseSwXml(input);
-  const root = tree.selectChild("microprocessor", options.duplicateChildElement);
-  return MicrocontrollerSchema.safeParse(root, options);
+  return x.safeParseTree(MicrocontrollerSchema, tree, "microprocessor", options);
 }

@@ -1,5 +1,18 @@
-import type { DuplicateChildElementMode, SwXmlNode } from "../parser";
+import type { DuplicateChildElementMode, SwXmlNode, SwXmlNodeList } from "../parser";
 import type { SwXmlSchemaError } from "./errors";
+
+/**
+ * A path segment in a parsed Stormworks XML value.
+ *
+ * String segments represent object fields. Number segments represent list item
+ * indexes.
+ */
+export type SwXmlPathSegment = string | number;
+
+/**
+ * A path to a value in a parsed Stormworks XML value.
+ */
+export type SwXmlPath = readonly SwXmlPathSegment[];
 
 /**
  * A value accepted by schemas.
@@ -9,32 +22,25 @@ import type { SwXmlSchemaError } from "./errors";
  */
 export type SchemaInput = SwXmlNode | string | undefined;
 
-/**
- * The result returned by {@link Schema.safeParse}.
- */
 export type SchemaSafeParseResult<T> =
   | {
-      /**
-       * Whether parsing succeeded.
-       */
       success: true;
-
-      /**
-       * The parsed value.
-       */
       data: T;
     }
   | {
-      /**
-       * Whether parsing succeeded.
-       */
       success: false;
-
-      /**
-       * The schema error containing all collected issues.
-       */
       error: SwXmlSchemaError;
     };
+
+export interface SchemaParseContext {
+  path: { index: number; tag: string }[];
+}
+
+export function newSchemaParseContext(): SchemaParseContext {
+  return {
+    path: [],
+  };
+}
 
 export interface SchemaParseOptions {
   /**
@@ -52,7 +58,9 @@ export interface SchemaParseOptions {
    *
    * The default is "error", which requires record child elements to be unique.
    */
-  duplicateChildElement?: DuplicateChildElementMode;
+  duplicateChildElement?:
+    | DuplicateChildElementMode
+    | ((ctx: SchemaParseContext, target: string) => DuplicateChildElementMode);
 }
 
 /**
@@ -64,21 +72,29 @@ export interface Schema<T> {
    *
    * @throws {@link SwXmlSchemaError} when the value does not match the schema.
    */
-  parse(value: SchemaInput, options?: SchemaParseOptions): T;
+  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T;
 
   /**
    * Parses a Stormworks XML node or attribute value without throwing schema errors.
    */
-  safeParse(value: SchemaInput, options?: SchemaParseOptions): SchemaSafeParseResult<T>;
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<T>;
 
   /**
    * Parses one field from an XML record node.
    *
    * Primitive schemas read attributes. Object and list schemas read child
-   * elements. This lets schemas decide how to interpret XML structure instead
-   * of relying on a schema-free record/list guess.
+   * elements.
    */
-  parseField(parent: SwXmlNode, key: string, options?: SchemaParseOptions): T;
+  parseField(
+    parent: SwXmlNodeList,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): T;
 
   /**
    * Serializes a typed value into a raw XML-compatible value.

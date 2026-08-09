@@ -211,8 +211,7 @@ export function parseVehicleXml(
   options: ParseOptions = {},
 ): Vehicle {
   const tree = parseSwXml(input);
-  const root = tree.selectChild("vehicle", options.duplicateChildElement);
-  return VehicleSchema.parse(root, options);
+  return x.parseTree(VehicleSchema, tree, "vehicle", options);
 }
 
 /**
@@ -223,6 +222,5 @@ export function safeParseVehicleXml(
   options: ParseOptions = {},
 ): SchemaSafeParseResult<Vehicle> {
   const tree = parseSwXml(input);
-  const root = tree.selectChild("vehicle", options.duplicateChildElement);
-  return VehicleSchema.safeParse(root, options);
+  return x.safeParseTree(VehicleSchema, tree, "vehicle", options);
 }

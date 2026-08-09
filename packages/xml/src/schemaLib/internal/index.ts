@@ -1,19 +1,27 @@
-import { createSwXmlIssue, SwXmlSchemaError, type SchemaParseOptions } from "..";
-import { SwXmlStructureError, type SwXmlNode } from "../../parser";
+import {
+  SwXmlSchemaError,
+  type Schema,
+  type SchemaInput,
+  type SchemaParseContext,
+  type SchemaParseOptions,
+  type SchemaSafeParseResult,
+} from "..";
 
-export function schemaSelectChild(parent: SwXmlNode, key: string, options?: SchemaParseOptions) {
+/**
+ * Parses with a schema and returns a discriminated result instead of throwing.
+ */
+export function safeParseSchema<T>(
+  schema: Pick<Schema<T>, "parse">,
+  value: SchemaInput,
+  ctx?: SchemaParseContext,
+  options?: SchemaParseOptions,
+): SchemaSafeParseResult<T> {
   try {
-    return parent.selectChild(key, options?.duplicateChildElement);
-  } catch (e) {
-    if (e instanceof SwXmlStructureError) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "structure_error",
-          message: e.message,
-          structureError: e,
-        }),
-      ]);
+    return { success: true, data: schema.parse(value, ctx, options) };
+  } catch (error) {
+    if (error instanceof SwXmlSchemaError) {
+      return { success: false, error };
     }
-    throw e;
+    throw error;
   }
 }
