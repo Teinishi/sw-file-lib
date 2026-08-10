@@ -78,7 +78,8 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     }
 
     for (const [index, child] of value.nodes.entries()) {
-      if (child.tag !== this.itemTag && !(child.tag in this.metaShape.shape)) {
+      const isItem = child.tag === this.itemTag;
+      if (!isItem && !(child.tag in this.metaShape.shape)) {
         // 未知子要素
         const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child: child }, options);
         if (mode === "ignore") continue;
@@ -90,6 +91,8 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
           }),
         );
       }
+
+      if (!isItem) continue;
 
       const newCtx: SchemaParseContext = {
         ...ctx,
