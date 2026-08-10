@@ -8,7 +8,7 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
-import { assertString, createSwXmlIssue, safeParseSchema } from "./internal";
+import { assertString, createSwXmlIssue, safeParse } from "./internal";
 
 /**
  * A schema that parses XML text values as numbers.
@@ -30,14 +30,6 @@ export class NumberSchema implements Schema<number> {
     return parsed;
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<number> {
-    return safeParseSchema(this, value, ctx, options);
-  }
-
   parseField(
     parent: SwXmlNode,
     key: string,
@@ -45,6 +37,14 @@ export class NumberSchema implements Schema<number> {
     options?: SchemaParseOptions,
   ): number {
     return this.parse(parent.attr(key), ctx, options);
+  }
+
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<number> {
+    return safeParse(() => this.parse(value, ctx, options));
   }
 
   serialize(value: number): unknown {

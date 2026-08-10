@@ -8,7 +8,7 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import { SwXmlNode } from "../parser";
-import { assertString, createSwXmlIssue, safeParseSchema } from "./internal";
+import { assertString, createSwXmlIssue, safeParse } from "./internal";
 
 /**
  * A schema that parses XML text values as booleans.
@@ -29,14 +29,6 @@ export class BooleanSchema implements Schema<boolean> {
     ]);
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<boolean> {
-    return safeParseSchema(this, value, ctx, options);
-  }
-
   parseField(
     parent: SwXmlNode,
     key: string,
@@ -44,6 +36,14 @@ export class BooleanSchema implements Schema<boolean> {
     options?: SchemaParseOptions,
   ): boolean {
     return this.parse(parent.attr(key), ctx, options);
+  }
+
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<boolean> {
+    return safeParse(() => this.parse(value, ctx, options));
   }
 
   serialize(value: boolean): unknown {

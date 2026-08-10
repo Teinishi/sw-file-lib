@@ -6,7 +6,7 @@ import {
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
-import { safeParseSchema } from "./internal";
+import { safeParse } from "./internal";
 
 /**
  * A schema wrapper that accepts undefined values.
@@ -21,14 +21,6 @@ export class OptionalSchema<T> implements Schema<T | undefined> {
     return this.inner.parse(value, ctx, options);
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<T | undefined> {
-    return safeParseSchema(this, value, ctx, options);
-  }
-
   parseField(
     parent: SwXmlNode,
     key: string,
@@ -39,6 +31,14 @@ export class OptionalSchema<T> implements Schema<T | undefined> {
       return undefined;
     }
     return this.inner.parseField(parent, key, ctx, options);
+  }
+
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<T | undefined> {
+    return safeParse(() => this.parse(value, ctx, options));
   }
 
   serialize(value: T | undefined): unknown {

@@ -9,7 +9,7 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
-import { createSwXmlIssue, safeParseSchema } from "./internal";
+import { createSwXmlIssue, safeParse } from "./internal";
 
 export type SchemaTuple = readonly Schema<any>[];
 
@@ -42,14 +42,6 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
     ]);
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferUnion<T>> {
-    return safeParseSchema(this, value, ctx, options);
-  }
-
   parseField(
     parent: SwXmlNode,
     key: string,
@@ -76,6 +68,14 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
         unionErrors: errors,
       }),
     ]);
+  }
+
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<InferUnion<T>> {
+    return safeParse(() => this.parse(value, ctx, options));
   }
 
   serialize(value: T): unknown {

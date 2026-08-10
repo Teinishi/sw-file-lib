@@ -15,7 +15,7 @@ describe("schemaLib", () => {
 
     const tree = parseSwXml('<root name="Test" mass="heavy"><position x="1"/></root>');
 
-    const result = x.safeParseTree(schema, tree, "root");
+    const result = schema.safeParseTree(tree, "root");
 
     expect(result.success).toBe(false);
     if (result.success) throw new Error("Unexpected parse success");
@@ -72,7 +72,7 @@ describe("schemaLib", () => {
     const unknownFieldSpy = vi.spyOn(options, "unknownField");
     const duplicateChildElementSpy = vi.spyOn(options, "duplicateChildElement");
 
-    const data = x.parseTree(schema, tree, "root", options);
+    const data = schema.parseTree(tree, "root", options);
 
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       1,

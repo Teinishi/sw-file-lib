@@ -277,7 +277,7 @@ export function parseComponentDefinitionXml(
   options: ParseOptions = {},
 ): ComponentDefinition {
   const tree = parseSwXml(input);
-  return x.parseTree(ComponentDefinitionSchema, tree, "definition", options);
+  return ComponentDefinitionSchema.parseTree(tree, "definition", options);
 }
 
 /**
@@ -288,5 +288,5 @@ export function safeParseComponentDefinitionXml(
   options: ParseOptions = {},
 ): SchemaSafeParseResult<ComponentDefinition> {
   const tree = parseSwXml(input);
-  return x.safeParseTree(ComponentDefinitionSchema, tree, "definition", options);
+  return ComponentDefinitionSchema.safeParseTree(tree, "definition", options);
 }

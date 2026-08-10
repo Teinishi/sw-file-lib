@@ -92,6 +92,19 @@ export interface Schema<T> {
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T;
 
   /**
+   * Parses one field from an XML record node.
+   *
+   * Primitive schemas read attributes. Object and list schemas read child
+   * elements.
+   */
+  parseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): T;
+
+  /**
    * Parses a Stormworks XML node or attribute value without throwing schema errors.
    */
   safeParse(
@@ -99,19 +112,6 @@ export interface Schema<T> {
     ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<T>;
-
-  /**
-   * Parses one field from an XML record node.
-   *
-   * Primitive schemas read attributes. Object and list schemas read child
-   * elements.
-   */
-  parseField(
-    parent: SwXmlNodeList,
-    key: string,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): T;
 
   /**
    * Serializes a typed value into a raw XML-compatible value.
@@ -122,6 +122,22 @@ export interface Schema<T> {
    * Returns a schema that accepts undefined values.
    */
   optional(): Schema<T | undefined>;
+}
+
+export interface ElementSchema<T> extends Schema<T> {
+  /**
+   * Parses from XML tree with the root tag name specified.
+   */
+  parseTree(tree: SwXmlNodeList, rootTag: string, options?: SchemaParseOptions): T;
+
+  /**
+   * Parses from XML tree with the root tag name specified without throwing schema errors.
+   */
+  safeParseTree(
+    tree: SwXmlNodeList,
+    rootTag: string,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<T>;
 }
 
 export type PartialShape<T extends Shape> = {

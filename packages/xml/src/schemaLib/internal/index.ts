@@ -1,7 +1,6 @@
 import {
   newSchemaParseContext,
   SchemaError,
-  type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -11,8 +10,9 @@ import {
   type SchemaIssueMap,
   type UnknownFieldCallback,
   type UnknownFieldMode,
+  selectChild,
 } from "..";
-import { SwXmlNode, type DuplicateChildElementMode } from "../../parser";
+import { SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
 
 export function createSwXmlIssue<T extends keyof SchemaIssueMap>(
   code: T,
@@ -76,25 +76,6 @@ function isSwXmlNode(value: SchemaInput): value is SwXmlNode {
   return typeof value === "object" && value !== null && "tag" in value && "attrs" in value;
 }
 
-/**
- * Parses with a schema and returns a discriminated result instead of throwing.
- */
-export function safeParseSchema<T>(
-  schema: Pick<Schema<T>, "parse">,
-  value: SchemaInput,
-  ctx?: SchemaParseContext,
-  options?: SchemaParseOptions,
-): SchemaSafeParseResult<T> {
-  try {
-    return { success: true, data: schema.parse(value, ctx, options) };
-  } catch (error) {
-    if (error instanceof SchemaError) {
-      return { success: false, error };
-    }
-    throw error;
-  }
-}
-
 export function evaluateUnknownFieldMode(
   ctx: SchemaParseContext = newSchemaParseContext(),
   target: Parameters<UnknownFieldCallback>[1],
@@ -117,4 +98,41 @@ export function evaluateDuplicateChildElementMode(
   } else {
     return options?.duplicateChildElement ?? "error";
   }
+}
+
+export function safeParse<T>(getData: () => T): SchemaSafeParseResult<T> {
+  try {
+    return {
+      success: true,
+      data: getData(),
+    };
+  } catch (error) {
+    if (error instanceof SchemaError) {
+      return {
+        success: false,
+        error,
+      };
+    }
+    throw error;
+  }
+}
+
+export function parseTree<T>(
+  schemaName: string,
+  tree: SwXmlNodeList,
+  rootTag: string,
+  options: SchemaParseOptions | undefined,
+  getData: (el: SwXmlNode, ctx: SchemaParseContext, options: SchemaParseOptions | undefined) => T,
+): T {
+  const ctx = newSchemaParseContext();
+  const child = selectChild(tree, rootTag, ctx, options);
+  if (child === undefined) {
+    throw new SchemaError([
+      createSwXmlIssue("missing_required_field", {
+        message: `Required ${schemaName} field is missing.`,
+        expected: "xml_element",
+      }),
+    ]);
+  }
+  return getData(child.value, child.newCtx, options);
 }

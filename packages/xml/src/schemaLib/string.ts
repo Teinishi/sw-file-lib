@@ -7,7 +7,7 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
-import { assertString, safeParseSchema } from "./internal";
+import { assertString, safeParse } from "./internal";
 
 /**
  * A schema that parses XML text values as strings.
@@ -19,14 +19,6 @@ export class StringSchema implements Schema<string> {
     return value;
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<string> {
-    return safeParseSchema(this, value, ctx, options);
-  }
-
   parseField(
     parent: SwXmlNode,
     key: string,
@@ -34,6 +26,14 @@ export class StringSchema implements Schema<string> {
     options?: SchemaParseOptions,
   ): string {
     return this.parse(parent.attr(key), ctx, options);
+  }
+
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<string> {
+    return safeParse(() => this.parse(value, ctx, options));
   }
 
   serialize(value: string): unknown {

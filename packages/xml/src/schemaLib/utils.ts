@@ -1,13 +1,7 @@
 import { SwXmlNode, SwXmlStructureError, type SwXmlNodeList } from "../parser";
 import { SchemaError } from "./errors";
 import { createSwXmlIssue, evaluateDuplicateChildElementMode } from "./internal";
-import {
-  newSchemaParseContext,
-  type Schema,
-  type SchemaParseContext,
-  type SchemaParseOptions,
-  type SchemaSafeParseResult,
-} from "./types";
+import { newSchemaParseContext, type SchemaParseContext, type SchemaParseOptions } from "./types";
 
 export function selectChild(
   nodeList: SwXmlNodeList,
@@ -50,32 +44,4 @@ export function selectChild(
       xmlPath: ctx.xmlPath.concat({ index: result.index, tag }),
     },
   };
-}
-
-export function parseTree<T>(
-  schema: Schema<T>,
-  tree: SwXmlNodeList,
-  rootTag: string,
-  options?: SchemaParseOptions,
-): T {
-  return schema.parseField(tree, rootTag, newSchemaParseContext(), options);
-}
-
-export function safeParseTree<T>(
-  schema: Schema<T>,
-  tree: SwXmlNodeList,
-  rootTag: string,
-  options?: SchemaParseOptions,
-): SchemaSafeParseResult<T> {
-  try {
-    return {
-      success: true,
-      data: schema.parseField(tree, rootTag, newSchemaParseContext(), options),
-    };
-  } catch (error) {
-    if (error instanceof SchemaError) {
-      return { success: false, error };
-    }
-    throw error;
-  }
 }

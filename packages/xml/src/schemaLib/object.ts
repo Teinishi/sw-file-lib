@@ -12,19 +12,21 @@ import {
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type Shape,
+  type ElementSchema,
 } from ".";
-import { SwXmlNode } from "../parser";
+import { SwXmlNode, SwXmlNodeList } from "../parser";
 import {
   assertXmlNode,
   createSwXmlIssue,
   evaluateUnknownFieldMode,
-  safeParseSchema,
+  parseTree,
+  safeParse,
 } from "./internal";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
  */
-export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
+export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T>> {
   constructor(public readonly shape: T) {}
 
   /**
@@ -100,14 +102,6 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
     return parsed as InferShape<T>;
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferShape<T>> {
-    return safeParseSchema(this, value, ctx, options);
-  }
-
   parseField(
     parent: SwXmlNode,
     key: string,
@@ -116,6 +110,30 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
   ): InferShape<T> {
     const child = selectChild(parent, key, ctx, options);
     return this.parse(child?.value, child?.newCtx ?? ctx, options);
+  }
+
+  safeParse(
+    value: SchemaInput,
+    ctx?: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<InferShape<T>> {
+    return safeParse(() => this.parse(value, ctx, options));
+  }
+
+  parseTree(tree: SwXmlNodeList, rootTag: string, options?: SchemaParseOptions): InferShape<T> {
+    return parseTree("object", tree, rootTag, options, (el, ctx, options) =>
+      this.parse(el, ctx, options),
+    );
+  }
+
+  safeParseTree(
+    tree: SwXmlNodeList,
+    rootTag: string,
+    options?: SchemaParseOptions,
+  ): SchemaSafeParseResult<InferShape<T>> {
+    return parseTree("object", tree, rootTag, options, (el, ctx, options) =>
+      this.safeParse(el, ctx, options),
+    );
   }
 
   serialize(value: InferShape<T>): unknown {

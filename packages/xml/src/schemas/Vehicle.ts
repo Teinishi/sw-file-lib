@@ -211,7 +211,7 @@ export function parseVehicleXml(
   options: ParseOptions = {},
 ): Vehicle {
   const tree = parseSwXml(input);
-  return x.parseTree(VehicleSchema, tree, "vehicle", options);
+  return VehicleSchema.parseTree(tree, "vehicle", options);
 }
 
 /**
@@ -222,5 +222,5 @@ export function safeParseVehicleXml(
   options: ParseOptions = {},
 ): SchemaSafeParseResult<Vehicle> {
   const tree = parseSwXml(input);
-  return x.safeParseTree(VehicleSchema, tree, "vehicle", options);
+  return VehicleSchema.safeParseTree(tree, "vehicle", options);
 }
