@@ -1,33 +1,29 @@
 import {
-  createSwXmlIssue,
-  describeSchemaInput,
   OptionalSchema,
-  SwXmlSchemaError,
+  SchemaError,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from ".";
-import type { SwXmlNode } from "../parser";
-import { safeParseSchema } from "./internal";
+import { SwXmlNode } from "../parser";
+import { assertString, createSwXmlIssue, safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML text values as booleans.
  */
 export class BooleanSchema implements Schema<boolean> {
   parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): boolean {
+    assertString(value, "boolean");
+
     if (value === "true") return true;
     if (value === "false") return false;
-    throw new SwXmlSchemaError([
-      createSwXmlIssue({
-        code: value === undefined ? "missing_required_field" : "invalid_value",
-        message:
-          value === undefined
-            ? "Required boolean field is missing."
-            : `Expected "true" or "false", received ${JSON.stringify(value)}.`,
-        expected: '"true" | "false"',
-        received: describeSchemaInput(value),
+
+    throw new SchemaError([
+      createSwXmlIssue("invalid_value", {
+        message: `Expected "true" or "false", received ${JSON.stringify(value)}.`,
+        expected: "boolean_string",
         value,
       }),
     ]);

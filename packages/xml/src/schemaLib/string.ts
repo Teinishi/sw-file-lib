@@ -1,8 +1,5 @@
 import {
-  createSwXmlIssue,
-  describeSchemaInput,
   OptionalSchema,
-  SwXmlSchemaError,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
@@ -10,27 +7,16 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
-import { safeParseSchema } from "./internal";
+import { assertString, safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML text values as strings.
  */
 export class StringSchema implements Schema<string> {
   parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): string {
-    if (typeof value === "string") {
-      return value;
-    } else {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: value === undefined ? "missing_required_field" : "invalid_type",
-          message:
-            value === undefined ? "Required string field is missing." : "Expected a string value.",
-          expected: "string",
-          received: describeSchemaInput(value),
-          value,
-        }),
-      ]);
-    }
+    assertString(value, "string");
+
+    return value;
   }
 
   safeParse(

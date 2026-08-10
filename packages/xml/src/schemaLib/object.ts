@@ -1,10 +1,9 @@
 import {
-  createSwXmlIssue,
-  describeSchemaInput,
   OptionalSchema,
-  prependSwXmlIssuePath,
+  prependSchemaIssuePath,
   selectChild,
-  SwXmlSchemaError,
+  SchemaError,
+  type AnySchemaIssue,
   type InferShape,
   type PartialShape,
   type Schema,
@@ -13,10 +12,14 @@ import {
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type Shape,
-  type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
-import { evaluateUnknownFieldMode, safeParseSchema } from "./internal";
+import {
+  assertXmlNode,
+  createSwXmlIssue,
+  evaluateUnknownFieldMode,
+  safeParseSchema,
+} from "./internal";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
@@ -35,21 +38,10 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
    * @throws {@link SwXmlSchemaError} when the value does not match the schema.
    */
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferShape<T> {
-    if (!(value instanceof SwXmlNode)) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: value === undefined ? "missing_required_field" : "invalid_type",
-          message:
-            value === undefined ? "Required object field is missing." : "Expected an XML element.",
-          expected: "XML element",
-          received: describeSchemaInput(value),
-          value,
-        }),
-      ]);
-    }
+    assertXmlNode(value, "object");
 
     const parsed: Record<string, unknown> = {};
-    const issues: SwXmlIssue[] = [];
+    const issues: AnySchemaIssue[] = [];
 
     for (const [key, schema] of Object.entries(this.shape)) {
       try {
@@ -58,8 +50,8 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
           parsed[key] = parsedValue;
         }
       } catch (error) {
-        if (error instanceof SwXmlSchemaError) {
-          issues.push(...prependSwXmlIssuePath(error, [key]).issues);
+        if (error instanceof SchemaError) {
+          issues.push(...prependSchemaIssuePath(error, [key]).issues);
           continue;
         }
         throw error;
@@ -78,25 +70,23 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
       if (mode === "omit") continue;
 
       issues.push(
-        createSwXmlIssue({
-          code: "unknown_attribute",
-          message: `Unknown attribute ${key}="${fieldValue}".`,
+        createSwXmlIssue("unknown_attribute", {
+          message: `Unknown attribute ${key}=${JSON.stringify(fieldValue)}.`,
           key,
           value: fieldValue,
         }),
       );
     }
 
-    for (const child of value.nodes) {
+    for (const [index, child] of value.nodes.entries()) {
       if (child.tag in this.shape) continue;
 
       // 未知子要素
-      const mode = evaluateUnknownFieldMode(ctx, { kind: "child", child });
+      const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child }, options);
       if (mode === "omit") continue;
 
       issues.push(
-        createSwXmlIssue({
-          code: "unknown_child",
+        createSwXmlIssue("unknown_child", {
           message: `Unknown child element <${child.tag}>.`,
           child,
         }),
@@ -104,7 +94,7 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
     }
 
     if (issues.length > 0) {
-      throw new SwXmlSchemaError(issues);
+      throw new SchemaError(issues);
     }
 
     return parsed as InferShape<T>;

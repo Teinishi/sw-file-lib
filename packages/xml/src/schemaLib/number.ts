@@ -1,8 +1,6 @@
 import {
-  createSwXmlIssue,
-  describeSchemaInput,
   OptionalSchema,
-  SwXmlSchemaError,
+  SchemaError,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
@@ -10,33 +8,21 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
-import { safeParseSchema } from "./internal";
+import { assertString, createSwXmlIssue, safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML text values as numbers.
  */
 export class NumberSchema implements Schema<number> {
   parse(value: SchemaInput, _ctx?: SchemaParseContext, options?: SchemaParseOptions): number {
-    if (typeof value !== "string") {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: value === undefined ? "missing_required_field" : "invalid_type",
-          message:
-            value === undefined ? "Required number field is missing." : "Expected a string value.",
-          expected: "numeric string",
-          received: describeSchemaInput(value),
-          value,
-        }),
-      ]);
-    }
+    assertString(value, "number");
+
     const parsed = Number(value);
     if (!options?.allowNaN && Number.isNaN(parsed)) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "invalid_number",
+      throw new SchemaError([
+        createSwXmlIssue("invalid_value", {
           message: `Expected a numeric string, received ${JSON.stringify(value)}.`,
-          expected: "numeric string",
-          received: "NaN",
+          expected: "numeric_string",
           value,
         }),
       ]);

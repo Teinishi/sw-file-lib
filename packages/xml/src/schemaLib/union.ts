@@ -1,8 +1,6 @@
 import {
-  createSwXmlIssue,
-  describeSchemaInput,
   OptionalSchema,
-  SwXmlSchemaError,
+  SchemaError,
   type Infer,
   type Schema,
   type SchemaInput,
@@ -11,74 +9,37 @@ import {
   type SchemaSafeParseResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
-import { safeParseSchema } from "./internal";
+import { createSwXmlIssue, safeParseSchema } from "./internal";
 
 export type SchemaTuple = readonly Schema<any>[];
 
 export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 
-function unionParse<T extends SchemaTuple>(
-  schemas: T,
-  value: SchemaInput,
-): { success: true; data: InferUnion<T> } | { success: false; errors: SwXmlSchemaError[] } {
-  const errors: SwXmlSchemaError[] = [];
-
-  for (const schema of schemas) {
-    try {
-      return {
-        success: true,
-        data: schema.parse(value),
-      };
-    } catch (error) {
-      if (error instanceof SwXmlSchemaError) {
-        errors.push(error);
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  return {
-    success: false,
-    errors,
-  };
-}
-
 class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
   constructor(public readonly schemas: T) {}
 
-  parse(
-    value: SchemaInput,
-    _ctx?: SchemaParseContext,
-    _options?: SchemaParseOptions,
-  ): InferUnion<T> {
-    const result = unionParse(this.schemas, value);
+  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferUnion<T> {
+    const errors: SchemaError[] = [];
 
-    if (result.success) {
-      return result.data;
+    for (const schema of this.schemas) {
+      try {
+        schema.parse(value, ctx, options);
+      } catch (error) {
+        if (error instanceof SchemaError) {
+          errors.push(error);
+        } else {
+          throw error;
+        }
+      }
     }
 
-    if (value === undefined) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "missing_required_field",
-          message: "Required union field is missing.",
-          expected: "Any of union schema",
-          received: describeSchemaInput(value),
-          value,
-        }),
-      ]);
-    } else {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "invalid_union",
-          message: "Value does not match any union schema.",
-          unionErrors: result.errors,
-          received: describeSchemaInput(value),
-          value,
-        }),
-      ]);
-    }
+    throw new SchemaError([
+      createSwXmlIssue("invalid_union", {
+        message: "Value does not match any union schema.",
+        unionErrors: errors,
+        value,
+      }),
+    ]);
   }
 
   safeParse(
@@ -95,13 +56,13 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
     ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
   ): InferUnion<T> {
-    const errors: SwXmlSchemaError[] = [];
+    const errors: SchemaError[] = [];
 
     for (const schema of this.schemas) {
       try {
         return schema.parseField(parent, key, ctx, options);
       } catch (e) {
-        if (e instanceof SwXmlSchemaError) {
+        if (e instanceof SchemaError) {
           errors.push(e);
         } else {
           throw e;
@@ -109,23 +70,12 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
       }
     }
 
-    if (errors.length === 0) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "missing_required_field",
-          message: "Required union field is missing.",
-          expected: "Any of union schema",
-        }),
-      ]);
-    } else {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "invalid_union",
-          message: "Value does not match any union schema.",
-          unionErrors: errors,
-        }),
-      ]);
-    }
+    throw new SchemaError([
+      createSwXmlIssue("invalid_union", {
+        message: "Value does not match any union schema.",
+        unionErrors: errors,
+      }),
+    ]);
   }
 
   serialize(value: T): unknown {

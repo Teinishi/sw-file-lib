@@ -1,20 +1,23 @@
 import {
-  createSwXmlIssue,
-  describeSchemaInput,
   newSchemaParseContext,
   OptionalSchema,
-  prependSwXmlIssuePath,
+  prependSchemaIssuePath,
   selectChild,
-  SwXmlSchemaError,
+  SchemaError,
+  type AnySchemaIssue,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
-  type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
-import { safeParseSchema } from "./internal";
+import {
+  assertXmlNode,
+  createSwXmlIssue,
+  evaluateUnknownFieldMode,
+  safeParseSchema,
+} from "./internal";
 
 /**
  * A schema that parses XML list elements as JavaScript arrays.
@@ -39,33 +42,34 @@ export class ListSchema<T> implements Schema<T[]> {
     ctx: SchemaParseContext = newSchemaParseContext(),
     options?: SchemaParseOptions,
   ): T[] {
-    if (!(value instanceof SwXmlNode)) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: value === undefined ? "missing_required_field" : "invalid_type",
-          message:
-            value === undefined ? "Required list field is missing." : "Expected an XML element.",
-          expected: "XML element",
-          received: describeSchemaInput(value),
-          value,
-        }),
-      ]);
-    }
+    assertXmlNode(value, "list");
 
     const parsed: T[] = [];
-    const issues: SwXmlIssue[] = [];
+    const issues: AnySchemaIssue[] = [];
 
     for (const [index, item] of value.nodes.entries()) {
+      if (item.tag !== this.itemTag) {
+        // 未知子要素
+        const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child: item }, options);
+        if (mode === "omit") continue;
+        issues.push(
+          createSwXmlIssue("unknown_child", {
+            message: `Expected list item <${this.itemTag}>, found <${item.tag}>.`,
+            child: item,
+          }),
+        );
+      }
+
       const newCtx: SchemaParseContext = {
         ...ctx,
-        path: ctx.path.concat({ index, tag: item.tag }),
+        xmlPath: ctx.xmlPath.concat({ index, tag: item.tag }),
       };
 
       try {
         parsed.push(this.itemSchema.parse(item, newCtx, options));
       } catch (error) {
-        if (error instanceof SwXmlSchemaError) {
-          issues.push(...prependSwXmlIssuePath(error, [index]).issues);
+        if (error instanceof SchemaError) {
+          issues.push(...prependSchemaIssuePath(error, [index]).issues);
           continue;
         }
         throw error;
@@ -73,7 +77,7 @@ export class ListSchema<T> implements Schema<T[]> {
     }
 
     if (issues.length > 0) {
-      throw new SwXmlSchemaError(issues);
+      throw new SchemaError(issues);
     }
 
     return parsed;

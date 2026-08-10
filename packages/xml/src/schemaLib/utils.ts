@@ -1,6 +1,6 @@
 import { SwXmlNode, SwXmlStructureError, type SwXmlNodeList } from "../parser";
-import { createSwXmlIssue, SwXmlSchemaError } from "./errors";
-import { evaluateDuplicateChildElementMode } from "./internal";
+import { SchemaError } from "./errors";
+import { createSwXmlIssue, evaluateDuplicateChildElementMode } from "./internal";
 import {
   newSchemaParseContext,
   type Schema,
@@ -31,9 +31,8 @@ export function selectChild(
     }
   } catch (e) {
     if (e instanceof SwXmlStructureError) {
-      throw new SwXmlSchemaError([
-        createSwXmlIssue({
-          code: "structure_error",
+      throw new SchemaError([
+        createSwXmlIssue("structure_error", {
           message: e.message,
           structureError: e,
         }),
@@ -48,7 +47,7 @@ export function selectChild(
     value: result.value,
     newCtx: {
       ...ctx,
-      path: ctx.path.concat({ index: result.index, tag }),
+      xmlPath: ctx.xmlPath.concat({ index: result.index, tag }),
     },
   };
 }
@@ -74,7 +73,7 @@ export function safeParseTree<T>(
       data: schema.parseField(tree, rootTag, newSchemaParseContext(), options),
     };
   } catch (error) {
-    if (error instanceof SwXmlSchemaError) {
+    if (error instanceof SchemaError) {
       return { success: false, error };
     }
     throw error;

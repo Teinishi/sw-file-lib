@@ -1,5 +1,5 @@
 import type { DuplicateChildElementMode, SwXmlNode, SwXmlNodeList } from "../parser";
-import type { SwXmlSchemaError } from "./errors";
+import type { SchemaError } from "./errors";
 
 /**
  * A path segment in a parsed Stormworks XML value.
@@ -7,12 +7,12 @@ import type { SwXmlSchemaError } from "./errors";
  * String segments represent object fields. Number segments represent list item
  * indexes.
  */
-export type SwXmlPathSegment = string | number;
+export type SchemaPathSegment = string | number;
 
 /**
  * A path to a value in a parsed Stormworks XML value.
  */
-export type SwXmlPath = readonly SwXmlPathSegment[];
+export type SchemaPath = readonly SchemaPathSegment[];
 
 /**
  * A value accepted by schemas.
@@ -29,33 +29,43 @@ export type SchemaSafeParseResult<T> =
     }
   | {
       success: false;
-      error: SwXmlSchemaError;
+      error: SchemaError;
     };
 
+export type SwXmlPath = { index: number; tag: string }[];
+
 export interface SchemaParseContext {
-  path: { index: number; tag: string }[];
+  /**
+   * Path to current XML element from the root.
+   */
+  xmlPath: SwXmlPath;
 }
 
 export function newSchemaParseContext(): SchemaParseContext {
   return {
-    path: [],
+    xmlPath: [],
   };
 }
 
 export type UnknownFieldMode = "error" | "omit";
 
+export type UnknownFieldCallback = (
+  ctx: SchemaParseContext,
+  target:
+    | { kind: "attribute"; key: string; value: string }
+    | { kind: "child"; index: number; child: SwXmlNode },
+) => UnknownFieldMode;
+
+export type DuplicateChildElementCallback = (
+  ctx: SchemaParseContext,
+  target: string,
+) => DuplicateChildElementMode;
+
 export interface SchemaParseOptions {
   /**
    * Removes fields that are not declared in the schema.
    */
-  unknownField?:
-    | UnknownFieldMode
-    | ((
-        ctx: SchemaParseContext,
-        target:
-          | { kind: "attribute"; key: string; value: string }
-          | { kind: "child"; child: SwXmlNode },
-      ) => UnknownFieldMode);
+  unknownField?: UnknownFieldMode | UnknownFieldCallback;
 
   /**
    * Allows numeric fields to parse to NaN.
@@ -67,9 +77,7 @@ export interface SchemaParseOptions {
    *
    * The default is "error", which requires record child elements to be unique.
    */
-  duplicateChildElement?:
-    | DuplicateChildElementMode
-    | ((ctx: SchemaParseContext, target: string) => DuplicateChildElementMode);
+  duplicateChildElement?: DuplicateChildElementMode | DuplicateChildElementCallback;
 }
 
 /**

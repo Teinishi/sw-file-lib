@@ -1,131 +1,109 @@
-import type { StrictOmit } from "ts-essentials";
 import type { SwXmlNode, SwXmlStructureError } from "../parser";
-import { type SchemaInput, type SwXmlPath, type SwXmlPathSegment } from "./types";
+import { type SchemaInput, type SchemaPath, type SchemaPathSegment } from "./types";
 
-/**
- * A machine-readable validation issue produced while parsing a schema.
- */
-export type SwXmlIssue =
-  | {
-      /**
-       * The kind of schema validation failure.
-       */
-      code:
-        | "invalid_type"
-        | "invalid_value"
-        | "invalid_number"
-        | "missing_required_field"
-        | "invalid_list_item_tag";
+export type ExpectedSchemaInputType = "xml_element" | "string";
 
-      /**
-       * The path to the value that caused the issue.
-       */
-      path: SwXmlPath;
+export interface SchemaIssueBase<T extends string> {
+  /**
+   * The kind of schema validation failure.
+   */
+  code: T;
 
-      message: string;
+  /**
+   * The path to the value that caused the issue.
+   */
+  path: SchemaPath;
 
-      /**
-       * The expected value type or shape, when applicable.
-       */
-      expected?: string;
+  message: string;
+}
 
-      /**
-       * The received value type or shape, when applicable.
-       */
-      received?: string;
+export interface SchemaIssueMap {
+  invalid_type: {
+    /**
+     * The expected value type.
+     */
+    expected: ExpectedSchemaInputType;
 
-      /**
-       * The original value that caused the issue, when useful for diagnostics.
-       */
-      value?: unknown;
-    }
-  | {
-      /**
-       * The kind of schema validation failure.
-       */
-      code: "invalid_union";
+    /**
+     * The original value that caused the issue.
+     */
+    value: SchemaInput;
+  };
 
-      /**
-       * The path to the value that caused the issue.
-       */
-      path: SwXmlPath;
+  invalid_value: {
+    /**
+     * The expected value.
+     */
+    expected: "boolean_string" | "numeric_string";
 
-      message: string;
+    /**
+     * The original value that caused the issue.
+     */
+    value: string;
+  };
 
-      unionErrors: readonly SwXmlSchemaError[];
+  missing_required_field: {
+    /**
+     * The expected value type.
+     */
+    expected: ExpectedSchemaInputType;
+  };
 
-      /**
-       * The received value type or shape, when applicable.
-       */
-      received?: string;
+  invalid_list_item_tag: {};
 
-      /**
-       * The original value that caused the issue, when useful for diagnostics.
-       */
-      value?: unknown;
-    }
-  | {
-      code: "structure_error";
+  invalid_union: {
+    unionErrors: readonly SchemaError[];
 
-      /**
-       * The path to the value that caused the issue.
-       */
-      path: SwXmlPath;
+    /**
+     * The original value that caused the issue.
+     */
+    value?: SchemaInput;
+  };
 
-      message: string;
+  structure_error: {
+    structureError: SwXmlStructureError;
+  };
 
-      structureError: SwXmlStructureError;
-    }
-  | {
-      code: "unknown_attribute";
-      path: SwXmlPath;
-      message: string;
-      key: string;
-      value: string;
-    }
-  | {
-      code: "unknown_child";
-      path: SwXmlPath;
-      message: string;
-      child: SwXmlNode;
-    };
+  unknown_attribute: {
+    key: string;
+    value: string;
+  };
+
+  unknown_child: {
+    child: SwXmlNode;
+  };
+}
+
+export type SchemaIssue<T extends keyof SchemaIssueMap> = SchemaIssueBase<T> & SchemaIssueMap[T];
+
+export type AnySchemaIssue = {
+  [T in keyof SchemaIssueMap]: SchemaIssue<T>;
+}[keyof SchemaIssueMap];
 
 /**
  * An error thrown when a Stormworks XML value does not match a schema.
  */
-export class SwXmlSchemaError extends Error {
+export class SchemaError extends Error {
   /**
    * The schema validation issues that caused this error.
    */
-  readonly issues: SwXmlIssue[];
+  readonly issues: AnySchemaIssue[];
 
-  constructor(issues: readonly SwXmlIssue[]) {
-    super(formatSwXmlIssues(issues));
+  constructor(issues: readonly AnySchemaIssue[]) {
+    super(formatIssues(issues));
     this.name = "SwXmlSchemaError";
     this.issues = [...issues];
   }
 }
 
 /**
- * Creates a schema issue.
- */
-export function createSwXmlIssue(
-  issue: StrictOmit<SwXmlIssue, "path"> & { path?: SwXmlPath },
-): SwXmlIssue {
-  return {
-    ...issue,
-    path: issue.path ?? [],
-  };
-}
-
-/**
  * Prepends path segments to every issue in a schema error.
  */
-export function prependSwXmlIssuePath(
-  error: SwXmlSchemaError,
-  path: readonly SwXmlPathSegment[],
-): SwXmlSchemaError {
-  return new SwXmlSchemaError(
+export function prependSchemaIssuePath(
+  error: SchemaError,
+  path: readonly SchemaPathSegment[],
+): SchemaError {
+  return new SchemaError(
     error.issues.map((issue) => ({
       ...issue,
       path: [...path, ...issue.path],
@@ -133,32 +111,15 @@ export function prependSwXmlIssuePath(
   );
 }
 
-/**
- * Returns a short type description for a schema input value.
- */
-export function describeSchemaInput(value: SchemaInput): string {
-  if (value === undefined) return "undefined";
-  if (typeof value === "string") return "string";
-  if (isSwXmlNode(value)) return `<${value.tag}>`;
-  return typeof value;
-}
-
-function isSwXmlNode(value: SchemaInput): value is SwXmlNode {
-  return typeof value === "object" && value !== null && "tag" in value && "attrs" in value;
-}
-
-function formatSwXmlIssues(issues: readonly SwXmlIssue[]): string {
+function formatIssues(issues: readonly AnySchemaIssue[]): string {
   if (issues.length === 0) return "Stormworks XML schema validation failed.";
 
   const first = issues[0]!;
   const suffix = issues.length === 1 ? "" : ` (${issues.length} issues total)`;
-  return `${formatSwXmlPath(first.path)}: ${first.message}${suffix}`;
+  return `${formatSchemaPath(first.path)}: ${first.message}${suffix}`;
 }
 
-/**
- * Formats a schema path for human-readable diagnostics.
- */
-export function formatSwXmlPath(path: SwXmlPath): string {
+export function formatSchemaPath(path: SchemaPath): string {
   if (path.length === 0) return "<root>";
 
   let formatted = "";

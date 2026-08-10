@@ -1,5 +1,6 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 import { parseSwXml, x } from "@xml";
+import type { DuplicateChildElementCallback, UnknownFieldCallback } from "../../src/schemaLib";
 
 describe("schemaLib", () => {
   test("schema safeParse returns path-aware issues", () => {
@@ -19,18 +20,20 @@ describe("schemaLib", () => {
     expect(result.success).toBe(false);
     if (result.success) throw new Error("Unexpected parse success");
 
-    expect(result.error).toBeInstanceOf(x.SwXmlSchemaError);
+    expect(result.error).toBeInstanceOf(x.SchemaError);
     expect(result.error.issues).toMatchObject([
       {
-        code: "invalid_number",
+        code: "invalid_value",
         path: ["mass"],
+        expected: "numeric_string",
+        value: "heavy",
       },
       {
         code: "missing_required_field",
         path: ["position", "y"],
+        expected: "string",
       },
     ]);
-    expect(x.formatSwXmlPath(result.error.issues[1]!.path)).toBe("position.y");
   });
 
   test("schema parsing uses schema context for single-child records", () => {
@@ -48,37 +51,75 @@ describe("schemaLib", () => {
     });
 
     const tree = parseSwXml(
-      `<root>
+      `<root unknown_attr="0">
         <surfaces/>
         <surfaces>
           <surface>
             <position/>
             <position x="1" y="2" z="3"/>
+            <unknown_child/>
           </surface>
+          <unknown_item/>
         </surfaces>
       </root>`,
     );
 
-    const duplicateChildElementArgs: [{ index: number; tag: string }[], string][] = [];
+    const options = {
+      unknownField: ((_ctx, _target) => "omit") satisfies UnknownFieldCallback,
+      duplicateChildElement: ((_ctx, _target) => "last") satisfies DuplicateChildElementCallback,
+    };
 
-    const data = x.parseTree(schema, tree, "root", {
-      duplicateChildElement(ctx, target) {
-        duplicateChildElementArgs.push([ctx.path, target]);
-        return "last";
-      },
-    });
+    const unknownFieldSpy = vi.spyOn(options, "unknownField");
+    const duplicateChildElementSpy = vi.spyOn(options, "duplicateChildElement");
 
-    expect(duplicateChildElementArgs).toEqual([
-      [[{ index: 0, tag: "root" }], "surfaces"],
-      [
-        [
+    const data = x.parseTree(schema, tree, "root", options);
+
+    expect(unknownFieldSpy).toHaveBeenNthCalledWith(
+      1,
+      {
+        xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
           { index: 0, tag: "surface" },
         ],
-        "position",
-      ],
-    ]);
+      },
+      { kind: "child", index: 2, child: expect.objectContaining({ tag: "unknown_child" }) },
+    );
+
+    expect(unknownFieldSpy).toHaveBeenNthCalledWith(
+      2,
+      {
+        xmlPath: [
+          { index: 0, tag: "root" },
+          { index: 1, tag: "surfaces" },
+        ],
+      },
+      { kind: "child", index: 1, child: expect.objectContaining({ tag: "unknown_item" }) },
+    );
+
+    expect(unknownFieldSpy).toHaveBeenNthCalledWith(
+      3,
+      { xmlPath: [{ index: 0, tag: "root" }] },
+      { kind: "attribute", key: "unknown_attr", value: "0" },
+    );
+
+    expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
+      1,
+      { xmlPath: [{ index: 0, tag: "root" }] },
+      "surfaces",
+    );
+
+    expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
+      2,
+      {
+        xmlPath: [
+          { index: 0, tag: "root" },
+          { index: 1, tag: "surfaces" },
+          { index: 0, tag: "surface" },
+        ],
+      },
+      "position",
+    );
 
     expect(data.surfaces).toEqual([
       {
