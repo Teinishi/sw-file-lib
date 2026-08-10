@@ -26,12 +26,11 @@ export const VehicleComponentDisplaySchema = x.partialObject({
   col: x.rgb(),
   min: TextValuePairSchema,
   max: TextValuePairSchema,
-  /*col_extra: x.partialObject({
-    size: x.number(),
-    c: x.list("value", x.rgb()),
-  }),*/
-  col_extra: x.list(
+  col_extra: x.metalist(
     "c",
+    x.partialObject({
+      size: x.number(),
+    }),
     x.partialObject({
       value: x.rgb(),
     }),

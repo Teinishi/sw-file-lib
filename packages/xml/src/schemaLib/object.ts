@@ -1,9 +1,7 @@
 import {
   OptionalSchema,
-  prependSchemaIssuePath,
   selectChild,
   SchemaError,
-  type AnySchemaIssue,
   type InferShape,
   type PartialShape,
   type Schema,
@@ -19,6 +17,7 @@ import {
   assertXmlNode,
   createSwXmlIssue,
   evaluateUnknownFieldMode,
+  parseRecordElement,
   parseTree,
   safeParse,
 } from "./internal";
@@ -42,40 +41,24 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferShape<T> {
     assertXmlNode(value, "object");
 
-    const parsed: Record<string, unknown> = {};
-    const issues: AnySchemaIssue[] = [];
+    const { parsed, issues } = parseRecordElement(value, this.shape, ctx, options);
 
-    for (const [key, schema] of Object.entries(this.shape)) {
-      try {
-        const parsedValue = schema.parseField(value, key, ctx, options);
-        if (parsedValue !== undefined || hasField(value, key)) {
-          parsed[key] = parsedValue;
-        }
-      } catch (error) {
-        if (error instanceof SchemaError) {
-          issues.push(...prependSchemaIssuePath(error, [key]).issues);
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    for (const [key, fieldValue] of value.attrs) {
+    for (const [key, attrValue] of value.attrs) {
       if (key in this.shape) continue;
 
       // 未知属性
       const mode = evaluateUnknownFieldMode(
         ctx,
-        { kind: "attribute", key, value: fieldValue },
+        { kind: "attribute", key, value: attrValue },
         options,
       );
       if (mode === "ignore") continue;
 
       issues.push(
         createSwXmlIssue("unknown_attribute", {
-          message: `Unknown attribute ${key}=${JSON.stringify(fieldValue)}.`,
+          message: `Unknown attribute ${key}=${JSON.stringify(attrValue)}.`,
           key,
-          value: fieldValue,
+          value: attrValue,
         }),
       );
     }
@@ -187,8 +170,4 @@ export function object<T extends Shape>(shape: T): ObjectSchema<T> {
  */
 export function partialObject<T extends Shape>(shape: T): ObjectSchema<PartialShape<T>> {
   return object(shape).partial();
-}
-
-function hasField(parent: SwXmlNode, key: string): boolean {
-  return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
 }

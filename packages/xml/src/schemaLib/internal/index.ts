@@ -11,6 +11,9 @@ import {
   type UnknownFieldCallback,
   type UnknownFieldMode,
   selectChild,
+  type AnySchemaIssue,
+  type Shape,
+  prependSchemaIssuePath,
 } from "..";
 import { SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
 
@@ -74,6 +77,41 @@ export function describeSchemaInput(value: SchemaInput): string {
 
 function isSwXmlNode(value: SchemaInput): value is SwXmlNode {
   return typeof value === "object" && value !== null && "tag" in value && "attrs" in value;
+}
+
+// record 要素の属性と子要素を shape でパース
+export function parseRecordElement(
+  value: SwXmlNode,
+  shape: Shape,
+  ctx?: SchemaParseContext,
+  options?: SchemaParseOptions,
+  prependPath: (string | number)[] = [],
+) {
+  const parsed: Record<string, unknown> = {};
+  const issues: AnySchemaIssue[] = [];
+
+  for (const [key, schema] of Object.entries(shape)) {
+    let parsedValue;
+    try {
+      parsedValue = schema.parseField(value, key, ctx, options);
+    } catch (error) {
+      if (error instanceof SchemaError) {
+        issues.push(...prependSchemaIssuePath(error, [...prependPath, key]).issues);
+        continue;
+      }
+      throw error;
+    }
+
+    if (parsedValue !== undefined || hasField(value, key)) {
+      parsed[key] = parsedValue;
+    }
+  }
+
+  return { parsed, issues };
+}
+
+function hasField(parent: SwXmlNode, key: string): boolean {
+  return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
 }
 
 export function evaluateUnknownFieldMode(

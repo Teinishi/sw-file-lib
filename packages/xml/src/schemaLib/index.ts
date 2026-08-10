@@ -11,6 +11,7 @@ export * from "./number";
 export * from "./string";
 export * from "./object";
 export * from "./list";
+export * from "./metalist";
 
 /**
  * Creates a schema for Stormworks 2D vector records with optional x and y fields.
