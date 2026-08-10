@@ -1,10 +1,6 @@
-import {
-  SwXmlNode,
-  SwXmlStructureError,
-  type DuplicateChildElementMode,
-  type SwXmlNodeList,
-} from "../parser";
+import { SwXmlNode, SwXmlStructureError, type SwXmlNodeList } from "../parser";
 import { createSwXmlIssue, SwXmlSchemaError } from "./errors";
+import { evaluateDuplicateChildElementMode } from "./internal";
 import {
   newSchemaParseContext,
   type Schema,
@@ -12,18 +8,6 @@ import {
   type SchemaParseOptions,
   type SchemaSafeParseResult,
 } from "./types";
-
-export function evaluateDuplicateChildElementMode(
-  tag: string,
-  ctx: SchemaParseContext = newSchemaParseContext(),
-  options?: SchemaParseOptions,
-): DuplicateChildElementMode {
-  if (typeof options?.duplicateChildElement === "function") {
-    return options.duplicateChildElement(ctx, tag);
-  } else {
-    return options?.duplicateChildElement ?? "error";
-  }
-}
 
 export function selectChild(
   nodeList: SwXmlNodeList,
@@ -42,7 +26,7 @@ export function selectChild(
     if (nodeList.countChild(tag) === 1) {
       result = nodeList.child(tag);
     } else {
-      const mode = evaluateDuplicateChildElementMode(tag, ctx, options);
+      const mode = evaluateDuplicateChildElementMode(ctx, tag, options);
       result = nodeList.selectChild(tag, mode);
     }
   } catch (e) {

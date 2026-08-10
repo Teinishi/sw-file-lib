@@ -1,7 +1,6 @@
 import {
   createSwXmlIssue,
   describeSchemaInput,
-  evaluateDuplicateChildElementMode,
   OptionalSchema,
   prependSwXmlIssuePath,
   selectChild,
@@ -17,7 +16,7 @@ import {
   type SwXmlIssue,
 } from ".";
 import { SwXmlNode } from "../parser";
-import { safeParseSchema } from "./internal";
+import { evaluateUnknownFieldMode, safeParseSchema } from "./internal";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
@@ -67,22 +66,45 @@ export class ObjectSchema<T extends Shape> implements Schema<InferShape<T>> {
       }
     }
 
-    if (issues.length > 0) {
-      throw new SwXmlSchemaError(issues);
+    for (const [key, fieldValue] of value.attrs) {
+      if (key in this.shape) continue;
+
+      // 未知属性
+      const mode = evaluateUnknownFieldMode(
+        ctx,
+        { kind: "attribute", key, value: fieldValue },
+        options,
+      );
+      if (mode === "omit") continue;
+
+      issues.push(
+        createSwXmlIssue({
+          code: "unknown_attribute",
+          message: `Unknown attribute ${key}="${fieldValue}".`,
+          key,
+          value: fieldValue,
+        }),
+      );
     }
 
-    if (!options?.omitUnknownField) {
-      // todo: unknown なデータの扱いは再考
-      for (const [key, fieldValue] of value.attrs) {
-        if (key in parsed) continue;
-        parsed[key] = fieldValue;
-      }
+    for (const child of value.nodes) {
+      if (child.tag in this.shape) continue;
 
-      for (const child of value.nodes) {
-        if (child.tag in parsed) continue;
-        const mode = evaluateDuplicateChildElementMode(child.tag, ctx, options);
-        parsed[child.tag] = child.asRawTree(mode);
-      }
+      // 未知子要素
+      const mode = evaluateUnknownFieldMode(ctx, { kind: "child", child });
+      if (mode === "omit") continue;
+
+      issues.push(
+        createSwXmlIssue({
+          code: "unknown_child",
+          message: `Unknown child element <${child.tag}>.`,
+          child,
+        }),
+      );
+    }
+
+    if (issues.length > 0) {
+      throw new SwXmlSchemaError(issues);
     }
 
     return parsed as InferShape<T>;

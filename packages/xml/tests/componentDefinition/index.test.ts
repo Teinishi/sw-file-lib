@@ -103,7 +103,7 @@ describe("component definition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const definition = parseComponentDefinitionXml(xml);
+    const definition = parseComponentDefinitionXml(xml, { unknownField: "omit" });
     if (!definition) throw new Error("Unexpected error");
 
     const name: string | undefined = definition.name;
@@ -115,8 +115,8 @@ describe("component definition", () => {
     const type: number | undefined = definition.type;
     expect(type).toBe(0);
 
-    const unknownAttr = definition.unknown_attr;
-    expect(unknownAttr).toBe("anything");
+    //const unknownAttr = definition.unknown_attr;
+    //expect(unknownAttr).toBe("anything");
 
     expect(definition.surfaces).toEqual([
       { orientation: 0, shape: 0, position: { x: 0, y: 0, z: 0 } },

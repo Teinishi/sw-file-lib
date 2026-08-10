@@ -75,6 +75,19 @@ export type SwXmlIssue =
       message: string;
 
       structureError: SwXmlStructureError;
+    }
+  | {
+      code: "unknown_attribute";
+      path: SwXmlPath;
+      message: string;
+      key: string;
+      value: string;
+    }
+  | {
+      code: "unknown_child";
+      path: SwXmlPath;
+      message: string;
+      child: SwXmlNode;
     };
 
 /**

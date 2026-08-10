@@ -42,11 +42,20 @@ export function newSchemaParseContext(): SchemaParseContext {
   };
 }
 
+export type UnknownFieldMode = "error" | "omit";
+
 export interface SchemaParseOptions {
   /**
    * Removes fields that are not declared in the schema.
    */
-  omitUnknownField?: boolean;
+  unknownField?:
+    | UnknownFieldMode
+    | ((
+        ctx: SchemaParseContext,
+        target:
+          | { kind: "attribute"; key: string; value: string }
+          | { kind: "child"; child: SwXmlNode },
+      ) => UnknownFieldMode);
 
   /**
    * Allows numeric fields to parse to NaN.
@@ -121,6 +130,6 @@ export type Shape = Record<string, Schema<any>>;
 
 export type InferShape<T extends Shape> = {
   [K in keyof T]: T[K] extends Schema<infer U> ? U : never;
-} & { [key: string]: UnknownValue };
+};
 
 export type Infer<T extends Schema<any>> = T extends Schema<infer U> ? U : never;
