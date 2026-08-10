@@ -103,7 +103,7 @@ describe("component definition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const definition = parseComponentDefinitionXml(xml, { unknownField: "omit" });
+    const definition = parseComponentDefinitionXml(xml, { unknownField: "ignore" });
     if (!definition) throw new Error("Unexpected error");
 
     const name: string | undefined = definition.name;

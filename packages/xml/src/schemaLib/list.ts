@@ -53,7 +53,7 @@ export class ListSchema<T> implements ElementSchema<T[]> {
       if (item.tag !== this.itemTag) {
         // 未知子要素
         const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child: item }, options);
-        if (mode === "omit") continue;
+        if (mode === "ignore") continue;
         issues.push(
           createSwXmlIssue("unknown_child", {
             message: `Expected list item <${this.itemTag}>, found <${item.tag}>.`,

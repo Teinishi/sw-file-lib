@@ -69,7 +69,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
         { kind: "attribute", key, value: fieldValue },
         options,
       );
-      if (mode === "omit") continue;
+      if (mode === "ignore") continue;
 
       issues.push(
         createSwXmlIssue("unknown_attribute", {
@@ -85,7 +85,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
 
       // 未知子要素
       const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child }, options);
-      if (mode === "omit") continue;
+      if (mode === "ignore") continue;
 
       issues.push(
         createSwXmlIssue("unknown_child", {

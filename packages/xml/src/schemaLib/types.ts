@@ -47,7 +47,10 @@ export function newSchemaParseContext(): SchemaParseContext {
   };
 }
 
-export type UnknownFieldMode = "error" | "omit";
+/**
+ * How to handle unknown attribute or element: "error" to throw an error, or just "ignore".
+ */
+export type UnknownFieldMode = "error" | "ignore";
 
 export type UnknownFieldCallback = (
   ctx: SchemaParseContext,
@@ -63,19 +66,21 @@ export type DuplicateChildElementCallback = (
 
 export interface SchemaParseOptions {
   /**
-   * Removes fields that are not declared in the schema.
+   * Controls how unknown attributes or elements are handled.
+   *
+   * "error", "ignore" or a fucntion that returns them. The default is "error".
    */
   unknownField?: UnknownFieldMode | UnknownFieldCallback;
 
   /**
-   * Allows numeric fields to parse to NaN.
+   * Allows numeric fields to parse to NaN when a non-numeric string is given.
    */
   allowNaN?: boolean;
 
   /**
-   * Controls how duplicate child elements in XML records are handled.
+   * Controls how duplicate child elements are handled where single element is expected.
    *
-   * The default is "error", which requires record child elements to be unique.
+   * "error", "first", "last", or a fucntion that returns them. The default is "error".
    */
   duplicateChildElement?: DuplicateChildElementMode | DuplicateChildElementCallback;
 }

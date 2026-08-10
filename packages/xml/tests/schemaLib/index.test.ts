@@ -65,7 +65,7 @@ describe("schemaLib", () => {
     );
 
     const options = {
-      unknownField: ((_ctx, _target) => "omit") satisfies UnknownFieldCallback,
+      unknownField: ((_ctx, _target) => "ignore") satisfies UnknownFieldCallback,
       duplicateChildElement: ((_ctx, _target) => "last") satisfies DuplicateChildElementCallback,
     };
 
