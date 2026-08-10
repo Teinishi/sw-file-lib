@@ -7,8 +7,9 @@ import {
   RawXmlTreeList,
   SwXmlNode,
   SwXmlNodeList,
-  parseComponentDefinitionXml,
   safeParseComponentDefinitionXml,
+  ComponentDefinitionSchema,
+  x,
 } from "@xml";
 import { searchRom } from "../../../internalUtils/src/testUtils";
 
@@ -103,8 +104,14 @@ describe("component definition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const definition = parseComponentDefinitionXml(xml, { unknownField: "ignore" });
-    if (!definition) throw new Error("Unexpected error");
+    const schema = ComponentDefinitionSchema.extend(
+      x.partialObject({
+        type: x.string(),
+        unknown_attr: x.string(),
+      }),
+    );
+
+    const definition = schema.parseTree(parseSwXml(xml), "definition");
 
     const name: string | undefined = definition.name;
     expect(name).toBe("(M) Test Cube 1");
@@ -112,11 +119,11 @@ describe("component definition", () => {
     const category: number | undefined = definition.category;
     expect(category).toBe(0);
 
-    const type: number | undefined = definition.type;
-    expect(type).toBe(0);
+    const type: string | undefined = definition.type;
+    expect(type).toBe("0");
 
-    //const unknownAttr = definition.unknown_attr;
-    //expect(unknownAttr).toBe("anything");
+    const unknownAttr: string | undefined = definition.unknown_attr;
+    expect(unknownAttr).toBe("anything");
 
     expect(definition.surfaces).toEqual([
       { orientation: 0, shape: 0, position: { x: 0, y: 0, z: 0 } },

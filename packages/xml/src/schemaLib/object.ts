@@ -155,6 +155,24 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
       ) as PartialShape<T>,
     );
   }
+
+  /**
+   * Returns a new object schema with specified keys are omitted.
+   */
+  omit<U extends keyof T>(keys: U[]): ObjectSchema<Omit<T, U>> {
+    const newShape = { ...this.shape };
+    for (const key of keys) {
+      delete newShape[key];
+    }
+    return new ObjectSchema(newShape);
+  }
+
+  /**
+   * Returns a new object schema by adding new fields or overwriting existing fields.
+   */
+  extend<U extends Shape>(other: ObjectSchema<U>): ObjectSchema<Omit<T, keyof U> & U> {
+    return new ObjectSchema({ ...this.shape, ...other.shape });
+  }
 }
 
 /**
