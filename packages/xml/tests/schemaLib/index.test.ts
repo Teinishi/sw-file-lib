@@ -3,6 +3,221 @@ import { parseSwXml, x } from "@xml";
 import type { DuplicateChildElementCallback, UnknownFieldCallback } from "../../src/schemaLib";
 
 describe("schemaLib", () => {
+  test("schema of each types", () => {
+    const schema = x.object({
+      string: x.string(),
+      integer: x.number(),
+      decimal: x.number(),
+      trueValue: x.boolean(),
+      falseValue: x.boolean(),
+    });
+
+    const xml = `
+      <types
+        string="hello"
+        integer="123"
+        decimal="45.67"
+        trueValue="true"
+        falseValue="false"
+      />`;
+
+    const result = schema.parseTree(parseSwXml(xml), "types");
+
+    expect(result).toEqual({
+      string: "hello",
+      integer: 123,
+      decimal: 45.67,
+      trueValue: true,
+      falseValue: false,
+    });
+  });
+
+  test("schema of union", () => {
+    const schema = x.object({
+      stringOrNumber: x.union([x.number(), x.string()]),
+      numberOrBoolean: x.union([x.boolean(), x.number()]),
+      stringOrBoolean: x.union([x.boolean(), x.string()]),
+      allTypes: x.union([x.boolean(), x.number(), x.string()]),
+    });
+
+    const xml = `
+      <union
+        stringOrNumber="hello"
+        numberOrBoolean="123"
+        stringOrBoolean="false"
+        allTypes="42"
+      />`;
+
+    const result = schema.parseTree(parseSwXml(xml), "union");
+
+    expect(result).toEqual({
+      stringOrNumber: "hello",
+      numberOrBoolean: 123,
+      stringOrBoolean: false,
+      allTypes: 42,
+    });
+  });
+
+  test("deep nested", () => {
+    const schema = x.object({
+      nested: x.object({
+        id: x.number(),
+        level1: x.object({
+          name: x.string(),
+          level2: x.object({
+            name: x.string(),
+            level3: x.object({
+              name: x.string(),
+              value: x.object({
+                text: x.string(),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const xml = `
+      <root>
+        <nested id="400">
+          <level1 name="one">
+            <level2 name="two">
+              <level3 name="three">
+                <value text="deep value"/>
+              </level3>
+            </level2>
+          </level1>
+        </nested>
+      </root>`;
+
+    const result = schema.parseTree(parseSwXml(xml), "root");
+
+    expect(result).toEqual({
+      nested: {
+        id: 400,
+        level1: {
+          name: "one",
+          level2: {
+            name: "two",
+            level3: {
+              name: "three",
+              value: {
+                text: "deep value",
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  test("general schema", () => {
+    const schema = x.object({
+      name: x.string(),
+      version: x.string(),
+      enabled: x.boolean(),
+      optional: x.number().optional(),
+      metadata: x.object({
+        id: x.number(),
+        active: x.boolean(),
+      }),
+      tags: x.list("tag", x.partialObject({ name: x.string() })),
+      items: x.metalist(
+        "item",
+        x.object({
+          id: x.number(),
+          enabled: x.boolean(),
+          name: x.object({
+            text: x.string(),
+          }),
+        }),
+        x.object({
+          id: x.number(),
+          value: x.number(),
+          flag: x.boolean(),
+          name: x.string(),
+        }),
+      ),
+      empty: x.object({
+        content: x.object({
+          value: x.string(),
+        }),
+      }),
+      leaf: x.object({
+        id: x.number(),
+        name: x.string(),
+        value: x.number(),
+        enabled: x.boolean(),
+      }),
+      group: x.metalist(
+        "member",
+        x.object({
+          name: x.string(),
+          count: x.number(),
+        }),
+        x.object({
+          name: x.string(),
+        }),
+      ),
+    });
+
+    const xml = `
+      <?xml version="1.0" encoding="UTF-8"?>
+      <test
+        name="Test Document"
+        version="1.5"
+        enabled="true"
+        optional="42"
+      >
+        <metadata id="100" active="false"/>
+        <tags>
+          <tag name="alpha"/>
+          <tag name="beta"/>
+          <tag/>
+        </tags>
+        <items id="200" enabled="true">
+          <name text="Item Collection"/>
+          <item id="1" value="10" flag="true" name="First"/>
+          <item id="2" value="20.5" flag="false" name="Second"/>
+          <item id="3" value="30" flag="true" name="Third"/>
+        </items>
+        <empty>
+          <content value="content"/>
+        </empty>
+        <leaf id="300" name="Leaf" value="123" enabled="true" />
+        <group name="Group A" count="3">
+          <member name="Alice" />
+          <member name="Bob" />
+          <member name="Charlie" />
+        </group>
+      </test>`;
+
+    const result = schema.parseTree(parseSwXml(xml), "test");
+
+    expect(result).toEqual({
+      name: "Test Document",
+      version: "1.5",
+      enabled: true,
+      optional: 42,
+      metadata: { id: 100, active: false },
+      tags: [{ name: "alpha" }, { name: "beta" }, {}],
+      items: {
+        meta: { id: 200, enabled: true, name: { text: "Item Collection" } },
+        items: [
+          { id: 1, value: 10, flag: true, name: "First" },
+          { id: 2, value: 20.5, flag: false, name: "Second" },
+          { id: 3, value: 30, flag: true, name: "Third" },
+        ],
+      },
+      empty: { content: { value: "content" } },
+      leaf: { id: 300, name: "Leaf", value: 123, enabled: true },
+      group: {
+        meta: { name: "Group A", count: 3 },
+        items: [{ name: "Alice" }, { name: "Bob" }, { name: "Charlie" }],
+      },
+    });
+  });
+
   test("schema safeParse returns path-aware issues", () => {
     const schema = x.object({
       name: x.string(),
