@@ -27,7 +27,7 @@ import {
   safeParse,
   serializeElement,
 } from "./internal";
-import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
+import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
 
 export type InferMetaList<T extends Shape, U> = {
   meta: InferShape<T>;
@@ -75,7 +75,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
 
       issues.push(
         createSwXmlIssue("unknown_attribute", {
-          message: `Unknown attribute: ${key}=${JSON.stringify(attrValue)}.`,
+          message: `Unknown attribute: ${key}="${escapeXmlAttribute(attrValue)}".`,
           key,
           value: attrValue,
         }),

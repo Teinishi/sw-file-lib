@@ -15,7 +15,7 @@ import {
   type ElementSchemaSerializeResult,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
-import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
+import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
 import {
   assertXmlNode,
   createSwXmlIssue,
@@ -59,7 +59,7 @@ export class ListSchema<T> implements ElementSchema<T[]> {
 
       issues.push(
         createSwXmlIssue("unknown_attribute", {
-          message: `Expected no attribute for a list tag, found ${key}=${JSON.stringify(attrValue)}.`,
+          message: `Expected no attribute for a list tag, found ${key}="${escapeXmlAttribute(attrValue)}".`,
           key,
           value: attrValue,
         }),

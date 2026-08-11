@@ -16,7 +16,7 @@ import {
   type ElementSchemaSerializeResult,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
-import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
+import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
 import {
   assertXmlNode,
   createSwXmlIssue,
@@ -61,7 +61,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
 
       issues.push(
         createSwXmlIssue("unknown_attribute", {
-          message: `Unknown attribute: ${key}=${JSON.stringify(attrValue)}.`,
+          message: `Unknown attribute: ${key}="${escapeXmlAttribute(attrValue)}".`,
           key,
           value: attrValue,
         }),

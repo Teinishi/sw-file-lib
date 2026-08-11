@@ -95,16 +95,16 @@ export class XmlWriter {
     let s = "";
     for (const [name, value] of attributes) {
       if (value === undefined) continue;
-      s += ` ${name}="${this.escapeAttribute(value)}"`;
+      s += ` ${name}="${escapeXmlAttribute(String(value))}"`;
     }
     return s;
   }
+}
 
-  private escapeAttribute(value: string | number | boolean): string {
-    return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
-  }
+export function escapeXmlAttribute(value: string): string {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
