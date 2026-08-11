@@ -1,6 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
 import { parseSwXml, x } from "@xml";
-import type { DuplicateChildElementCallback, UnknownFieldCallback } from "../../src/schemaLib";
 
 describe("schemaLib", () => {
   test("schema of each types", () => {
@@ -29,7 +28,7 @@ describe("schemaLib", () => {
     expect(serialized).toBe(xml);
   });
 
-  test("schema of union", () => {
+  test("attribute union", () => {
     const schema = x.object({
       stringOrNumber: x.union([x.number(), x.string()]),
       numberOrBoolean: x.union([x.boolean(), x.number()]),
@@ -50,6 +49,24 @@ describe("schemaLib", () => {
     });
 
     const serialized = schema.serialize("union", result, { xmlDeclaration: false }).toString();
+    expect(serialized).toBe(xml);
+  });
+
+  test("mixed union", () => {
+    const schema = x.list(
+      "item",
+      x.object({
+        value: x.union([x.number(), x.object({ text: x.string() })]),
+      }),
+    );
+
+    const xml = '<list><item value="123"/><item><value text="hoge"/></item></list>';
+
+    const result = schema.parseTree(parseSwXml(xml), "list");
+
+    expect(result).toEqual([{ value: 123 }, { value: { text: "hoge" } }]);
+
+    const serialized = schema.serialize("list", result, { xmlDeclaration: false }).toString();
     expect(serialized).toBe(xml);
   });
 
@@ -109,6 +126,59 @@ describe("schemaLib", () => {
       .serialize("root", result, { xmlDeclaration: false, indentString: "  ", pretty: true })
       .toString();
     expect(serialized).toBe(xml);
+
+    const schema2 = schema.deepMerge(
+      x.object({
+        nested: x.object({
+          level1: x.object({
+            level2: x.object({
+              level3: x.object({
+                new_attribute: x.boolean(),
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
+
+    const xml2 = `<root>
+  <nested id="400">
+    <level1 name="one">
+      <level2 name="two">
+        <level3 name="three" new_attribute="true">
+          <value text="deep value"/>
+        </level3>
+      </level2>
+    </level1>
+  </nested>
+</root>
+`;
+
+    const result2 = schema2.parseTree(xml2, "root");
+
+    expect(result2).toEqual({
+      nested: {
+        id: 400,
+        level1: {
+          name: "one",
+          level2: {
+            name: "two",
+            level3: {
+              name: "three",
+              new_attribute: true,
+              value: {
+                text: "deep value",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const serialized2 = schema2
+      .serialize("root", result2, { xmlDeclaration: false, indentString: "  ", pretty: true })
+      .toString();
+    expect(serialized2).toBe(xml2);
   });
 
   test("general schema", () => {
@@ -280,8 +350,8 @@ describe("schemaLib", () => {
     );
 
     const options = {
-      unknownField: ((_ctx, _target) => "ignore") satisfies UnknownFieldCallback,
-      duplicateChildElement: ((_ctx, _target) => "last") satisfies DuplicateChildElementCallback,
+      unknownField: ((_ctx, _target) => "ignore") satisfies x.UnknownFieldCallback,
+      duplicateChildElement: ((_ctx, _target) => "last") satisfies x.DuplicateChildElementCallback,
     };
 
     const unknownFieldSpy = vi.spyOn(options, "unknownField");

@@ -14,8 +14,6 @@ import { assertString, safeParse } from "./internal";
  * A schema that parses XML text values as strings.
  */
 export class StringSchema implements Schema<string> {
-  kind = "attribute" as const;
-
   parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): string {
     assertString(value, "string");
 

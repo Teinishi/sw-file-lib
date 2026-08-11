@@ -16,7 +16,7 @@ import {
   prependSchemaIssuePath,
   type ElementSchemaSerializeResult,
 } from "..";
-import { SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
+import { parseSwXml, SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
 import { XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 
 export function createSwXmlIssue<T extends keyof SchemaIssueMap>(
@@ -159,11 +159,15 @@ export function safeParse<T>(getData: () => T): SchemaSafeParseResult<T> {
 
 export function parseTree<T>(
   schemaName: string,
-  tree: SwXmlNodeList,
+  tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
   rootTag: string,
   options: SchemaParseOptions | undefined,
   getData: (el: SwXmlNode, ctx: SchemaParseContext, options: SchemaParseOptions | undefined) => T,
 ): T {
+  if (!(tree instanceof SwXmlNodeList)) {
+    tree = parseSwXml(tree);
+  }
+
   const ctx = newSchemaParseContext();
   const child = selectChild(tree, rootTag, ctx, options);
   if (child === undefined) {

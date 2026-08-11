@@ -29,8 +29,6 @@ import {
  * A schema that parses XML list elements as JavaScript arrays.
  */
 export class ListSchema<T> implements ElementSchema<T[]> {
-  kind = "element" as const;
-
   constructor(
     public readonly itemTag: string,
     public readonly itemSchema: ElementSchema<T>,
@@ -123,7 +121,11 @@ export class ListSchema<T> implements ElementSchema<T[]> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
-  parseTree(tree: SwXmlNodeList, rootTag: string, options?: SchemaParseOptions): T[] {
+  parseTree(
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
+    rootTag: string,
+    options?: SchemaParseOptions,
+  ): T[] {
     return parseTree("list", tree, rootTag, options, (el, ctx, options) =>
       this.parse(el, ctx, options),
     );

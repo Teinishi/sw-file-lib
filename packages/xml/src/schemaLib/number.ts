@@ -15,8 +15,6 @@ import { assertString, createSwXmlIssue, safeParse } from "./internal";
  * A schema that parses XML text values as numbers.
  */
 export class NumberSchema implements Schema<number> {
-  kind = "attribute" as const;
-
   parse(value: SchemaInput, _ctx?: SchemaParseContext, options?: SchemaParseOptions): number {
     assertString(value, "number");
 

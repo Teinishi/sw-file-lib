@@ -146,7 +146,11 @@ export interface ElementSchema<T> extends Schema<T> {
   /**
    * Parses from XML tree with the root tag name specified.
    */
-  parseTree(tree: SwXmlNodeList, rootTag: string, options?: SchemaParseOptions): T;
+  parseTree: (
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
+    rootTag: string,
+    options?: SchemaParseOptions,
+  ) => T;
 
   /**
    * Parses from XML tree with the root tag name specified without throwing schema errors.
@@ -165,10 +169,6 @@ export interface ElementSchema<T> extends Schema<T> {
   serialize: (name: string, data: T, writer?: XmlWriter | XmlWriterOptions) => XmlWriter;
 }
 
-export type PartialShape<T extends Shape> = {
-  [K in keyof T]: Schema<(T[K] extends Schema<infer U> ? U : never) | undefined>;
-};
-
 export type UnknownValue = string | null | UnknownObject | UnknownValue[];
 
 export interface UnknownObject {
@@ -176,6 +176,10 @@ export interface UnknownObject {
 }
 
 export type Shape = Record<string, Schema<any>>;
+
+export type PartialShape<T extends Shape> = {
+  [K in keyof T]: Schema<(T[K] extends Schema<infer U> ? U : never) | undefined>;
+};
 
 export type InferShape<T extends Shape> = {
   [K in keyof T]: T[K] extends Schema<infer U> ? U : never;

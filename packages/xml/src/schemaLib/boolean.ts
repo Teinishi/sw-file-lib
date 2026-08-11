@@ -15,8 +15,6 @@ import { assertString, createSwXmlIssue, safeParse } from "./internal";
  * A schema that parses XML text values as booleans.
  */
 export class BooleanSchema implements Schema<boolean> {
-  kind = "attribute" as const;
-
   parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): boolean {
     assertString(value, "boolean");
 

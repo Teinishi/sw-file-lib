@@ -17,8 +17,6 @@ export type SchemaTuple = readonly Schema<any>[];
 export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 
 export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
-  kind = "union" as const;
-
   constructor(public readonly schemas: T) {}
 
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferUnion<T> {

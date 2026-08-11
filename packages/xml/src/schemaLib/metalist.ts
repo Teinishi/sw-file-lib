@@ -38,8 +38,6 @@ export type InferMetaList<T extends Shape, U> = {
  * A schema that parses XML list elements that have attributes as JavaScript arrays.
  */
 export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMetaList<T, U>> {
-  kind = "element" as const;
-
   constructor(
     public readonly itemTag: string,
     public readonly metaShape: ObjectSchema<T>,
@@ -77,7 +75,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
 
       issues.push(
         createSwXmlIssue("unknown_attribute", {
-          message: `Unknown attribute ${key}=${JSON.stringify(attrValue)}.`,
+          message: `Unknown attribute: ${key}=${JSON.stringify(attrValue)}.`,
           key,
           value: attrValue,
         }),
@@ -93,7 +91,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
 
         issues.push(
           createSwXmlIssue("unknown_child", {
-            message: `Unknown child element <${child.tag}>.`,
+            message: `Unknown child element: <${child.tag}>.`,
             child: child,
           }),
         );
@@ -143,7 +141,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
   }
 
   parseTree(
-    tree: SwXmlNodeList,
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
   ): InferMetaList<T, U> {

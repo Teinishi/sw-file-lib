@@ -13,8 +13,6 @@ import { safeParse } from "./internal";
  * A schema wrapper that accepts undefined values.
  */
 export class OptionalSchema<T> implements Schema<T | undefined> {
-  kind = "optional" as const;
-
   constructor(private readonly inner: Schema<T>) {}
 
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T | undefined {
