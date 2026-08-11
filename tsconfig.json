@@ -17,6 +17,7 @@
     "skipLibCheck": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
+    "strictFunctionTypes": true,
     "paths": {
       "@core": ["./packages/core/src"],
       "@xml": ["./packages/xml/src"],

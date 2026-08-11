@@ -6,6 +6,7 @@ import {
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
+  type SchemaSerializeResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
 import { assertString, createSwXmlIssue, safeParse } from "./internal";
@@ -14,6 +15,8 @@ import { assertString, createSwXmlIssue, safeParse } from "./internal";
  * A schema that parses XML text values as numbers.
  */
 export class NumberSchema implements Schema<number> {
+  kind = "attribute" as const;
+
   parse(value: SchemaInput, _ctx?: SchemaParseContext, options?: SchemaParseOptions): number {
     assertString(value, "number");
 
@@ -47,11 +50,15 @@ export class NumberSchema implements Schema<number> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
-  serialize(value: number): unknown {
-    return String(value);
+  serializeField(value: unknown): SchemaSerializeResult {
+    if (typeof value === "number") {
+      return { kind: "attribute", value: String(value) };
+    } else {
+      return { kind: "failed" };
+    }
   }
 
-  optional(): Schema<number | undefined> {
+  optional(): OptionalSchema<number> {
     return new OptionalSchema(this);
   }
 }

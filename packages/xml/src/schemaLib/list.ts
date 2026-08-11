@@ -11,23 +11,29 @@ import {
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type ElementSchema,
+  type WriteElementCallback,
+  type ElementSchemaSerializeResult,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
+import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import {
   assertXmlNode,
   createSwXmlIssue,
   evaluateUnknownFieldMode,
   parseTree,
   safeParse,
+  serializeElement,
 } from "./internal";
 
 /**
  * A schema that parses XML list elements as JavaScript arrays.
  */
 export class ListSchema<T> implements ElementSchema<T[]> {
+  kind = "element" as const;
+
   constructor(
     public readonly itemTag: string,
-    public readonly itemSchema: Schema<T>,
+    public readonly itemSchema: ElementSchema<T>,
   ) {}
 
   /**
@@ -133,9 +139,41 @@ export class ListSchema<T> implements ElementSchema<T[]> {
     );
   }
 
-  serialize(value: T[]): unknown {
-    // todo: implement
-    return value;
+  serializeField(value: unknown): ElementSchemaSerializeResult {
+    if (!Array.isArray(value)) {
+      return { kind: "failed" };
+    }
+
+    const { itemTag, itemSchema } = this;
+
+    const children: WriteElementCallback[] = [];
+
+    for (const item of value) {
+      const r = itemSchema.serializeField(item);
+      if (r.kind === "failed") {
+        return { kind: "failed" };
+      }
+      children.push(r.write);
+    }
+
+    return {
+      kind: "element",
+      write(name, writer) {
+        if (children.length === 0) {
+          writer.empty(name, []);
+        } else {
+          writer.begin(name, []);
+          for (const child of children) {
+            child(itemTag, writer);
+          }
+          writer.end(name);
+        }
+      },
+    };
+  }
+
+  serialize(name: string, data: T[], writer?: XmlWriter | XmlWriterOptions): XmlWriter {
+    return serializeElement(name, this.serializeField(data), writer);
   }
 
   optional(): Schema<T[] | undefined> {
@@ -146,6 +184,6 @@ export class ListSchema<T> implements ElementSchema<T[]> {
 /**
  * Creates a schema that parses XML list elements as JavaScript arrays.
  */
-export function list<T>(itemTag: string, itemSchema: Schema<T>): ListSchema<T> {
+export function list<T>(itemTag: string, itemSchema: ElementSchema<T>): ListSchema<T> {
   return new ListSchema(itemTag, itemSchema);
 }

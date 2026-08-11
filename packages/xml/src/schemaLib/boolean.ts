@@ -6,6 +6,7 @@ import {
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
+  type SchemaSerializeResult,
 } from ".";
 import { SwXmlNode } from "../parser";
 import { assertString, createSwXmlIssue, safeParse } from "./internal";
@@ -14,6 +15,8 @@ import { assertString, createSwXmlIssue, safeParse } from "./internal";
  * A schema that parses XML text values as booleans.
  */
 export class BooleanSchema implements Schema<boolean> {
+  kind = "attribute" as const;
+
   parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): boolean {
     assertString(value, "boolean");
 
@@ -46,11 +49,15 @@ export class BooleanSchema implements Schema<boolean> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
-  serialize(value: boolean): unknown {
-    return value ? "true" : "false";
+  serializeField(value: unknown): SchemaSerializeResult {
+    if (typeof value === "boolean") {
+      return { kind: "attribute", value: value ? "true" : "false" };
+    } else {
+      return { kind: "failed" };
+    }
   }
 
-  optional(): Schema<boolean | undefined> {
+  optional(): OptionalSchema<boolean> {
     return new OptionalSchema(this);
   }
 }

@@ -1,4 +1,5 @@
 import type { DuplicateChildElementMode, SwXmlNode, SwXmlNodeList } from "../parser";
+import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import type { SchemaError } from "./errors";
 
 /**
@@ -85,6 +86,21 @@ export interface SchemaParseOptions {
   duplicateChildElement?: DuplicateChildElementMode | DuplicateChildElementCallback;
 }
 
+export type WriteElementCallback = (name: string, writer: XmlWriter) => void;
+
+export interface SchemaSerializeFailResult {
+  kind: "failed";
+}
+
+export type ElementSchemaSerializeResult =
+  | { kind: "element"; write: WriteElementCallback }
+  | SchemaSerializeFailResult;
+
+export type SchemaSerializeResult =
+  | { kind: "attribute"; value: string }
+  | { kind: "omitted" }
+  | ElementSchemaSerializeResult;
+
 /**
  * A schema that parses a Stormworks XML node into a typed value.
  */
@@ -118,10 +134,7 @@ export interface Schema<T> {
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<T>;
 
-  /**
-   * Serializes a typed value into a raw XML-compatible value.
-   */
-  serialize(value: T): unknown;
+  serializeField(value: unknown): SchemaSerializeResult;
 
   /**
    * Returns a schema that accepts undefined values.
@@ -143,6 +156,13 @@ export interface ElementSchema<T> extends Schema<T> {
     rootTag: string,
     options?: SchemaParseOptions,
   ): SchemaSafeParseResult<T>;
+
+  serializeField(value: unknown): ElementSchemaSerializeResult;
+
+  /**
+   * Serializes data into an XmlWriter.
+   */
+  serialize: (name: string, data: T, writer?: XmlWriter | XmlWriterOptions) => XmlWriter;
 }
 
 export type PartialShape<T extends Shape> = {

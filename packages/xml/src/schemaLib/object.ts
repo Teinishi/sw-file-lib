@@ -1,3 +1,4 @@
+import { isStringKeyRecord } from "@core";
 import {
   OptionalSchema,
   selectChild,
@@ -11,8 +12,11 @@ import {
   type SchemaSafeParseResult,
   type Shape,
   type ElementSchema,
+  type WriteElementCallback,
+  type ElementSchemaSerializeResult,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
+import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import {
   assertXmlNode,
   createSwXmlIssue,
@@ -20,12 +24,15 @@ import {
   parseRecordElement,
   parseTree,
   safeParse,
+  serializeElement,
 } from "./internal";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
  */
 export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T>> {
+  kind = "element" as const;
+
   constructor(public readonly shape: T) {}
 
   /**
@@ -119,9 +126,47 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     );
   }
 
-  serialize(value: InferShape<T>): unknown {
-    // todo: implement
-    return value;
+  serializeField(value: unknown): ElementSchemaSerializeResult {
+    if (!isStringKeyRecord(value)) {
+      return { kind: "failed" };
+    }
+
+    const attributes: [string, string][] = [];
+    const children: [string, WriteElementCallback][] = [];
+
+    for (const [key, fieldSchema] of Object.entries(this.shape)) {
+      const r = fieldSchema.serializeField(value[key]);
+
+      switch (r.kind) {
+        case "attribute":
+          attributes.push([key, r.value]);
+          break;
+        case "element":
+          children.push([key, r.write]);
+          break;
+        case "failed":
+          return { kind: "failed" };
+      }
+    }
+
+    return {
+      kind: "element",
+      write(name, writer) {
+        if (children.length === 0) {
+          writer.empty(name, attributes);
+        } else {
+          writer.begin(name, attributes);
+          for (const [tag, write] of children) {
+            write(tag, writer);
+          }
+          writer.end(name);
+        }
+      },
+    };
+  }
+
+  serialize(name: string, data: InferShape<T>, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
+    return serializeElement(name, this.serializeField(data), writer);
   }
 
   optional(): Schema<InferShape<T> | undefined> {

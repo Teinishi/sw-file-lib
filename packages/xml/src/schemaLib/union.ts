@@ -7,6 +7,7 @@ import {
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
+  type SchemaSerializeResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
 import { createSwXmlIssue, safeParse } from "./internal";
@@ -15,7 +16,9 @@ export type SchemaTuple = readonly Schema<any>[];
 
 export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 
-class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
+export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
+  kind = "union" as const;
+
   constructor(public readonly schemas: T) {}
 
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferUnion<T> {
@@ -78,9 +81,14 @@ class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
-  serialize(value: T): unknown {
-    // todo: implement
-    return value;
+  serializeField(value: unknown): SchemaSerializeResult {
+    for (const schema of this.schemas) {
+      const r = schema.serializeField(value);
+      if (r.kind !== "failed") {
+        return r;
+      }
+    }
+    return { kind: "failed" };
   }
 
   optional(): Schema<InferUnion<T> | undefined> {

@@ -14,8 +14,10 @@ import {
   type AnySchemaIssue,
   type Shape,
   prependSchemaIssuePath,
+  type ElementSchemaSerializeResult,
 } from "..";
 import { SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
+import { XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 
 export function createSwXmlIssue<T extends keyof SchemaIssueMap>(
   code: T,
@@ -173,4 +175,21 @@ export function parseTree<T>(
     ]);
   }
   return getData(child.value, child.newCtx, options);
+}
+
+export function serializeElement(
+  name: string,
+  serializeResult: ElementSchemaSerializeResult,
+  writer?: XmlWriter | XmlWriterOptions,
+): XmlWriter {
+  if (serializeResult.kind === "failed") {
+    throw new Error("todo: error message");
+  }
+
+  if (!(writer instanceof XmlWriter)) {
+    writer = new XmlWriter(writer);
+  }
+
+  serializeResult.write(name, writer);
+  return writer;
 }

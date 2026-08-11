@@ -5,6 +5,7 @@ import {
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
+  type SchemaSerializeResult,
 } from ".";
 import type { SwXmlNode } from "../parser";
 import { assertString, safeParse } from "./internal";
@@ -13,6 +14,8 @@ import { assertString, safeParse } from "./internal";
  * A schema that parses XML text values as strings.
  */
 export class StringSchema implements Schema<string> {
+  kind = "attribute" as const;
+
   parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): string {
     assertString(value, "string");
 
@@ -36,11 +39,15 @@ export class StringSchema implements Schema<string> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
-  serialize(value: string): unknown {
-    return value;
+  serializeField(value: unknown): SchemaSerializeResult {
+    if (typeof value === "string") {
+      return { kind: "attribute", value: value };
+    } else {
+      return { kind: "failed" };
+    }
   }
 
-  optional(): Schema<string | undefined> {
+  optional(): OptionalSchema<string> {
     return new OptionalSchema(this);
   }
 }

@@ -1,3 +1,4 @@
+import { isStringKeyRecord } from "@core";
 import {
   newSchemaParseContext,
   OptionalSchema,
@@ -13,6 +14,8 @@ import {
   type Shape,
   type InferShape,
   ObjectSchema,
+  type ElementSchemaSerializeResult,
+  type WriteElementCallback,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
 import {
@@ -22,7 +25,9 @@ import {
   parseRecordElement,
   parseTree,
   safeParse,
+  serializeElement,
 } from "./internal";
+import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 
 export type InferMetaList<T extends Shape, U> = {
   meta: InferShape<T>;
@@ -33,10 +38,12 @@ export type InferMetaList<T extends Shape, U> = {
  * A schema that parses XML list elements that have attributes as JavaScript arrays.
  */
 export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMetaList<T, U>> {
+  kind = "element" as const;
+
   constructor(
     public readonly itemTag: string,
     public readonly metaShape: ObjectSchema<T>,
-    public readonly itemSchema: Schema<U>,
+    public readonly itemSchema: ElementSchema<U>,
   ) {}
 
   /**
@@ -155,9 +162,68 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     );
   }
 
-  serialize(value: InferMetaList<T, U>): unknown {
-    // todo: implement
-    return value;
+  serializeField(value: unknown): ElementSchemaSerializeResult {
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      !("meta" in value) ||
+      !("items" in value) ||
+      !isStringKeyRecord(value.meta) ||
+      !Array.isArray(value.items)
+    ) {
+      return { kind: "failed" };
+    }
+
+    const { itemTag, itemSchema } = this;
+
+    const attributes: [string, string][] = [];
+    const children: [string, WriteElementCallback][] = [];
+
+    for (const [key, fieldSchema] of Object.entries(this.metaShape.shape)) {
+      const r = fieldSchema.serializeField(value.meta[key]);
+
+      switch (r.kind) {
+        case "attribute":
+          attributes.push([key, r.value]);
+          break;
+        case "element":
+          children.push([key, r.write]);
+          break;
+        case "failed":
+          return { kind: "failed" };
+      }
+    }
+
+    for (const item of value.items) {
+      const r = itemSchema.serializeField(item);
+      if (r.kind === "failed") {
+        return { kind: "failed" };
+      }
+      children.push([itemTag, r.write]);
+    }
+
+    return {
+      kind: "element",
+      write(name, writer) {
+        if (children.length === 0) {
+          writer.empty(name, attributes);
+        } else {
+          writer.begin(name, attributes);
+          for (const [tag, write] of children) {
+            write(tag, writer);
+          }
+          writer.end(name);
+        }
+      },
+    };
+  }
+
+  serialize(
+    name: string,
+    data: InferMetaList<T, U>,
+    writer?: XmlWriter | XmlWriterOptions,
+  ): XmlWriter {
+    return serializeElement(name, this.serializeField(data), writer);
   }
 
   optional(): Schema<InferMetaList<T, U> | undefined> {
@@ -171,7 +237,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
 export function metalist<T extends Shape, U>(
   itemTag: string,
   metaSchema: ObjectSchema<T>,
-  itemSchema: Schema<U>,
+  itemSchema: ElementSchema<U>,
 ): MetaListSchema<T, U> {
   return new MetaListSchema(itemTag, metaSchema, itemSchema);
 }

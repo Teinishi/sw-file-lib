@@ -5,6 +5,7 @@ import {
   type SchemaParseContext,
   type SchemaParseOptions,
   type SchemaSafeParseResult,
+  type SchemaSerializeResult,
 } from ".";
 import { safeParse } from "./internal";
 
@@ -12,6 +13,8 @@ import { safeParse } from "./internal";
  * A schema wrapper that accepts undefined values.
  */
 export class OptionalSchema<T> implements Schema<T | undefined> {
+  kind = "optional" as const;
+
   constructor(private readonly inner: Schema<T>) {}
 
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T | undefined {
@@ -41,14 +44,15 @@ export class OptionalSchema<T> implements Schema<T | undefined> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
-  serialize(value: T | undefined): unknown {
+  serializeField(value: unknown): SchemaSerializeResult {
     if (value === undefined) {
-      return undefined;
+      return { kind: "omitted" };
+    } else {
+      return this.inner.serializeField(value);
     }
-    return this.inner.serialize(value);
   }
 
-  optional(): Schema<T | undefined> {
+  optional(): OptionalSchema<T> {
     return this;
   }
 }

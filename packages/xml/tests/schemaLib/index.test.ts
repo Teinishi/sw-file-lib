@@ -12,14 +12,8 @@ describe("schemaLib", () => {
       falseValue: x.boolean(),
     });
 
-    const xml = `
-      <types
-        string="hello"
-        integer="123"
-        decimal="45.67"
-        trueValue="true"
-        falseValue="false"
-      />`;
+    const xml =
+      '<types string="hello" integer="123" decimal="45.67" trueValue="true" falseValue="false"/>';
 
     const result = schema.parseTree(parseSwXml(xml), "types");
 
@@ -30,6 +24,9 @@ describe("schemaLib", () => {
       trueValue: true,
       falseValue: false,
     });
+
+    const serialized = schema.serialize("types", result, { xmlDeclaration: false }).toString();
+    expect(serialized).toBe(xml);
   });
 
   test("schema of union", () => {
@@ -40,13 +37,8 @@ describe("schemaLib", () => {
       allTypes: x.union([x.boolean(), x.number(), x.string()]),
     });
 
-    const xml = `
-      <union
-        stringOrNumber="hello"
-        numberOrBoolean="123"
-        stringOrBoolean="false"
-        allTypes="42"
-      />`;
+    const xml =
+      '<union stringOrNumber="hello" numberOrBoolean="123" stringOrBoolean="false" allTypes="42"/>';
 
     const result = schema.parseTree(parseSwXml(xml), "union");
 
@@ -56,6 +48,9 @@ describe("schemaLib", () => {
       stringOrBoolean: false,
       allTypes: 42,
     });
+
+    const serialized = schema.serialize("union", result, { xmlDeclaration: false }).toString();
+    expect(serialized).toBe(xml);
   });
 
   test("deep nested", () => {
@@ -77,18 +72,18 @@ describe("schemaLib", () => {
       }),
     });
 
-    const xml = `
-      <root>
-        <nested id="400">
-          <level1 name="one">
-            <level2 name="two">
-              <level3 name="three">
-                <value text="deep value"/>
-              </level3>
-            </level2>
-          </level1>
-        </nested>
-      </root>`;
+    const xml = `<root>
+  <nested id="400">
+    <level1 name="one">
+      <level2 name="two">
+        <level3 name="three">
+          <value text="deep value"/>
+        </level3>
+      </level2>
+    </level1>
+  </nested>
+</root>
+`;
 
     const result = schema.parseTree(parseSwXml(xml), "root");
 
@@ -109,6 +104,11 @@ describe("schemaLib", () => {
         },
       },
     });
+
+    const serialized = schema
+      .serialize("root", result, { xmlDeclaration: false, indentString: "  ", pretty: true })
+      .toString();
+    expect(serialized).toBe(xml);
   });
 
   test("general schema", () => {
@@ -161,36 +161,31 @@ describe("schemaLib", () => {
       ),
     });
 
-    const xml = `
-      <?xml version="1.0" encoding="UTF-8"?>
-      <test
-        name="Test Document"
-        version="1.5"
-        enabled="true"
-        optional="42"
-      >
-        <metadata id="100" active="false"/>
-        <tags>
-          <tag name="alpha"/>
-          <tag name="beta"/>
-          <tag/>
-        </tags>
-        <items id="200" enabled="true">
-          <name text="Item Collection"/>
-          <item id="1" value="10" flag="true" name="First"/>
-          <item id="2" value="20.5" flag="false" name="Second"/>
-          <item id="3" value="30" flag="true" name="Third"/>
-        </items>
-        <empty>
-          <content value="content"/>
-        </empty>
-        <leaf id="300" name="Leaf" value="123" enabled="true" />
-        <group name="Group A" count="3">
-          <member name="Alice" />
-          <member name="Bob" />
-          <member name="Charlie" />
-        </group>
-      </test>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<test name="Test Document" version="1.5" enabled="true" optional="42">
+  <metadata id="100" active="false"/>
+  <tags>
+    <tag name="alpha"/>
+    <tag name="beta"/>
+    <tag/>
+  </tags>
+  <items id="200" enabled="true">
+    <name text="Item Collection"/>
+    <item id="1" value="10" flag="true" name="First"/>
+    <item id="2" value="20.5" flag="false" name="Second"/>
+    <item id="3" value="30" flag="true" name="Third"/>
+  </items>
+  <empty>
+    <content value="content"/>
+  </empty>
+  <leaf id="300" name="Leaf" value="123" enabled="true"/>
+  <group name="Group A" count="3">
+    <member name="Alice"/>
+    <member name="Bob"/>
+    <member name="Charlie"/>
+  </group>
+</test>
+`;
 
     const result = schema.parseTree(parseSwXml(xml), "test");
 
@@ -216,6 +211,11 @@ describe("schemaLib", () => {
         items: [{ name: "Alice" }, { name: "Bob" }, { name: "Charlie" }],
       },
     });
+
+    const serialized = schema
+      .serialize("test", result, { indentString: "  ", pretty: true })
+      .toString();
+    expect(serialized).toBe(xml);
   });
 
   test("schema safeParse returns path-aware issues", () => {
