@@ -1,4 +1,4 @@
-import type { ObjectSchema } from "./object";
+import type { ObjectSchema } from "./classes";
 import type { DuplicateChildElementMode, SwXmlNode, SwXmlNodeList } from "../parser";
 import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import type { SchemaError } from "./errors";

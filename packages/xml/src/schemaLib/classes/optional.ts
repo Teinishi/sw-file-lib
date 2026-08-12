@@ -1,4 +1,5 @@
-import type { SwXmlNode } from "../parser";
+import type { SwXmlNode } from "../../parser";
+import { safeParse } from "../internal";
 import {
   type Schema,
   type SchemaInput,
@@ -6,8 +7,7 @@ import {
   type SchemaParseOptions,
   type SchemaSafeParseResult,
   type SchemaSerializeResult,
-} from ".";
-import { safeParse } from "./internal";
+} from "..";
 
 /**
  * A schema wrapper that accepts undefined values.

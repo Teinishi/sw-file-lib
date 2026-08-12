@@ -1,17 +1,9 @@
-import { number } from "./number";
-import { object } from "./object";
+import { number, object } from "./classes";
 
 export * from "./types";
 export * from "./errors";
 export * from "./utils";
-export * from "./optional";
-export * from "./union";
-export * from "./boolean";
-export * from "./number";
-export * from "./string";
-export * from "./object";
-export * from "./list";
-export * from "./metalist";
+export * from "./classes";
 
 /**
  * Creates a schema for Stormworks 2D vector records with optional x and y fields.

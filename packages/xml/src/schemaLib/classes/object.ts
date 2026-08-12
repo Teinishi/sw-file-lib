@@ -1,4 +1,15 @@
 import { isStringKeyRecord } from "@core";
+import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { SwXmlNode, SwXmlNodeList } from "../../parser";
+import {
+  assertXmlNode,
+  createSwXmlIssue,
+  evaluateUnknownFieldMode,
+  parseRecordElement,
+  parseTree,
+  safeParse,
+  serializeElement,
+} from "../internal";
 import {
   OptionalSchema,
   selectChild,
@@ -15,18 +26,7 @@ import {
   type WriteElementCallback,
   type ElementSchemaSerializeResult,
   type ExtendObjectSchema,
-} from ".";
-import { SwXmlNode, SwXmlNodeList } from "../parser";
-import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
-import {
-  assertXmlNode,
-  createSwXmlIssue,
-  evaluateUnknownFieldMode,
-  parseRecordElement,
-  parseTree,
-  safeParse,
-  serializeElement,
-} from "./internal";
+} from "..";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.

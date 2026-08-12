@@ -1,4 +1,15 @@
 import { isStringKeyRecord } from "@core";
+import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { SwXmlNode, SwXmlNodeList } from "../../parser";
+import {
+  assertXmlNode,
+  createSwXmlIssue,
+  evaluateUnknownFieldMode,
+  parseRecordElement,
+  parseTree,
+  safeParse,
+  serializeElement,
+} from "../internal";
 import {
   newSchemaParseContext,
   OptionalSchema,
@@ -18,18 +29,7 @@ import {
   type Infer,
   type ExtendObjectSchema,
   type ExtendShape,
-} from ".";
-import { SwXmlNode, SwXmlNodeList } from "../parser";
-import {
-  assertXmlNode,
-  createSwXmlIssue,
-  evaluateUnknownFieldMode,
-  parseRecordElement,
-  parseTree,
-  safeParse,
-  serializeElement,
-} from "./internal";
-import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
+} from "..";
 
 export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
   meta: M;
