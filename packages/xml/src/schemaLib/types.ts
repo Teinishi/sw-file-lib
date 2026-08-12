@@ -1,3 +1,4 @@
+import type { ObjectSchema } from "./object";
 import type { DuplicateChildElementMode, SwXmlNode, SwXmlNodeList } from "../parser";
 import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import type { SchemaError } from "./errors";
@@ -186,3 +187,7 @@ export type InferShape<T extends Shape> = {
 };
 
 export type Infer<T extends Schema<any>> = T extends Schema<infer U> ? U : never;
+
+export type ExtendShape<T extends Shape, U extends Shape> = Omit<T, keyof U> & U;
+
+export type ExtendObjectSchema<T extends Shape, U extends Shape> = ObjectSchema<ExtendShape<T, U>>;

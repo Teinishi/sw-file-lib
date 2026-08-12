@@ -12,10 +12,12 @@ import {
   type SchemaSafeParseResult,
   type ElementSchema,
   type Shape,
-  type InferShape,
   ObjectSchema,
   type ElementSchemaSerializeResult,
   type WriteElementCallback,
+  type Infer,
+  type ExtendObjectSchema,
+  type ExtendShape,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
 import {
@@ -29,19 +31,21 @@ import {
 } from "./internal";
 import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
 
-export type InferMetaList<T extends Shape, U> = {
-  meta: InferShape<T>;
-  items: U[];
+export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
+  meta: M;
+  items: Infer<U>[];
 };
 
 /**
  * A schema that parses XML list elements that have attributes as JavaScript arrays.
  */
-export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMetaList<T, U>> {
+export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> implements ElementSchema<
+  InferMetaList<M, I>
+> {
   constructor(
     public readonly itemTag: string,
-    public readonly metaShape: ObjectSchema<T>,
-    public readonly itemSchema: ElementSchema<U>,
+    public readonly metaShape: M,
+    public readonly itemSchema: I,
   ) {}
 
   /**
@@ -53,17 +57,17 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     value: SchemaInput,
     ctx: SchemaParseContext = newSchemaParseContext(),
     options?: SchemaParseOptions,
-  ): InferMetaList<T, U> {
+  ): InferMetaList<M, I> {
     assertXmlNode(value, "metalist");
 
-    const shape = this.metaShape.shape;
+    const shape = this.metaShape;
 
     const { parsed: meta, issues } = parseRecordElement(value, shape, ctx, options, ["meta"]);
 
-    const items: U[] = [];
+    const items: Infer<I>[] = [];
 
     for (const [key, attrValue] of value.attrs) {
-      if (key in this.metaShape.shape) continue;
+      if (key in this.metaShape) continue;
 
       // 未知属性
       const mode = evaluateUnknownFieldMode(
@@ -84,7 +88,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
 
     for (const [index, child] of value.nodes.entries()) {
       const isItem = child.tag === this.itemTag;
-      if (!isItem && !(child.tag in this.metaShape.shape)) {
+      if (!isItem && !(child.tag in this.metaShape)) {
         // 未知子要素
         const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child: child }, options);
         if (mode === "ignore") continue;
@@ -119,7 +123,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
       throw new SchemaError(issues);
     }
 
-    return { meta: meta as InferShape<T>, items };
+    return { meta: meta as M, items };
   }
 
   parseField(
@@ -127,7 +131,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     key: string,
     ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): InferMetaList<T, U> {
+  ): InferMetaList<M, I> {
     const child = selectChild(parent, key, ctx, options);
     return this.parse(child?.value, child?.newCtx ?? ctx, options);
   }
@@ -136,7 +140,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     value: SchemaInput,
     ctx?: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferMetaList<T, U>> {
+  ): SchemaSafeParseResult<InferMetaList<M, I>> {
     return safeParse(() => this.parse(value, ctx, options));
   }
 
@@ -144,7 +148,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): InferMetaList<T, U> {
+  ): InferMetaList<M, I> {
     return parseTree("metalist", tree, rootTag, options, (el, ctx, options) =>
       this.parse(el, ctx, options),
     );
@@ -154,7 +158,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     tree: SwXmlNodeList,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferMetaList<T, U>> {
+  ): SchemaSafeParseResult<InferMetaList<M, I>> {
     return parseTree("metalist", tree, rootTag, options, (el, ctx, options) =>
       this.safeParse(el, ctx, options),
     );
@@ -177,7 +181,7 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
     const attributes: [string, string][] = [];
     const children: [string, WriteElementCallback][] = [];
 
-    for (const [key, fieldSchema] of Object.entries(this.metaShape.shape)) {
+    for (const [key, fieldSchema] of Object.entries(this.metaShape)) {
       const r = fieldSchema.serializeField(value.meta[key]);
 
       switch (r.kind) {
@@ -218,24 +222,85 @@ export class MetaListSchema<T extends Shape, U> implements ElementSchema<InferMe
 
   serialize(
     name: string,
-    data: InferMetaList<T, U>,
+    data: InferMetaList<M, I>,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
     return serializeElement(name, this.serializeField(data), writer);
   }
 
-  optional(): Schema<InferMetaList<T, U> | undefined> {
+  optional(): Schema<InferMetaList<M, I> | undefined> {
     return new OptionalSchema(this);
+  }
+
+  /**
+   * Returns a new metalist schema with the name of item tags changed.
+   */
+  renameItemTag(itemTag: string): MetaListSchema<M, I> {
+    return new MetaListSchema(itemTag, this.metaShape, this.itemSchema);
+  }
+
+  /**
+   * Returns a new metalist schema by adding new fields or overwriting existing fields to the meta schema.
+   */
+  extendMeta<U extends Shape>(factory: (shape: M) => U): MetaListSchema<ExtendShape<M, U>, I> {
+    return new MetaListSchema(
+      this.itemTag,
+      new ObjectSchema(this.metaShape).extend(factory).shape,
+      this.itemSchema,
+    );
+  }
+
+  /**
+   * Returns a new metalist schema by adding new fields or overwriting existing fields to the item schema.
+   */
+  extendItem<U extends Shape>(
+    factory: (shape: I) => U,
+  ): I extends ObjectSchema<infer S> ? MetaListSchema<M, ExtendObjectSchema<S, U>> : never {
+    if (this.itemSchema instanceof ObjectSchema) {
+      return new MetaListSchema(
+        this.itemTag,
+        this.metaShape,
+        this.itemSchema.extend(factory),
+      ) as I extends ObjectSchema<infer S> ? MetaListSchema<M, ExtendObjectSchema<S, U>> : never;
+    }
+    throw new Error("todo: message (cannot extend non-object item schema of metalist)");
+  }
+
+  /**
+   * Returns a new list schema with specified keys are omitted from the meta schema.
+   */
+  omitMeta<U extends keyof M>(keys: U[]): MetaListSchema<Omit<M, U>, I> {
+    return new MetaListSchema(
+      this.itemTag,
+      new ObjectSchema(this.metaShape).omit(keys).shape,
+      this.itemSchema,
+    );
+  }
+
+  /**
+   * Returns a new list schema with specified keys are omitted from the item schema.
+   */
+  omitItem<S extends Shape, U extends keyof S>(
+    keys: U[],
+  ): I extends ObjectSchema<S> ? MetaListSchema<M, ObjectSchema<Omit<S, U>>> : never {
+    if (!(this.itemSchema instanceof ObjectSchema)) {
+      throw new Error("todo: message (cannot omit field of non-object schema)");
+    }
+    return new MetaListSchema(
+      this.itemTag,
+      this.metaShape,
+      this.itemSchema.omit(keys),
+    ) as I extends ObjectSchema<S> ? MetaListSchema<M, ObjectSchema<Omit<S, U>>> : never;
   }
 }
 
 /**
  * Creates a schema that parses XML list elements as JavaScript arrays.
  */
-export function metalist<T extends Shape, U>(
+export function metalist<M extends Shape, I extends ElementSchema<any>>(
   itemTag: string,
-  metaSchema: ObjectSchema<T>,
-  itemSchema: ElementSchema<U>,
-): MetaListSchema<T, U> {
-  return new MetaListSchema(itemTag, metaSchema, itemSchema);
+  metaSchema: ObjectSchema<M>,
+  itemSchema: I,
+): MetaListSchema<M, I> {
+  return new MetaListSchema(itemTag, metaSchema.shape, itemSchema);
 }

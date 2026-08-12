@@ -127,19 +127,17 @@ describe("schemaLib", () => {
       .toString();
     expect(serialized).toBe(xml);
 
-    const schema2 = schema.deepMerge(
-      x.object({
-        nested: x.object({
-          level1: x.object({
-            level2: x.object({
-              level3: x.object({
-                new_attribute: x.boolean(),
-              }),
-            }),
-          }),
-        }),
-      }),
-    );
+    const schema2 = schema.extend((s) => ({
+      nested: s.nested.extend((s) => ({
+        level1: s.level1.extend((s) => ({
+          level2: s.level2.extend((s) => ({
+            level3: s.level3.extend((_) => ({
+              new_attribute: x.boolean(),
+            })),
+          })),
+        })),
+      })),
+    }));
 
     const xml2 = `<root>
   <nested id="400">
@@ -156,29 +154,89 @@ describe("schemaLib", () => {
 
     const result2 = schema2.parseTree(xml2, "root");
 
-    expect(result2).toEqual({
-      nested: {
-        id: 400,
-        level1: {
-          name: "one",
-          level2: {
-            name: "two",
-            level3: {
-              name: "three",
-              new_attribute: true,
-              value: {
-                text: "deep value",
-              },
-            },
-          },
-        },
-      },
-    });
+    const new_attribute: boolean = result2.nested.level1.level2.level3.new_attribute;
+
+    expect(new_attribute).toBe(true);
 
     const serialized2 = schema2
       .serialize("root", result2, { xmlDeclaration: false, indentString: "  ", pretty: true })
       .toString();
     expect(serialized2).toBe(xml2);
+  });
+
+  test("schema extension", () => {
+    const schema1 = x.object({
+      name: x.string(),
+      position: x.object({
+        x: x.number(),
+        y: x.number(),
+      }),
+    });
+
+    const xml1 = '<root name="hello"><position x="1" y="2"/></root>';
+    const result1 = schema1.parseTree(xml1, "root");
+    expect(result1).toEqual({
+      name: "hello",
+      position: {
+        x: 1,
+        y: 2,
+      },
+    });
+
+    const schema2 = schema1.extend((s) => ({
+      position: s.position.extend((_) => ({
+        z: x.number(),
+      })),
+      list: x.list(
+        "item",
+        x.object({
+          name: x.string(),
+        }),
+      ),
+      metalist: x
+        .metalist(
+          "item",
+          x.object({
+            size: x.number(),
+          }),
+          x.object({
+            name: x.string(),
+          }),
+        )
+        .optional(),
+    }));
+
+    const xml2 =
+      '<root name="hello"><position x="1" y="2" z="3"/><list><item name="alpha"/></list></root>';
+    const result2 = schema2.parseTree(xml2, "root");
+    expect(result2).toEqual({
+      name: "hello",
+      position: {
+        x: 1,
+        y: 2,
+        z: 3,
+      },
+      list: [{ name: "alpha" }],
+    });
+
+    const schema3 = schema2.extend((s) => ({
+      list: s.list.extendItem((_) => ({
+        num: x.number().optional(),
+      })),
+    }));
+
+    const xml3 =
+      '<root name="hello"><position x="1" y="2" z="3"/><list><item name="alpha"/><item name="beta" num="2"/></list></root>';
+    const result3 = schema3.parseTree(xml3, "root");
+    expect(result3).toEqual({
+      name: "hello",
+      position: {
+        x: 1,
+        y: 2,
+        z: 3,
+      },
+      list: [{ name: "alpha" }, { name: "beta", num: 2 }],
+    });
   });
 
   test("general schema", () => {

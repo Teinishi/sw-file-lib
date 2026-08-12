@@ -104,7 +104,7 @@ describe("component definition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const schema = ComponentDefinitionSchema.shallowMerge(
+    const schema = ComponentDefinitionSchema.extend(
       x.partialObject({
         type: x.string(),
         unknown_attr: x.string(),

@@ -14,6 +14,7 @@ import {
   type ElementSchema,
   type WriteElementCallback,
   type ElementSchemaSerializeResult,
+  type ExtendObjectSchema,
 } from ".";
 import { SwXmlNode, SwXmlNodeList } from "../parser";
 import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../writer/XmlWriter";
@@ -187,6 +188,13 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
   }
 
   /**
+   * Returns a new object schema by adding new fields or overwriting existing fields.
+   */
+  extend<U extends Shape>(factory: (shape: T) => U): ExtendObjectSchema<T, U> {
+    return new ObjectSchema({ ...this.shape, ...factory(this.shape) });
+  }
+
+  /**
    * Returns a new object schema with specified keys are omitted.
    */
   omit<U extends keyof T>(keys: U[]): ObjectSchema<Omit<T, U>> {
@@ -196,52 +204,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     }
     return new ObjectSchema(newShape);
   }
-
-  /**
-   * Returns a new object schema by adding new fields or overwriting existing fields.
-   */
-  shallowMerge<U extends Shape>(other: ObjectSchema<U>): ObjectSchema<Omit<T, keyof U> & U> {
-    return new ObjectSchema({ ...this.shape, ...other.shape });
-  }
-
-  /**
-   * Returns a new object schema by merging object schema recursively.
-   */
-  deepMerge<U extends Shape>(other: ObjectSchema<U>): ObjectSchema<DeepMergeShape<T, U>> {
-    const shape: Shape = { ...this.shape };
-
-    for (const [key, b] of Object.entries(other.shape)) {
-      const a = this.shape[key];
-
-      if (a instanceof ObjectSchema && b instanceof ObjectSchema) {
-        shape[key] = a.deepMerge(b);
-      } else {
-        shape[key] = b;
-      }
-    }
-
-    return new ObjectSchema(shape) as ObjectSchema<DeepMergeShape<T, U>>;
-  }
 }
-
-export type SharedKeyof<T, U> = keyof T & keyof U;
-
-export type DeepMergeSchema<A, B> =
-  A extends ObjectSchema<infer AS>
-    ? B extends ObjectSchema<infer BS>
-      ? ObjectSchema<DeepMergeShape<AS, BS>>
-      : B
-    : B;
-
-export type DeepMergeShape<A extends Shape, B extends Shape> = {
-  [K in keyof A | keyof B]: K extends keyof B
-    ? K extends keyof A
-      ? DeepMergeSchema<A[K], B[K]>
-      : B[K]
-    : K extends keyof A
-      ? A[K]
-      : never;
-};
 
 /**
  * Creates a schema that parses XML record elements as JavaScript objects.
