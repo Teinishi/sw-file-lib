@@ -24,7 +24,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
 
     for (const schema of this.schemas) {
       try {
-        schema.parse(value, ctx, options);
+        return schema.parse(value, ctx, options);
       } catch (error) {
         if (error instanceof SchemaError) {
           errors.push(error);
@@ -89,7 +89,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
     return { kind: "failed" };
   }
 
-  optional(): Schema<InferUnion<T> | undefined> {
+  optional(): OptionalSchema<InferUnion<T>> {
     return new OptionalSchema(this);
   }
 }

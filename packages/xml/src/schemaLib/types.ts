@@ -1,4 +1,4 @@
-import type { ObjectSchema } from "./classes";
+import type { ObjectSchema, OptionalSchema } from "./classes";
 import type { DuplicateChildElementMode, SwXmlNode, SwXmlNodeList } from "../parser";
 import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import type { SchemaError } from "./errors";
@@ -140,7 +140,7 @@ export interface Schema<T> {
   /**
    * Returns a schema that accepts undefined values.
    */
-  optional(): Schema<T | undefined>;
+  optional: () => OptionalSchema<T>;
 }
 
 export interface ElementSchema<T> extends Schema<T> {
@@ -176,18 +176,33 @@ export interface UnknownObject {
   [key: string]: UnknownValue;
 }
 
-export type Shape = Record<string, Schema<any>>;
+export type Shape = Record<string, Schema<any> | OptionalSchema<any>>;
 
-export type PartialShape<T extends Shape> = {
-  [K in keyof T]: Schema<(T[K] extends Schema<infer U> ? U : never) | undefined>;
-};
+export type Infer<T extends Schema<any> | OptionalSchema<any>> =
+  T extends OptionalSchema<infer U> ? U : T extends Schema<infer U> ? U : never;
+
+export type OptionalKeys<T extends Shape> = {
+  [K in keyof T]: T[K] extends OptionalSchema<any> ? K : never;
+}[keyof T];
+
+export type RequiredKeys<T extends Shape> = Exclude<keyof T, OptionalKeys<T>>;
 
 export type InferShape<T extends Shape> = {
-  [K in keyof T]: T[K] extends Schema<infer U> ? U : never;
+  [K in OptionalKeys<T>]?: Infer<T[K]>;
+} & {
+  [K in RequiredKeys<T>]: Infer<T[K]>;
 };
 
-export type Infer<T extends Schema<any>> = T extends Schema<infer U> ? U : never;
+export type PartialShape<T extends Shape> = {
+  [K in keyof T]: T[K] extends OptionalSchema<any>
+    ? T[K]
+    : T[K] extends Schema<infer U>
+      ? OptionalSchema<U>
+      : never;
+};
 
 export type ExtendShape<T extends Shape, U extends Shape> = Omit<T, keyof U> & U;
 
 export type ExtendObjectSchema<T extends Shape, U extends Shape> = ObjectSchema<ExtendShape<T, U>>;
+
+export type ObjectShape<T> = T extends ObjectSchema<infer S> ? S : never;

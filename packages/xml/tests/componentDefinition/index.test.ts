@@ -52,7 +52,7 @@ describe("component definition", () => {
       ["number_rewarded", 2000],
     ]);
 
-    expect(builder.toXml({ indentString: "\t", pretty: true })).toBe(xml);
+    expect(builder.toXml({ indent: "\t" })).toBe(xml);
   });
 
   test("parse 1", () => {
@@ -104,12 +104,10 @@ describe("component definition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const schema = ComponentDefinitionSchema.extend(
-      x.partialObject({
-        type: x.string(),
-        unknown_attr: x.string(),
-      }),
-    );
+    const schema = ComponentDefinitionSchema.extend((_) => ({
+      type: x.string(),
+      unknown_attr: x.string(),
+    }));
 
     const definition = schema.parseTree(parseSwXml(xml), "definition");
 

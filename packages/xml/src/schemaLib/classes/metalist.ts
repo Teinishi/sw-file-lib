@@ -16,7 +16,6 @@ import {
   prependSchemaIssuePath,
   selectChild,
   SchemaError,
-  type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -27,12 +26,13 @@ import {
   type ElementSchemaSerializeResult,
   type WriteElementCallback,
   type Infer,
-  type ExtendObjectSchema,
   type ExtendShape,
+  type InferShape,
+  type ObjectShape,
 } from "..";
 
 export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
-  meta: M;
+  meta: InferShape<M>;
   items: Infer<U>[];
 };
 
@@ -123,7 +123,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
       throw new SchemaError(issues);
     }
 
-    return { meta: meta as M, items };
+    return { meta: meta as InferShape<M>, items };
   }
 
   parseField(
@@ -228,7 +228,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     return serializeElement(name, this.serializeField(data), writer);
   }
 
-  optional(): Schema<InferMetaList<M, I> | undefined> {
+  optional(): OptionalSchema<InferMetaList<M, I>> {
     return new OptionalSchema(this);
   }
 
@@ -251,22 +251,6 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
   }
 
   /**
-   * Returns a new metalist schema by adding new fields or overwriting existing fields to the item schema.
-   */
-  extendItem<U extends Shape>(
-    factory: (shape: I) => U,
-  ): I extends ObjectSchema<infer S> ? MetaListSchema<M, ExtendObjectSchema<S, U>> : never {
-    if (this.itemSchema instanceof ObjectSchema) {
-      return new MetaListSchema(
-        this.itemTag,
-        this.metaShape,
-        this.itemSchema.extend(factory),
-      ) as I extends ObjectSchema<infer S> ? MetaListSchema<M, ExtendObjectSchema<S, U>> : never;
-    }
-    throw new Error("todo: message (cannot extend non-object item schema of metalist)");
-  }
-
-  /**
    * Returns a new list schema with specified keys are omitted from the meta schema.
    */
   omitMeta<U extends keyof M>(keys: U[]): MetaListSchema<Omit<M, U>, I> {
@@ -276,21 +260,26 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
       this.itemSchema,
     );
   }
+}
+
+export class ObjectMetaListSchema<M extends Shape, I extends Shape> extends MetaListSchema<
+  M,
+  ObjectSchema<I>
+> {
+  /**
+   * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
+   */
+  extendItem<U extends Shape>(
+    factory: (shape: I) => U,
+  ): ObjectMetaListSchema<M, ExtendShape<I, U>> {
+    return new ObjectMetaListSchema(this.itemTag, this.metaShape, this.itemSchema.extend(factory));
+  }
 
   /**
    * Returns a new list schema with specified keys are omitted from the item schema.
    */
-  omitItem<S extends Shape, U extends keyof S>(
-    keys: U[],
-  ): I extends ObjectSchema<S> ? MetaListSchema<M, ObjectSchema<Omit<S, U>>> : never {
-    if (!(this.itemSchema instanceof ObjectSchema)) {
-      throw new Error("todo: message (cannot omit field of non-object schema)");
-    }
-    return new MetaListSchema(
-      this.itemTag,
-      this.metaShape,
-      this.itemSchema.omit(keys),
-    ) as I extends ObjectSchema<S> ? MetaListSchema<M, ObjectSchema<Omit<S, U>>> : never;
+  omitItem<U extends keyof I>(keys: U[]): ObjectMetaListSchema<M, Omit<I, U>> {
+    return new ObjectMetaListSchema(this.itemTag, this.metaShape, this.itemSchema.omit(keys));
   }
 }
 
@@ -301,6 +290,14 @@ export function metalist<M extends Shape, I extends ElementSchema<any>>(
   itemTag: string,
   metaSchema: ObjectSchema<M>,
   itemSchema: I,
-): MetaListSchema<M, I> {
-  return new MetaListSchema(itemTag, metaSchema.shape, itemSchema);
+): I extends ObjectSchema<any> ? ObjectMetaListSchema<M, ObjectShape<I>> : MetaListSchema<M, I> {
+  let s;
+  if (itemSchema instanceof ObjectSchema) {
+    s = new ObjectMetaListSchema(itemTag, metaSchema.shape, itemSchema);
+  } else {
+    s = new MetaListSchema(itemTag, metaSchema.shape, itemSchema);
+  }
+  return s as I extends ObjectSchema<any>
+    ? ObjectMetaListSchema<M, ObjectShape<I>>
+    : MetaListSchema<M, I>;
 }

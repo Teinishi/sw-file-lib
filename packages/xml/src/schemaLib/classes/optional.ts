@@ -12,8 +12,8 @@ import {
 /**
  * A schema wrapper that accepts undefined values.
  */
-export class OptionalSchema<T> implements Schema<T | undefined> {
-  constructor(private readonly inner: Schema<T>) {}
+export class OptionalSchema<T> {
+  constructor(readonly inner: Schema<T>) {}
 
   parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T | undefined {
     if (value === undefined) {

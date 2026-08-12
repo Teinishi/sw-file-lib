@@ -16,7 +16,6 @@ import {
   SchemaError,
   type InferShape,
   type PartialShape,
-  type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -26,6 +25,7 @@ import {
   type WriteElementCallback,
   type ElementSchemaSerializeResult,
   type ExtendObjectSchema,
+  type ExtendShape,
 } from "..";
 
 /**
@@ -172,7 +172,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     return serializeElement(name, this.serializeField(data), writer);
   }
 
-  optional(): Schema<InferShape<T> | undefined> {
+  optional(): OptionalSchema<InferShape<T>> {
     return new OptionalSchema(this);
   }
 
@@ -191,7 +191,8 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    * Returns a new object schema by adding new fields or overwriting existing fields.
    */
   extend<U extends Shape>(factory: (shape: T) => U): ExtendObjectSchema<T, U> {
-    return new ObjectSchema({ ...this.shape, ...factory(this.shape) });
+    const newShape: ExtendShape<T, U> = { ...this.shape, ...factory(this.shape) };
+    return new ObjectSchema(newShape);
   }
 
   /**
@@ -202,7 +203,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     for (const key of keys) {
       delete newShape[key];
     }
-    return new ObjectSchema(newShape);
+    return new ObjectSchema<Omit<T, U>>(newShape);
   }
 }
 
@@ -214,7 +215,7 @@ export function object<T extends Shape>(shape: T): ObjectSchema<T> {
 }
 
 /**
- * Shorthand for x.object(...).partial()
+ * Syntax sugar for `x.object(...).partial()`
  */
 export function partialObject<T extends Shape>(shape: T): ObjectSchema<PartialShape<T>> {
   return object(shape).partial();

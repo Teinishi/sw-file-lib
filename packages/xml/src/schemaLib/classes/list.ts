@@ -15,7 +15,6 @@ import {
   selectChild,
   SchemaError,
   type AnySchemaIssue,
-  type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -26,7 +25,8 @@ import {
   type Infer,
   ObjectSchema,
   type Shape,
-  type ExtendObjectSchema,
+  type ObjectShape,
+  type ExtendShape,
 } from "..";
 
 /**
@@ -182,7 +182,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     return serializeElement(name, this.serializeField(data), writer);
   }
 
-  optional(): Schema<Infer<T>[] | undefined> {
+  optional(): OptionalSchema<Infer<T>[]> {
     return new OptionalSchema(this);
   }
 
@@ -192,41 +192,36 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
   renameItemTag(itemTag: string): ListSchema<T> {
     return new ListSchema(itemTag, this.itemSchema);
   }
+}
 
+export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T>> {
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
    */
-  extendItem<U extends Shape>(
-    factory: (shape: T) => U,
-  ): T extends ObjectSchema<infer S> ? ListSchema<ExtendObjectSchema<S, U>> : never {
-    if (!(this.itemSchema instanceof ObjectSchema)) {
-      throw new Error("todo: message (cannot extend non-object schema)");
-    }
-    return new ListSchema(this.itemTag, this.itemSchema.extend(factory)) as T extends ObjectSchema<
-      infer S
-    >
-      ? ListSchema<ExtendObjectSchema<S, U>>
-      : never;
+  extendItem<U extends Shape>(factory: (shape: T) => U): ObjectListSchema<ExtendShape<T, U>> {
+    return new ObjectListSchema(this.itemTag, this.itemSchema.extend(factory));
   }
 
   /**
    * Returns a new list schema with specified keys are omitted from the item schema.
    */
-  omitItem<S extends Shape, U extends keyof S>(
-    keys: U[],
-  ): T extends ObjectSchema<S> ? ListSchema<ObjectSchema<Omit<S, U>>> : never {
-    if (!(this.itemSchema instanceof ObjectSchema)) {
-      throw new Error("todo: message (cannot omit field of non-object schema)");
-    }
-    return new ListSchema(this.itemTag, this.itemSchema.omit(keys)) as T extends ObjectSchema<S>
-      ? ListSchema<ObjectSchema<Omit<S, U>>>
-      : never;
+  omitItem<U extends keyof T>(keys: U[]): ObjectListSchema<Omit<T, U>> {
+    return new ObjectListSchema(this.itemTag, this.itemSchema.omit(keys));
   }
 }
 
 /**
  * Creates a schema that parses XML list elements as JavaScript arrays.
  */
-export function list<T extends ElementSchema<any>>(itemTag: string, itemSchema: T): ListSchema<T> {
-  return new ListSchema(itemTag, itemSchema);
+export function list<T extends ElementSchema<any>>(
+  itemTag: string,
+  itemSchema: T,
+): T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>> : ListSchema<T> {
+  let s;
+  if (itemSchema instanceof ObjectSchema) {
+    s = new ObjectListSchema(itemTag, itemSchema);
+  } else {
+    s = new ListSchema(itemTag, itemSchema);
+  }
+  return s as T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>> : ListSchema<T>;
 }
