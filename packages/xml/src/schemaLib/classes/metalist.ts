@@ -221,11 +221,11 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
   }
 
   serialize(
-    name: string,
     data: InferMetaList<M, I>,
+    rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
-    return serializeElement(name, this.serializeField(data), writer);
+    return serializeElement(this.serializeField(data), rootTag, writer);
   }
 
   optional(): OptionalSchema<InferMetaList<M, I>> {

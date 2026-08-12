@@ -167,7 +167,7 @@ export interface ElementSchema<T> extends Schema<T> {
   /**
    * Serializes data into an XmlWriter.
    */
-  serialize: (name: string, data: T, writer?: XmlWriter | XmlWriterOptions) => XmlWriter;
+  serialize: (data: T, rootTag: string, writer?: XmlWriter | XmlWriterOptions) => XmlWriter;
 }
 
 export type UnknownValue = string | null | UnknownObject | UnknownValue[];

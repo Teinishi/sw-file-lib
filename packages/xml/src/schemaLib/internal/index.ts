@@ -182,8 +182,8 @@ export function parseTree<T>(
 }
 
 export function serializeElement(
-  name: string,
   serializeResult: ElementSchemaSerializeResult,
+  rootTag: string,
   writer?: XmlWriter | XmlWriterOptions,
 ): XmlWriter {
   if (serializeResult.kind === "failed") {
@@ -194,6 +194,6 @@ export function serializeElement(
     writer = new XmlWriter(writer);
   }
 
-  serializeResult.write(name, writer);
+  serializeResult.write(rootTag, writer);
   return writer;
 }

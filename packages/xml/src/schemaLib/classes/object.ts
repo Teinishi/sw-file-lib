@@ -168,8 +168,12 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     };
   }
 
-  serialize(name: string, data: InferShape<T>, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
-    return serializeElement(name, this.serializeField(data), writer);
+  serialize(
+    data: InferShape<T>,
+    rootTag: string,
+    writer?: XmlWriter | XmlWriterOptions,
+  ): XmlWriter {
+    return serializeElement(this.serializeField(data), rootTag, writer);
   }
 
   optional(): OptionalSchema<InferShape<T>> {

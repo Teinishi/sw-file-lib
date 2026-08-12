@@ -178,8 +178,8 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     };
   }
 
-  serialize(name: string, data: Infer<T>[], writer?: XmlWriter | XmlWriterOptions): XmlWriter {
-    return serializeElement(name, this.serializeField(data), writer);
+  serialize(data: Infer<T>[], rootTag: string, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
+    return serializeElement(this.serializeField(data), rootTag, writer);
   }
 
   optional(): OptionalSchema<Infer<T>[]> {

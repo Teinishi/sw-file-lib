@@ -40,7 +40,7 @@ describe("schemaLib serialization", () => {
     const result = schema.parseTree(xml, "root");
 
     const serialized = schema
-      .serialize("root", result, {
+      .serialize(result, "root", {
         xmlDeclaration: false,
         indent: 2,
       })
@@ -73,7 +73,7 @@ describe("schemaLib serialization", () => {
     const result1 = schema.parseTree(xml, "root");
 
     const serialized = schema
-      .serialize("root", result1, {
+      .serialize(result1, "root", {
         xmlDeclaration: false,
         indent: 2,
       })

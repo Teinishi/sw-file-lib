@@ -36,7 +36,7 @@ describe("schemaLib", () => {
       },
     });
     const serialized = schema
-      .serialize("root", result, { xmlDeclaration: false, indent: 2 })
+      .serialize(result, "root", { xmlDeclaration: false, indent: 2 })
       .toString();
     expect(serialized).toBe(xml);
   });
@@ -63,7 +63,7 @@ describe("schemaLib", () => {
       falseValue: false,
     });
 
-    const serialized = schema.serialize("types", result, { xmlDeclaration: false }).toString();
+    const serialized = schema.serialize(result, "types", { xmlDeclaration: false }).toString();
     expect(serialized).toBe(xml);
   });
 
@@ -87,7 +87,7 @@ describe("schemaLib", () => {
       allTypes: 42,
     });
 
-    const serialized = schema.serialize("union", result, { xmlDeclaration: false }).toString();
+    const serialized = schema.serialize(result, "union", { xmlDeclaration: false }).toString();
     expect(serialized).toBe(xml);
   });
 
@@ -105,7 +105,7 @@ describe("schemaLib", () => {
 
     expect(result).toEqual([{ value: 123 }, { value: { text: "hoge" } }]);
 
-    const serialized = schema.serialize("list", result, { xmlDeclaration: false }).toString();
+    const serialized = schema.serialize(result, "list", { xmlDeclaration: false }).toString();
     expect(serialized).toBe(xml);
   });
 
@@ -162,7 +162,7 @@ describe("schemaLib", () => {
     });
 
     const serialized = schema
-      .serialize("root", result, { xmlDeclaration: false, indent: 2 })
+      .serialize(result, "root", { xmlDeclaration: false, indent: 2 })
       .toString();
     expect(serialized).toBe(xml);
 
@@ -198,7 +198,7 @@ describe("schemaLib", () => {
     expect(new_attribute).toBe(true);
 
     const serialized2 = schema2
-      .serialize("root", result2, { xmlDeclaration: false, indent: 2 })
+      .serialize(result2, "root", { xmlDeclaration: false, indent: 2 })
       .toString();
     expect(serialized2).toBe(xml2);
   });
@@ -379,7 +379,7 @@ describe("schemaLib", () => {
       },
     });
 
-    const serialized = schema.serialize("test", result, { indent: 2 }).toString();
+    const serialized = schema.serialize(result, "test", { indent: 2 }).toString();
     expect(serialized).toBe(xml);
   });
 
