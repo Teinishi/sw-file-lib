@@ -1,4 +1,3 @@
-import type { SwXmlNode } from "../../parser";
 import {
   SchemaError,
   type Result,
@@ -8,6 +7,7 @@ import {
   type SchemaParseOptions,
   type SchemaSerializeResult,
 } from "..";
+import type { SwXmlNode } from "../../parser";
 import { unwrapResult } from "../internal";
 
 /**

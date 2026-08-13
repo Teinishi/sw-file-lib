@@ -1,5 +1,3 @@
-import { SwXmlNode } from "../../parser";
-import { createSwXmlIssue, unwrapResult, validateSchemaInput } from "../internal";
 import {
   OptionalSchema,
   SchemaError,
@@ -11,6 +9,8 @@ import {
   type SchemaParseOptions,
   type SchemaSerializeResult,
 } from "..";
+import { SwXmlNode } from "../../parser";
+import { createSwXmlIssue, unwrapResult, validateSchemaInput } from "../internal";
 
 /**
  * A schema that parses XML text values as booleans.

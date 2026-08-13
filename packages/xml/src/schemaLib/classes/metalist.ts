@@ -1,16 +1,4 @@
 import { isStringKeyRecord } from "@core";
-import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
-import { SwXmlNode, SwXmlNodeList } from "../../parser";
-import {
-  checkUnknownFields,
-  parseList,
-  parseShape,
-  safeParseChild,
-  safeParseTree,
-  serializeElement,
-  unwrapResult,
-  validateSchemaInput,
-} from "../internal";
 import {
   OptionalSchema,
   SchemaError,
@@ -29,6 +17,18 @@ import {
   type Result,
   type SchemaParseFieldResult,
 } from "..";
+import { SwXmlNode, SwXmlNodeList } from "../../parser";
+import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import {
+  checkUnknownFields,
+  parseList,
+  parseShape,
+  safeParseChild,
+  safeParseTree,
+  serializeElement,
+  unwrapResult,
+  validateSchemaInput,
+} from "../internal";
 
 export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
   meta: InferShape<M>;

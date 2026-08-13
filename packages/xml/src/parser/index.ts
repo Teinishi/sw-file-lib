@@ -1,5 +1,5 @@
-import { isRecord, isStringRecord } from "@core";
 import { XMLParser } from "fast-xml-parser";
+import { isRecord, isStringRecord } from "@core";
 import { SwXmlParseError } from "./errors";
 import { SwXmlNode, SwXmlNodeList } from "./xmlNode";
 

@@ -1,6 +1,6 @@
-import { describe, expect, test } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { describe, expect, test } from "vitest";
 import { componentModFromBytes, componentModToBytes } from "@core";
 
 describe("component mod roundtrip", () => {

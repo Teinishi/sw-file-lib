@@ -1,5 +1,3 @@
-import type { SwXmlNode } from "../../parser";
-import { unwrapResult, validateSchemaInput } from "../internal";
 import {
   OptionalSchema,
   SchemaError,
@@ -11,6 +9,8 @@ import {
   type SchemaParseOptions,
   type SchemaSerializeResult,
 } from "..";
+import type { SwXmlNode } from "../../parser";
+import { unwrapResult, validateSchemaInput } from "../internal";
 
 /**
  * A schema that parses XML text values as strings.

@@ -1,5 +1,3 @@
-import type { SwXmlNode } from "../../parser";
-import { createSwXmlIssue, unwrapResult } from "../internal";
 import {
   OptionalSchema,
   SchemaError,
@@ -12,6 +10,8 @@ import {
   type SchemaParseOptions,
   type SchemaSerializeResult,
 } from "..";
+import type { SwXmlNode } from "../../parser";
+import { createSwXmlIssue, unwrapResult } from "../internal";
 
 export type SchemaTuple = readonly Schema<any>[];
 

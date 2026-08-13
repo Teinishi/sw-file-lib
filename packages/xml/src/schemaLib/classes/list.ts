@@ -1,14 +1,3 @@
-import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
-import { SwXmlNode, SwXmlNodeList } from "../../parser";
-import {
-  checkUnknownFields,
-  parseList,
-  safeParseChild,
-  safeParseTree,
-  serializeElement,
-  unwrapResult,
-  validateSchemaInput,
-} from "../internal";
 import {
   OptionalSchema,
   SchemaError,
@@ -26,6 +15,17 @@ import {
   type Result,
   type SchemaParseFieldResult,
 } from "..";
+import { SwXmlNode, SwXmlNodeList } from "../../parser";
+import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import {
+  checkUnknownFields,
+  parseList,
+  safeParseChild,
+  safeParseTree,
+  serializeElement,
+  unwrapResult,
+  validateSchemaInput,
+} from "../internal";
 
 /**
  * A schema that parses XML list elements as JavaScript arrays.

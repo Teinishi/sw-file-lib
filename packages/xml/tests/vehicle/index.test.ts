@@ -1,7 +1,7 @@
-import { describe, test } from "vitest";
 import fs from "node:fs/promises";
-import { searchEnvPath } from "../../../internalUtils/src/testUtils";
+import { describe, test } from "vitest";
 import { parseVehicleXml } from "@xml";
+import { searchEnvPath } from "../../../internalUtils/src/testUtils";
 
 describe("vehicle", () => {
   test.skipIf(process.env.CI)(

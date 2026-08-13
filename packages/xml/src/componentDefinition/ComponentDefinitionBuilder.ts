@@ -1,12 +1,12 @@
 import type { DeepReadonly, StrictOmit } from "ts-essentials";
 import { type Vec3, maxVec3, minVec3, vec3ToMap } from "@core";
+import type { LogicNode, Surface, Voxel } from "../types";
 import {
   XmlWriter,
   type XmlAttributes,
   type XmlAttributeValue,
   type XmlWriterOptions,
 } from "../writer/XmlWriter";
-import type { LogicNode, Surface, Voxel } from "../types";
 
 function splitAttrsAndChildrenOfSurface(surface: DeepReadonly<Surface>) {
   return {
