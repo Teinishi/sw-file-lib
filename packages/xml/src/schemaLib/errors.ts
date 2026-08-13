@@ -1,6 +1,22 @@
 import type { SwXmlNode, SwXmlStructureError } from "../parser";
-import { type SchemaInput, type SchemaPath, type SchemaPathSegment } from "./types";
+import { type SchemaInput } from "./types";
 
+/**
+ * A path segment in a parsed Stormworks XML value.
+ *
+ * String segments represent object fields. Number segments represent list item
+ * indexes.
+ */
+export type SchemaPathSegment = string | number;
+
+/**
+ * A path to a value in a parsed Stormworks XML value.
+ */
+export type SchemaPath = readonly SchemaPathSegment[];
+
+/**
+ * Describe the expected type of the value given to schema parse function. Used for error data.
+ */
 export type ExpectedSchemaInputType = "xml_element" | "string";
 
 export interface SchemaIssueBase<T extends string> {

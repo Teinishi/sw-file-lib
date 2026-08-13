@@ -1,7 +1,7 @@
 import { SwXmlNode, SwXmlStructureError, type SwXmlNodeList } from "../parser";
 import { SchemaError } from "./errors";
 import { createSwXmlIssue, evaluateDuplicateChildElementMode } from "./internal";
-import { newSchemaParseContext, type SchemaParseContext, type SchemaParseOptions } from "./types";
+import { newSchemaParseContext, type SchemaParseContext, type SchemaParseOptions } from "./parseOptions";
 
 export function selectChild(
   nodeList: SwXmlNodeList,
