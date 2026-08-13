@@ -107,7 +107,7 @@ export class SchemaError extends Error {
 
   constructor(issues: readonly AnySchemaIssue[]) {
     super(formatIssues(issues));
-    this.name = "SwXmlSchemaError";
+    this.name = "SchemaError";
     this.issues = [...issues];
   }
 }

@@ -1,4 +1,4 @@
-import type { SwXmlNode } from "../parser";
+import type { SwXmlNode, SwXmlNodeList } from "../parser";
 
 /**
  * A path identifying an element in an XML document.
@@ -30,7 +30,7 @@ import type { SwXmlNode } from "../parser";
  * ]
  * ```
  */
-export type SwXmlPath = { index: number; tag: string }[];
+export type SwXmlPath = readonly { index: number; tag: string }[];
 
 /**
  * Context information provided to schema parsing callbacks.
@@ -42,14 +42,20 @@ export interface SchemaParseContext {
    * The path identifies the element currently being parsed, rather than
    * the specific attribute or child element that caused the issue.
    */
-  xmlPath: SwXmlPath;
+  readonly xmlPath: SwXmlPath;
+
+  readonly root: SwXmlNodeList;
+
+  readonly node: SwXmlNode | undefined;
 
   // todo: node, tree, schemaPath, schema の追加検討
 }
 
-export function newSchemaParseContext(): SchemaParseContext {
+export function newSchemaParseContext(root: SwXmlNodeList): SchemaParseContext {
   return {
     xmlPath: [],
+    root,
+    node: undefined,
   };
 }
 

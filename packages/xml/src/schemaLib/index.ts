@@ -4,7 +4,6 @@ export * from "./classes";
 export * from "./errors";
 export * from "./parseOptions";
 export * from "./types";
-export * from "./utils";
 
 /**
  * Creates a schema for Stormworks 2D vector records with optional x and y fields.

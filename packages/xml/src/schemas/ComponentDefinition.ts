@@ -1,5 +1,4 @@
 import { parseSwXml } from "../parser";
-import type { SchemaSafeParseResult } from "../schemaLib";
 import * as x from "../schemaLib";
 import type { ParseOptions } from "../types";
 
@@ -269,7 +268,7 @@ export type ComponentDefinition = x.InferShape<typeof ComponentDefinitionSchema.
 /**
  * Parses a Stormworks component definition XML document.
  *
- * @throws {@link import("../schemaLib").SwXmlSchemaError} when the XML content
+ * @throws {@link import("../schemaLib").SchemaError} when the XML content
  * does not match the component definition schema.
  */
 export function parseComponentDefinitionXml(
@@ -286,7 +285,7 @@ export function parseComponentDefinitionXml(
 export function safeParseComponentDefinitionXml(
   input: string | Uint8Array<ArrayBuffer>,
   options: ParseOptions = {},
-): SchemaSafeParseResult<ComponentDefinition> {
+): x.Result<ComponentDefinition, x.SchemaError> {
   const tree = parseSwXml(input);
-  return ComponentDefinitionSchema.safeParseTree(tree, "definition", options);
+  return ComponentDefinitionSchema.safeParse(tree, "definition", options);
 }

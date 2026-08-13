@@ -1,24 +1,20 @@
-import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import {
-  assertXmlNode,
-  createSwXmlIssue,
-  evaluateUnknownFieldMode,
-  parseTree,
-  safeParse,
+  checkUnknownFields,
+  parseList,
+  safeParseChild,
+  safeParseTree,
   serializeElement,
+  unwrapResult,
+  validateSchemaInput,
 } from "../internal";
 import {
-  newSchemaParseContext,
   OptionalSchema,
-  prependSchemaIssuePath,
-  selectChild,
   SchemaError,
-  type AnySchemaIssue,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type ElementSchema,
   type WriteElementCallback,
   type ElementSchemaSerializeResult,
@@ -27,102 +23,74 @@ import {
   type Shape,
   type ObjectShape,
   type ExtendShape,
+  type Result,
+  type SchemaParseFieldResult,
 } from "..";
 
 /**
  * A schema that parses XML list elements as JavaScript arrays.
  */
 export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<Infer<T>[]> {
+  readonly name = "list";
+
   constructor(
     public readonly itemTag: string,
     public readonly itemSchema: T,
   ) {}
 
-  /**
-   * Parses an XML element as a list container.
-   *
-   * @throws {@link SwXmlSchemaError} when the value does not match the schema.
-   */
-  parse(
-    value: SchemaInput,
-    ctx: SchemaParseContext = newSchemaParseContext(),
+  safeParseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): Infer<T>[] {
-    assertXmlNode(value, "list");
+  ): Result<Infer<T>[], SchemaError> {
+    const r = validateSchemaInput(input, "xml_element", this.name);
+    if (!r.success) return r;
+    const value = r.data;
 
-    const parsed: Infer<T>[] = [];
-    const issues: AnySchemaIssue[] = [];
+    const { items, issues } = parseList(value, this.itemTag, this.itemSchema, ctx, options, [
+      "items",
+    ]);
 
-    for (const [key, attrValue] of value.attrs) {
-      const mode = evaluateUnknownFieldMode(
-        ctx,
-        { kind: "attribute", key, value: attrValue },
-        options,
-      );
-      if (mode === "ignore") continue;
+    const issues2 = checkUnknownFields(value, null, this.itemTag, ctx, options);
 
-      issues.push(
-        createSwXmlIssue("unknown_attribute", {
-          message: `Expected no attribute for a list tag, found ${key}="${escapeXmlAttribute(attrValue)}".`,
-          key,
-          value: attrValue,
-        }),
-      );
-    }
+    issues.push(...issues2);
 
-    for (const [index, item] of value.nodes.entries()) {
-      if (item.tag !== this.itemTag) {
-        // 未知子要素
-        const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child: item }, options);
-        if (mode === "ignore") continue;
-
-        issues.push(
-          createSwXmlIssue("unknown_child", {
-            message: `Expected list item <${this.itemTag}>, found <${item.tag}>.`,
-            child: item,
-          }),
-        );
-      }
-
-      const newCtx: SchemaParseContext = {
-        ...ctx,
-        xmlPath: ctx.xmlPath.concat({ index, tag: item.tag }),
+    if (issues.length === 0) {
+      return {
+        success: true,
+        data: items,
       };
-
-      try {
-        parsed.push(this.itemSchema.parse(item, newCtx, options));
-      } catch (error) {
-        if (error instanceof SchemaError) {
-          issues.push(...prependSchemaIssuePath(error, [index]).issues);
-          continue;
-        }
-        throw error;
-      }
+    } else {
+      return {
+        success: false,
+        error: new SchemaError(issues),
+      };
     }
-
-    if (issues.length > 0) {
-      throw new SchemaError(issues);
-    }
-
-    return parsed;
   }
 
-  parseField(
-    parent: SwXmlNode,
-    key: string,
-    ctx?: SchemaParseContext,
+  parseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): Infer<T>[] {
-    const child = selectChild(parent, key, ctx, options);
-    return this.parse(child?.value, child?.newCtx ?? ctx, options);
+    return unwrapResult(this.safeParseValue(input, ctx, options));
+  }
+
+  safeParseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaParseFieldResult<Infer<T>[]> {
+    return safeParseChild(this, parent, key, ctx, options);
   }
 
   safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
+    rootTag: string,
     options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<Infer<T>[]> {
-    return safeParse(() => this.parse(value, ctx, options));
+  ): Result<Infer<T>[], SchemaError> {
+    return safeParseTree(this, tree, rootTag, options);
   }
 
   parseTree(
@@ -130,19 +98,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     rootTag: string,
     options?: SchemaParseOptions,
   ): Infer<T>[] {
-    return parseTree("list", tree, rootTag, options, (el, ctx, options) =>
-      this.parse(el, ctx, options),
-    );
-  }
-
-  safeParseTree(
-    tree: SwXmlNodeList,
-    rootTag: string,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<Infer<T>[]> {
-    return parseTree("list", tree, rootTag, options, (el, ctx, options) =>
-      this.safeParse(el, ctx, options),
-    );
+    return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
   serializeField(value: unknown): ElementSchemaSerializeResult {

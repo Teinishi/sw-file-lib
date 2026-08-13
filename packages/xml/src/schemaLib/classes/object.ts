@@ -1,112 +1,106 @@
 import { isStringKeyRecord } from "@core";
-import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import {
-  assertXmlNode,
-  createSwXmlIssue,
-  evaluateUnknownFieldMode,
-  parseRecordElement,
-  parseTree,
-  safeParse,
+  checkUnknownFields,
+  parseShape,
+  safeParseChild,
+  safeParseTree,
   serializeElement,
+  unwrapResult,
+  validateSchemaInput,
 } from "../internal";
 import {
   OptionalSchema,
-  selectChild,
   SchemaError,
   type InferShape,
   type PartialShape,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type Shape,
   type ElementSchema,
   type WriteElementCallback,
   type ElementSchemaSerializeResult,
   type ExtendObjectSchema,
   type ExtendShape,
+  type Result,
+  type SchemaParseFieldResult,
 } from "..";
 
 /**
  * A schema that parses XML record elements as JavaScript objects.
  */
 export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T>> {
+  readonly name = "object";
+
   constructor(public readonly shape: T) {}
+
+  /**
+   * Parses an XML element as a record without throwing an error.
+   *
+   * Known fields are parsed with the configured field schemas. Primitive fields
+   * read attributes, while object and list fields read child elements.
+   */
+  safeParseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): Result<InferShape<T>, SchemaError> {
+    const r = validateSchemaInput(input, "xml_element", this.name);
+    if (!r.success) return r;
+    const value = r.data;
+
+    const { data, dataSource, issues } = parseShape(value, this.shape, ctx, options);
+
+    const issues2 = checkUnknownFields(value, dataSource, null, ctx, options);
+
+    issues.push(...issues2);
+
+    if (issues.length === 0) {
+      return {
+        success: true,
+        data,
+      };
+    } else {
+      return {
+        success: false,
+        error: new SchemaError(issues),
+      };
+    }
+  }
 
   /**
    * Parses an XML element as a record.
    *
    * Known fields are parsed with the configured field schemas. Primitive fields
-   * read attributes, while object and list fields read child elements. Unknown
-   * fields are preserved unless {@link SchemaParseOptions.omitUnknownField} is
-   * true.
+   * read attributes, while object and list fields read child elements.
    *
-   * @throws {@link SwXmlSchemaError} when the value does not match the schema.
+   * @throws {@link SchemaError} when the value does not match the schema.
    */
-  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferShape<T> {
-    assertXmlNode(value, "object");
-
-    const { parsed, issues } = parseRecordElement(value, this.shape, ctx, options);
-
-    for (const [key, attrValue] of value.attrs) {
-      if (key in this.shape) continue;
-
-      // 未知属性
-      const mode = evaluateUnknownFieldMode(
-        ctx,
-        { kind: "attribute", key, value: attrValue },
-        options,
-      );
-      if (mode === "ignore") continue;
-
-      issues.push(
-        createSwXmlIssue("unknown_attribute", {
-          message: `Unknown attribute: ${key}="${escapeXmlAttribute(attrValue)}".`,
-          key,
-          value: attrValue,
-        }),
-      );
-    }
-
-    for (const [index, child] of value.nodes.entries()) {
-      if (child.tag in this.shape) continue;
-
-      // 未知子要素
-      const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child }, options);
-      if (mode === "ignore") continue;
-
-      issues.push(
-        createSwXmlIssue("unknown_child", {
-          message: `Unknown child element: <${child.tag}>.`,
-          child,
-        }),
-      );
-    }
-
-    if (issues.length > 0) {
-      throw new SchemaError(issues);
-    }
-
-    return parsed as InferShape<T>;
-  }
-
-  parseField(
-    parent: SwXmlNode,
-    key: string,
-    ctx?: SchemaParseContext,
+  parseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): InferShape<T> {
-    const child = selectChild(parent, key, ctx, options);
-    return this.parse(child?.value, child?.newCtx ?? ctx, options);
+    return unwrapResult(this.safeParseValue(input, ctx, options));
+  }
+
+  safeParseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaParseFieldResult<InferShape<T>> {
+    return safeParseChild(this, parent, key, ctx, options);
   }
 
   safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
+    rootTag: string,
     options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferShape<T>> {
-    return safeParse(() => this.parse(value, ctx, options));
+  ): Result<InferShape<T>, SchemaError> {
+    return safeParseTree(this, tree, rootTag, options);
   }
 
   parseTree(
@@ -114,19 +108,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     rootTag: string,
     options?: SchemaParseOptions,
   ): InferShape<T> {
-    return parseTree("object", tree, rootTag, options, (el, ctx, options) =>
-      this.parse(el, ctx, options),
-    );
-  }
-
-  safeParseTree(
-    tree: SwXmlNodeList,
-    rootTag: string,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferShape<T>> {
-    return parseTree("object", tree, rootTag, options, (el, ctx, options) =>
-      this.safeParse(el, ctx, options),
-    );
+    return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
   serializeField(value: unknown): ElementSchemaSerializeResult {

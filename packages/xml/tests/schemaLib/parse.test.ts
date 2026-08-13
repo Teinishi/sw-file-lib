@@ -4,30 +4,30 @@ import { x } from "@xml";
 describe("schemaLib parse", () => {
   describe("primitive", () => {
     test("string", () => {
-      const schema = x.string();
+      const schema = x.object({ value: x.string() });
 
-      const result = schema.parse("hello");
+      const result = schema.parseTree('<root value="hello"/>', "root");
 
-      expect(result).toBe("hello");
-      expectTypeOf(result).toEqualTypeOf<string>();
+      expect(result.value).toBe("hello");
+      expectTypeOf(result.value).toEqualTypeOf<string>();
     });
 
     test("number", () => {
-      const schema = x.number();
+      const schema = x.object({ value: x.number() });
 
-      const result = schema.parse("123");
+      const result = schema.parseTree('<root value="123"/>', "root");
 
-      expect(result).toBe(123);
-      expectTypeOf(result).toEqualTypeOf<number>();
+      expect(result.value).toBe(123);
+      expectTypeOf(result.value).toEqualTypeOf<number>();
     });
 
     test("boolean", () => {
-      const schema = x.boolean();
+      const schema = x.object({ value: x.boolean() });
 
-      const result = schema.parse("true");
+      const result = schema.parseTree('<root value="true"/>', "root");
 
-      expect(result).toBe(true);
-      expectTypeOf(result).toEqualTypeOf<boolean>();
+      expect(result.value).toBe(true);
+      expectTypeOf(result.value).toEqualTypeOf<boolean>();
     });
 
     test("text nodes are ignored", () => {
@@ -285,36 +285,36 @@ describe("schemaLib parse", () => {
 
   describe("union", () => {
     test("parses boolean or string", () => {
-      const schema = x.union([x.boolean(), x.string()]);
+      const schema = x.object({ value: x.union([x.boolean(), x.string()]) });
 
-      const trueResult = schema.parse("true");
-      const stringResult = schema.parse("hello");
+      const trueResult = schema.parseTree('<root value="true"/>', "root");
+      const stringResult = schema.parseTree('<root value="hello"/>', "root");
 
-      expect(trueResult).toBe(true);
-      expect(stringResult).toBe("hello");
+      expect(trueResult.value).toBe(true);
+      expect(stringResult.value).toBe("hello");
 
-      expectTypeOf(trueResult).toEqualTypeOf<boolean | string>();
+      expectTypeOf(trueResult.value).toEqualTypeOf<boolean | string>();
     });
 
     test("parses number or string", () => {
-      const schema = x.union([x.number(), x.string()]);
+      const schema = x.object({ value: x.union([x.number(), x.string()]) });
 
-      const numberResult = schema.parse("123");
-      const stringResult = schema.parse("hello");
+      const numberResult = schema.parseTree('<root value="123"/>', "root");
+      const stringResult = schema.parseTree('<root value="hello"/>', "root");
 
-      expect(numberResult).toBe(123);
-      expect(stringResult).toBe("hello");
+      expect(numberResult.value).toBe(123);
+      expect(stringResult.value).toBe("hello");
 
-      expectTypeOf(numberResult).toEqualTypeOf<number | string>();
+      expectTypeOf(numberResult.value).toEqualTypeOf<number | string>();
     });
 
     test("tries schemas from left to right", () => {
-      const schema = x.union([x.boolean(), x.string()]);
+      const schema = x.object({ value: x.union([x.boolean(), x.string()]) });
 
-      const result = schema.parse("false");
+      const result = schema.parseTree('<root value="false"/>', "root");
 
-      expect(result).toBe(false);
-      expectTypeOf(result).toEqualTypeOf<boolean | string>();
+      expect(result.value).toBe(false);
+      expectTypeOf(result.value).toEqualTypeOf<boolean | string>();
     });
 
     test("can distinguish attribute and child-element forms", () => {

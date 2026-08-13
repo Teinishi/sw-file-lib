@@ -1,5 +1,4 @@
 import { parseSwXml } from "../parser";
-import type { SchemaSafeParseResult } from "../schemaLib";
 import * as x from "../schemaLib";
 import type { ParseOptions } from "../types";
 
@@ -161,7 +160,7 @@ export type Microcontroller = x.InferShape<typeof MicrocontrollerSchema.shape>;
 /**
  * Parses a Stormworks microcontroller XML document.
  *
- * @throws {@link import("../schemaLib").SwXmlSchemaError} when the XML content
+ * @throws {@link import("../schemaLib").SchemaError} when the XML content
  * does not match the microcontroller schema.
  */
 export function parseMicrocontrollerXml(
@@ -178,7 +177,7 @@ export function parseMicrocontrollerXml(
 export function safeParseMicrocontrollerXml(
   input: string | Uint8Array<ArrayBuffer>,
   options: ParseOptions = {},
-): SchemaSafeParseResult<Microcontroller> {
+): x.Result<Microcontroller, x.SchemaError> {
   const tree = parseSwXml(input);
-  return MicrocontrollerSchema.safeParseTree(tree, "microprocessor", options);
+  return MicrocontrollerSchema.safeParse(tree, "microprocessor", options);
 }

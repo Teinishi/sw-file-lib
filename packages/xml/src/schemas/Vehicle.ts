@@ -1,5 +1,4 @@
 import { parseSwXml } from "../parser";
-import type { SchemaSafeParseResult } from "../schemaLib";
 import * as x from "../schemaLib";
 import type { ParseOptions } from "../types";
 import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
@@ -202,7 +201,7 @@ export type Vehicle = x.InferShape<typeof VehicleSchema.shape>;
 /**
  * Parses a Stormworks vehicle XML document.
  *
- * @throws {@link import("../schemaLib").SwXmlSchemaError} when the XML content
+ * @throws {@link import("../schemaLib").SchemaError} when the XML content
  * does not match the vehicle schema.
  */
 export function parseVehicleXml(
@@ -219,7 +218,7 @@ export function parseVehicleXml(
 export function safeParseVehicleXml(
   input: string | Uint8Array<ArrayBuffer>,
   options: ParseOptions = {},
-): SchemaSafeParseResult<Vehicle> {
+): x.Result<Vehicle, x.SchemaError> {
   const tree = parseSwXml(input);
-  return VehicleSchema.safeParseTree(tree, "vehicle", options);
+  return VehicleSchema.safeParse(tree, "vehicle", options);
 }

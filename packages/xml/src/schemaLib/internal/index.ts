@@ -4,20 +4,58 @@ import {
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type SchemaIssue,
   type SchemaIssueBase,
   type SchemaIssueMap,
   type UnknownFieldCallback,
   type UnknownFieldMode,
-  selectChild,
   type AnySchemaIssue,
   type Shape,
   prependSchemaIssuePath,
   type ElementSchemaSerializeResult,
+  OptionalSchema,
+  type InferShape,
+  type ExpectedSchemaInputType,
+  type Result,
+  type Schema,
+  type ElementSchema,
+  type SchemaParseFieldChildResult,
+  type SwXmlPath,
 } from "..";
-import { parseSwXml, SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
-import { XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import {
+  parseSwXml,
+  SwXmlNode,
+  SwXmlNodeList,
+  SwXmlStructureError,
+  type DuplicateChildElementMode,
+} from "../../parser";
+import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+
+export function extendSchemaParseContext(
+  ctx: SchemaParseContext,
+  extendPath: SwXmlPath,
+): SchemaParseContext {
+  let node = ctx.node;
+  if (ctx.xmlPath.length === 0) {
+    const i = extendPath[0]?.index;
+    if (i !== undefined) {
+      node = ctx.root.nodes[i];
+    }
+    for (const seg of extendPath.slice(1)) {
+      node = node?.nodes[seg.index];
+    }
+  } else {
+    for (const seg of extendPath) {
+      node = node?.nodes[seg.index];
+    }
+  }
+
+  return {
+    xmlPath: ctx.xmlPath.concat(extendPath),
+    root: ctx.root,
+    node,
+  };
+}
 
 export function createSwXmlIssue<T extends keyof SchemaIssueMap>(
   code: T,
@@ -30,43 +68,42 @@ export function createSwXmlIssue<T extends keyof SchemaIssueMap>(
   };
 }
 
-export function assertString(value: SchemaInput, schemaName: string): asserts value is string {
-  if (typeof value === "string") return;
-  if (value === undefined) {
-    throw new SchemaError([
-      createSwXmlIssue("missing_required_field", {
-        message: `Required ${schemaName} field is missing.`,
-        expected: "string",
-      }),
-    ]);
-  } else {
-    throw new SchemaError([
-      createSwXmlIssue("invalid_type", {
-        message: `Expected string, received ${describeSchemaInput(value)}.`,
-        expected: "string",
-        value,
-      }),
-    ]);
-  }
+export function createMissingRequiredFieldError(
+  expected: ExpectedSchemaInputType,
+  schemaName: string,
+) {
+  return new SchemaError([
+    createSwXmlIssue("missing_required_field", {
+      message: `Required ${schemaName} field is missing.`,
+      expected,
+    }),
+  ]);
 }
 
-export function assertXmlNode(value: SchemaInput, schemaName: string): asserts value is SwXmlNode {
-  if (isSwXmlNode(value)) return;
-  if (value === undefined) {
-    throw new SchemaError([
-      createSwXmlIssue("missing_required_field", {
-        message: `Required ${schemaName} field is missing.`,
-        expected: "xml_element",
-      }),
-    ]);
+export function validateSchemaInput<E extends ExpectedSchemaInputType>(
+  input: SchemaInput,
+  expected: E,
+  schemaName: string,
+): Result<E extends "string" ? string : SwXmlNode, SchemaError> {
+  if (input === undefined) {
+    return {
+      success: false,
+      error: createMissingRequiredFieldError(expected, schemaName),
+    };
+  }
+  if (expected === "string" ? typeof input === "string" : isSwXmlNode(input)) {
+    return { success: true, data: input as E extends "string" ? string : SwXmlNode };
   } else {
-    throw new SchemaError([
-      createSwXmlIssue("invalid_type", {
-        message: `Expected XML element, received ${describeSchemaInput(value)}.`,
-        expected: "xml_element",
-        value,
-      }),
-    ]);
+    return {
+      success: false,
+      error: new SchemaError([
+        createSwXmlIssue("invalid_type", {
+          message: `Expected ${expected === "string" ? "string" : "XML element"}, received ${describeSchemaInput(input)}.`,
+          expected,
+          value: input,
+        }),
+      ]),
+    };
   }
 }
 
@@ -81,43 +118,133 @@ function isSwXmlNode(value: SchemaInput): value is SwXmlNode {
   return typeof value === "object" && value !== null && "tag" in value && "attrs" in value;
 }
 
-// record 要素の属性と子要素を shape でパース
-export function parseRecordElement(
+export type DataSource = "attribute" | "child" | "failed";
+
+/**
+ * Shape をもとに属性や子要素をパースしてデータオブジェクトを作成
+ */
+export function parseShape<T extends Shape>(
   value: SwXmlNode,
-  shape: Shape,
-  ctx?: SchemaParseContext,
+  shape: T,
+  ctx: SchemaParseContext,
   options?: SchemaParseOptions,
-  prependPath: (string | number)[] = [],
+  prependPath: string[] = [],
 ) {
-  const parsed: Record<string, unknown> = {};
+  const data: Record<string, unknown> = {};
+  const dataSource: Record<string, DataSource> = {};
   const issues: AnySchemaIssue[] = [];
 
   for (const [key, schema] of Object.entries(shape)) {
-    let parsedValue;
-    try {
-      parsedValue = schema.parseField(value, key, ctx, options);
-    } catch (error) {
-      if (error instanceof SchemaError) {
-        issues.push(...prependSchemaIssuePath(error, [...prependPath, key]).issues);
-        continue;
+    const result = schema.safeParseField(value, key, ctx, options);
+    if (!result.success) {
+      issues.push(...prependSchemaIssuePath(result.error, [...prependPath, key]).issues);
+      dataSource[key] = "failed";
+    } else if (!(schema instanceof OptionalSchema) || result.data !== undefined) {
+      if (!("omitted" in result.data) || !result.data.omitted) {
+        data[key] = result.data.value;
+        dataSource[key] = result.data.source;
       }
-      throw error;
-    }
-
-    if (parsedValue !== undefined || hasField(value, key)) {
-      parsed[key] = parsedValue;
     }
   }
 
-  return { parsed, issues };
+  return {
+    data: data as InferShape<T>,
+    dataSource: dataSource as { [key in keyof T]: DataSource },
+    issues,
+  };
 }
 
-function hasField(parent: SwXmlNode, key: string): boolean {
-  return parent.attrs.has(key) || parent.nodes.some((child) => child.tag === key);
+/**
+ * itemTag, itemSchema をもとに子要素をリストアイテムとしてパースしてデータ配列を作成
+ */
+export function parseList<T>(
+  value: SwXmlNodeList,
+  itemTag: string,
+  itemSchema: ElementSchema<T>,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+  prependPath: string[] = [],
+) {
+  const items: T[] = [];
+  const issues: AnySchemaIssue[] = [];
+
+  for (const [index, child] of value.nodes.entries()) {
+    if (child.tag !== itemTag) continue;
+
+    const newCtx = extendSchemaParseContext(ctx, [{ index, tag: child.tag }]);
+
+    const result = itemSchema.safeParseValue(child, newCtx, options);
+    if (!result.success) {
+      issues.push(...prependSchemaIssuePath(result.error, [...prependPath, index]).issues);
+    } else {
+      items.push(result.data);
+    }
+  }
+
+  return { items, issues };
+}
+
+/**
+ * 未処理の属性・子要素を見つけて issues にまとめる
+ */
+export function checkUnknownFields(
+  value: SwXmlNode,
+  dataSource: Record<string, DataSource> | null,
+  itemTag: string | null,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+) {
+  const issues: AnySchemaIssue[] = [];
+
+  if (options?.unknownField === "ignore") return issues;
+
+  for (const [key, attrValue] of value.attrs) {
+    if (dataSource !== null) {
+      const s = dataSource[key];
+      if (s === "attribute" || s === "failed") continue;
+    }
+
+    const mode = evaluateUnknownFieldMode(
+      ctx,
+      { kind: "attribute", key, value: attrValue },
+      options,
+    );
+    if (mode === "ignore") continue;
+
+    issues.push(
+      createSwXmlIssue("unknown_attribute", {
+        message: `${dataSource !== null ? "Unknown attribute: " : "Expected no attribute, but got "}${key}="${escapeXmlAttribute(attrValue)}".`,
+        key,
+        value: attrValue,
+      }),
+    );
+  }
+
+  for (const [index, child] of value.nodes.entries()) {
+    if (child.tag === itemTag) {
+      continue;
+    }
+    if (dataSource !== null) {
+      const s = dataSource[child.tag];
+      if (s === "child" || s === "failed") continue;
+    }
+
+    const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child }, options);
+    if (mode === "ignore") continue;
+
+    issues.push(
+      createSwXmlIssue("unknown_child", {
+        message: `Unknown child element: <${child.tag}>.`,
+        child,
+      }),
+    );
+  }
+
+  return issues;
 }
 
 export function evaluateUnknownFieldMode(
-  ctx: SchemaParseContext = newSchemaParseContext(),
+  ctx: SchemaParseContext,
   target: Parameters<UnknownFieldCallback>[1],
   options?: SchemaParseOptions,
 ): UnknownFieldMode {
@@ -129,7 +256,7 @@ export function evaluateUnknownFieldMode(
 }
 
 export function evaluateDuplicateChildElementMode(
-  ctx: SchemaParseContext = newSchemaParseContext(),
+  ctx: SchemaParseContext,
   target: string,
   options?: SchemaParseOptions,
 ): DuplicateChildElementMode {
@@ -140,45 +267,94 @@ export function evaluateDuplicateChildElementMode(
   }
 }
 
-export function safeParse<T>(getData: () => T): SchemaSafeParseResult<T> {
+export function selectChild(
+  nodeList: SwXmlNodeList,
+  tag: string,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+): { value: SwXmlNode; newCtx: SchemaParseContext } | undefined {
+  let result;
+
   try {
-    return {
-      success: true,
-      data: getData(),
-    };
-  } catch (error) {
-    if (error instanceof SchemaError) {
-      return {
-        success: false,
-        error,
-      };
+    if (nodeList.countChild(tag) === 1) {
+      result = nodeList.child(tag);
+    } else {
+      const mode = evaluateDuplicateChildElementMode(ctx, tag, options);
+      result = nodeList.selectChild(tag, mode);
     }
-    throw error;
+  } catch (e) {
+    if (e instanceof SwXmlStructureError) {
+      throw new SchemaError([
+        createSwXmlIssue("structure_error", {
+          message: e.message,
+          structureError: e,
+        }),
+      ]);
+    }
+    throw e;
+  }
+
+  if (!result) return;
+
+  return {
+    value: result.value,
+    newCtx: extendSchemaParseContext(ctx, [{ index: result.index, tag }]),
+  };
+}
+
+export function unwrapResult<T, E>(result: Result<T, E>): T {
+  if (result.success) {
+    return result.data;
+  } else {
+    throw result.error;
   }
 }
 
-export function parseTree<T>(
-  schemaName: string,
+export function safeParseChild<T>(
+  schema: Schema<T>,
+  parent: SwXmlNodeList,
+  key: string,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+): SchemaParseFieldChildResult<T> {
+  const child = selectChild(parent, key, ctx, options);
+  if (child === undefined) {
+    return {
+      success: false,
+      error: createMissingRequiredFieldError("xml_element", schema.name),
+    };
+  }
+  const r = schema.safeParseValue(child.value, child.newCtx, options);
+  if (!r.success) return r;
+  return {
+    success: true,
+    data: {
+      value: r.data,
+      source: "child",
+    },
+  };
+}
+
+export function safeParseTree<T>(
+  schema: Schema<T>,
   tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
   rootTag: string,
   options: SchemaParseOptions | undefined,
-  getData: (el: SwXmlNode, ctx: SchemaParseContext, options: SchemaParseOptions | undefined) => T,
-): T {
+): Result<T, SchemaError> {
   if (!(tree instanceof SwXmlNodeList)) {
     tree = parseSwXml(tree);
   }
 
-  const ctx = newSchemaParseContext();
-  const child = selectChild(tree, rootTag, ctx, options);
-  if (child === undefined) {
-    throw new SchemaError([
-      createSwXmlIssue("missing_required_field", {
-        message: `Required ${schemaName} field is missing.`,
-        expected: "xml_element",
-      }),
-    ]);
+  const ctx = newSchemaParseContext(tree);
+  const r = safeParseChild(schema, tree, rootTag, ctx, options);
+  if (!r.success) {
+    return r;
+  } else {
+    return {
+      success: true,
+      data: r.data.value,
+    };
   }
-  return getData(child.value, child.newCtx, options);
 }
 
 export function serializeElement(

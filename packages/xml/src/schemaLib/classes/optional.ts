@@ -1,45 +1,65 @@
 import type { SwXmlNode } from "../../parser";
-import { safeParse } from "../internal";
 import {
+  SchemaError,
+  type Result,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type SchemaSerializeResult,
 } from "..";
+import { unwrapResult } from "../internal";
 
 /**
  * A schema wrapper that accepts undefined values.
  */
 export class OptionalSchema<T> {
+  readonly name = "optional";
+
   constructor(readonly inner: Schema<T>) {}
 
-  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T | undefined {
-    if (value === undefined) {
-      return undefined;
+  safeParseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): Result<T | undefined, SchemaError> {
+    if (input === undefined) {
+      return { success: true, data: undefined };
+    } else {
+      return this.inner.safeParseValue(input, ctx, options);
     }
-    return this.inner.parse(value, ctx, options);
   }
 
-  parseField(
-    parent: SwXmlNode,
-    key: string,
-    ctx?: SchemaParseContext,
+  parseValue(
+    value: SchemaInput,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): T | undefined {
-    if (!hasField(parent, key)) {
-      return undefined;
-    }
-    return this.inner.parseField(parent, key, ctx, options);
+    return unwrapResult(this.safeParseValue(value, ctx, options));
   }
 
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
+  safeParseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<T | undefined> {
-    return safeParse(() => this.parse(value, ctx, options));
+  ): Result<
+    { omitted: true } | { omitted: false; value: T; source: "attribute" | "child" },
+    SchemaError
+  > {
+    if (!hasField(parent, key)) {
+      return { success: true, data: { omitted: true } };
+    }
+    const r = this.inner.safeParseField(parent, key, ctx, options);
+    if (!r.success) return r;
+    return {
+      success: true,
+      data: {
+        omitted: false,
+        value: r.data.value,
+        source: r.data.source,
+      },
+    };
   }
 
   serializeField(value: unknown): SchemaSerializeResult {

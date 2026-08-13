@@ -1,25 +1,22 @@
 import { isStringKeyRecord } from "@core";
-import { escapeXmlAttribute, type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import {
-  assertXmlNode,
-  createSwXmlIssue,
-  evaluateUnknownFieldMode,
-  parseRecordElement,
-  parseTree,
-  safeParse,
+  checkUnknownFields,
+  parseList,
+  parseShape,
+  safeParseChild,
+  safeParseTree,
   serializeElement,
+  unwrapResult,
+  validateSchemaInput,
 } from "../internal";
 import {
-  newSchemaParseContext,
   OptionalSchema,
-  prependSchemaIssuePath,
-  selectChild,
   SchemaError,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type ElementSchema,
   type Shape,
   ObjectSchema,
@@ -29,6 +26,8 @@ import {
   type ExtendShape,
   type InferShape,
   type ObjectShape,
+  type Result,
+  type SchemaParseFieldResult,
 } from "..";
 
 export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
@@ -42,106 +41,74 @@ export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
 export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> implements ElementSchema<
   InferMetaList<M, I>
 > {
+  readonly name = "metalist";
+
   constructor(
     public readonly itemTag: string,
     public readonly metaShape: M,
     public readonly itemSchema: I,
   ) {}
 
-  /**
-   * Parses an XML element as a list container.
-   *
-   * @throws {@link SwXmlSchemaError} when the value does not match the schema.
-   */
-  parse(
-    value: SchemaInput,
-    ctx: SchemaParseContext = newSchemaParseContext(),
+  safeParseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): InferMetaList<M, I> {
-    assertXmlNode(value, "metalist");
+  ): Result<InferMetaList<M, I>, SchemaError> {
+    const r = validateSchemaInput(input, "xml_element", this.name);
+    if (!r.success) return r;
+    const value = r.data;
 
-    const shape = this.metaShape;
+    const { data, dataSource, issues } = parseShape(value, this.metaShape, ctx, options, ["meta"]);
+    const { items, issues: issues2 } = parseList(
+      value,
+      this.itemTag,
+      this.itemSchema,
+      ctx,
+      options,
+      ["items"],
+    );
 
-    const { parsed: meta, issues } = parseRecordElement(value, shape, ctx, options, ["meta"]);
+    const issues3 = checkUnknownFields(value, dataSource, this.itemTag, ctx, options);
 
-    const items: Infer<I>[] = [];
+    issues.push(...issues2);
+    issues.push(...issues3);
 
-    for (const [key, attrValue] of value.attrs) {
-      if (key in this.metaShape) continue;
-
-      // 未知属性
-      const mode = evaluateUnknownFieldMode(
-        ctx,
-        { kind: "attribute", key, value: attrValue },
-        options,
-      );
-      if (mode === "ignore") continue;
-
-      issues.push(
-        createSwXmlIssue("unknown_attribute", {
-          message: `Unknown attribute: ${key}="${escapeXmlAttribute(attrValue)}".`,
-          key,
-          value: attrValue,
-        }),
-      );
-    }
-
-    for (const [index, child] of value.nodes.entries()) {
-      const isItem = child.tag === this.itemTag;
-      if (!isItem && !(child.tag in this.metaShape)) {
-        // 未知子要素
-        const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child: child }, options);
-        if (mode === "ignore") continue;
-
-        issues.push(
-          createSwXmlIssue("unknown_child", {
-            message: `Unknown child element: <${child.tag}>.`,
-            child: child,
-          }),
-        );
-      }
-
-      if (!isItem) continue;
-
-      const newCtx: SchemaParseContext = {
-        ...ctx,
-        xmlPath: ctx.xmlPath.concat({ index, tag: child.tag }),
+    if (issues.length === 0) {
+      return {
+        success: true,
+        data: { meta: data, items },
       };
-
-      try {
-        items.push(this.itemSchema.parse(child, newCtx, options));
-      } catch (error) {
-        if (error instanceof SchemaError) {
-          issues.push(...prependSchemaIssuePath(error, ["items", index]).issues);
-          continue;
-        }
-        throw error;
-      }
+    } else {
+      return {
+        success: false,
+        error: new SchemaError(issues),
+      };
     }
-
-    if (issues.length > 0) {
-      throw new SchemaError(issues);
-    }
-
-    return { meta: meta as InferShape<M>, items };
   }
 
-  parseField(
-    parent: SwXmlNode,
-    key: string,
-    ctx?: SchemaParseContext,
+  parseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): InferMetaList<M, I> {
-    const child = selectChild(parent, key, ctx, options);
-    return this.parse(child?.value, child?.newCtx ?? ctx, options);
+    return unwrapResult(this.safeParseValue(input, ctx, options));
+  }
+
+  safeParseField(
+    parent: SwXmlNode,
+    key: string,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): SchemaParseFieldResult<InferMetaList<M, I>> {
+    return safeParseChild(this, parent, key, ctx, options);
   }
 
   safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
+    rootTag: string,
     options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferMetaList<M, I>> {
-    return safeParse(() => this.parse(value, ctx, options));
+  ): Result<InferMetaList<M, I>, SchemaError> {
+    return safeParseTree(this, tree, rootTag, options);
   }
 
   parseTree(
@@ -149,19 +116,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     rootTag: string,
     options?: SchemaParseOptions,
   ): InferMetaList<M, I> {
-    return parseTree("metalist", tree, rootTag, options, (el, ctx, options) =>
-      this.parse(el, ctx, options),
-    );
-  }
-
-  safeParseTree(
-    tree: SwXmlNodeList,
-    rootTag: string,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferMetaList<M, I>> {
-    return parseTree("metalist", tree, rootTag, options, (el, ctx, options) =>
-      this.safeParse(el, ctx, options),
-    );
+    return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
   serializeField(value: unknown): ElementSchemaSerializeResult {

@@ -1,13 +1,14 @@
 import { SwXmlNode } from "../../parser";
-import { assertString, createSwXmlIssue, safeParse } from "../internal";
+import { createSwXmlIssue, unwrapResult, validateSchemaInput } from "../internal";
 import {
   OptionalSchema,
   SchemaError,
+  type Result,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
+  type SchemaParseFieldAttributeResult,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type SchemaSerializeResult,
 } from "..";
 
@@ -15,36 +16,51 @@ import {
  * A schema that parses XML text values as booleans.
  */
 export class BooleanSchema implements Schema<boolean> {
-  parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): boolean {
-    assertString(value, "boolean");
+  readonly name = "boolean";
 
-    if (value === "true") return true;
-    if (value === "false") return false;
+  safeParseValue(
+    input: SchemaInput,
+    _ctx: SchemaParseContext,
+    _options?: SchemaParseOptions,
+  ): Result<boolean, SchemaError> {
+    const r = validateSchemaInput(input, "string", this.name);
+    if (!r.success) return r;
+    const value = r.data;
 
-    throw new SchemaError([
-      createSwXmlIssue("invalid_value", {
-        message: `Expected "true" or "false", received ${JSON.stringify(value)}.`,
-        expected: "boolean_string",
-        value,
-      }),
-    ]);
+    if (value === "true") return { success: true, data: true };
+    if (value === "false") return { success: true, data: false };
+
+    return {
+      success: false,
+      error: new SchemaError([
+        createSwXmlIssue("invalid_value", {
+          message: `Expected "true" or "false", received ${JSON.stringify(value)}.`,
+          expected: "boolean_string",
+          value,
+        }),
+      ]),
+    };
   }
 
-  parseField(
+  parseValue(input: SchemaInput, ctx: SchemaParseContext, options?: SchemaParseOptions): boolean {
+    return unwrapResult(this.safeParseValue(input, ctx, options));
+  }
+
+  safeParseField(
     parent: SwXmlNode,
     key: string,
-    ctx?: SchemaParseContext,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): boolean {
-    return this.parse(parent.attr(key), ctx, options);
-  }
-
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<boolean> {
-    return safeParse(() => this.parse(value, ctx, options));
+  ): SchemaParseFieldAttributeResult<boolean> {
+    const r = this.safeParseValue(parent.attr(key), ctx, options);
+    if (r.success) {
+      return {
+        success: true,
+        data: { value: r.data, source: "attribute" },
+      };
+    } else {
+      return r;
+    }
   }
 
   serializeField(value: unknown): SchemaSerializeResult {

@@ -1,14 +1,15 @@
 import type { SwXmlNode } from "../../parser";
-import { createSwXmlIssue, safeParse } from "../internal";
+import { createSwXmlIssue, unwrapResult } from "../internal";
 import {
   OptionalSchema,
   SchemaError,
   type Infer,
+  type Result,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
+  type SchemaParseFieldResult,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type SchemaSerializeResult,
 } from "..";
 
@@ -17,66 +18,72 @@ export type SchemaTuple = readonly Schema<any>[];
 export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 
 export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
+  readonly name = "union";
+
   constructor(public readonly schemas: T) {}
 
-  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): InferUnion<T> {
+  safeParseValue(
+    input: SchemaInput,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): Result<Infer<T[number]>, SchemaError> {
     const errors: SchemaError[] = [];
 
     for (const schema of this.schemas) {
-      try {
-        return schema.parse(value, ctx, options);
-      } catch (error) {
-        if (error instanceof SchemaError) {
-          errors.push(error);
-        } else {
-          throw error;
-        }
+      const r = schema.safeParseValue(input, ctx, options);
+      if (r.success) {
+        return r;
+      } else {
+        errors.push(r.error);
       }
     }
 
-    throw new SchemaError([
-      createSwXmlIssue("invalid_union", {
-        message: "Value does not match any union schema.",
-        unionErrors: errors,
-        value,
-      }),
-    ]);
+    return {
+      success: false,
+      error: new SchemaError([
+        createSwXmlIssue("invalid_union", {
+          message: "Value does not match any union schema.",
+          unionErrors: errors,
+          value: input,
+        }),
+      ]),
+    };
   }
 
-  parseField(
+  parseValue(
+    value: SchemaInput,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ): Infer<T[number]> {
+    return unwrapResult(this.safeParseValue(value, ctx, options));
+  }
+
+  safeParseField(
     parent: SwXmlNode,
     key: string,
-    ctx?: SchemaParseContext,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): InferUnion<T> {
+  ): SchemaParseFieldResult<Infer<T[number]>> {
     const errors: SchemaError[] = [];
 
     for (const schema of this.schemas) {
-      try {
-        return schema.parseField(parent, key, ctx, options);
-      } catch (e) {
-        if (e instanceof SchemaError) {
-          errors.push(e);
-        } else {
-          throw e;
-        }
+      const r = schema.safeParseField(parent, key, ctx, options);
+      if (r.success) {
+        return r;
+      } else {
+        errors.push(r.error);
       }
     }
 
-    throw new SchemaError([
-      createSwXmlIssue("invalid_union", {
-        message: "Value does not match any union schema.",
-        unionErrors: errors,
-      }),
-    ]);
-  }
-
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<InferUnion<T>> {
-    return safeParse(() => this.parse(value, ctx, options));
+    return {
+      success: false,
+      error: new SchemaError([
+        createSwXmlIssue("invalid_union", {
+          message: "Value does not match any union schema.",
+          unionErrors: errors,
+        }),
+      ]),
+    };
   }
 
   serializeField(value: unknown): SchemaSerializeResult {

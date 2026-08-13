@@ -4,6 +4,16 @@ import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import type { SchemaError } from "./errors";
 import type { SchemaParseContext, SchemaParseOptions } from "./parseOptions";
 
+export type Result<T, E> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: E;
+    };
+
 /**
  * A value accepted by schemas.
  *
@@ -12,15 +22,17 @@ import type { SchemaParseContext, SchemaParseOptions } from "./parseOptions";
  */
 export type SchemaInput = SwXmlNode | string | undefined;
 
-export type SchemaSafeParseResult<T> =
-  | {
-      success: true;
-      data: T;
-    }
-  | {
-      success: false;
-      error: SchemaError;
-    };
+export type SchemaParseFieldResult<T> = Result<
+  { value: T; source: "attribute" | "child" },
+  SchemaError
+>;
+
+export type SchemaParseFieldAttributeResult<T> = Result<
+  { value: T; source: "attribute" },
+  SchemaError
+>;
+
+export type SchemaParseFieldChildResult<T> = Result<{ value: T; source: "child" }, SchemaError>;
 
 export type WriteElementCallback = (name: string, writer: XmlWriter) => void;
 
@@ -41,35 +53,46 @@ export type SchemaSerializeResult =
  * A schema that parses a Stormworks XML node into a typed value.
  */
 export interface Schema<T> {
+  readonly name: string;
+
+  /**
+   * Parses a Stormworks XML node or attribute value without throwing schema errors.
+   *
+   * todo: 通常これを直接使わず、ObjectSchema, ListSchema, MetaListSchema の safeParse を使うことを明記
+   */
+  safeParseValue: (
+    input: SchemaInput,
+    ctx: SchemaParseContext,
+    options?: SchemaParseOptions,
+  ) => Result<T, SchemaError>;
+
   /**
    * Parses a Stormworks XML node or attribute value.
    *
-   * @throws {@link SwXmlSchemaError} when the value does not match the schema.
+   * todo: 通常これを直接使わず、ObjectSchema, ListSchema, MetaListSchema の parse を使うことを明記
+   *
+   * @throws {@link SchemaError} when the value does not match the schema.
    */
-  parse(value: SchemaInput, ctx?: SchemaParseContext, options?: SchemaParseOptions): T;
+  parseValue: (input: SchemaInput, ctx: SchemaParseContext, options?: SchemaParseOptions) => T;
 
   /**
    * Parses one field from an XML record node.
    *
    * Primitive schemas read attributes. Object and list schemas read child
    * elements.
+   *
+   * todo: 通常これを直接使うことはないことを明記
    */
-  parseField(
+  safeParseField: (
     parent: SwXmlNode,
     key: string,
-    ctx?: SchemaParseContext,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): T;
+  ) => SchemaParseFieldResult<T>;
 
   /**
-   * Parses a Stormworks XML node or attribute value without throwing schema errors.
+   * todo: 通常これを直接使うことはないことを明記
    */
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<T>;
-
   serializeField(value: unknown): SchemaSerializeResult;
 
   /**
@@ -80,7 +103,18 @@ export interface Schema<T> {
 
 export interface ElementSchema<T> extends Schema<T> {
   /**
+   * Parses from XML tree with the root tag name specified without throwing schema errors.
+   */
+  safeParse: (
+    tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
+    rootTag: string,
+    options?: SchemaParseOptions,
+  ) => Result<T, SchemaError>;
+
+  /**
    * Parses from XML tree with the root tag name specified.
+   *
+   * @throws {@link SchemaError} when the value does not match the schema.
    */
   parseTree: (
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
@@ -89,15 +123,9 @@ export interface ElementSchema<T> extends Schema<T> {
   ) => T;
 
   /**
-   * Parses from XML tree with the root tag name specified without throwing schema errors.
+   * todo: 通常これを直接使うことはないことを明記
    */
-  safeParseTree(
-    tree: SwXmlNodeList,
-    rootTag: string,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<T>;
-
-  serializeField(value: unknown): ElementSchemaSerializeResult;
+  serializeField: (value: unknown) => ElementSchemaSerializeResult;
 
   /**
    * Serializes data into an XmlWriter.

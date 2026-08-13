@@ -395,7 +395,7 @@ describe("schemaLib", () => {
 
     const tree = parseSwXml('<root name="Test" mass="heavy"><position x="1"/></root>');
 
-    const result = schema.safeParseTree(tree, "root");
+    const result = schema.safeParse(tree, "root");
 
     expect(result.success).toBe(false);
     if (result.success) throw new Error("Unexpected parse success");
@@ -457,6 +457,8 @@ describe("schemaLib", () => {
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       1,
       {
+        node: expect.objectContaining({ tag: "surface" }),
+        root: expect.objectContaining({}),
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
@@ -469,6 +471,8 @@ describe("schemaLib", () => {
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       2,
       {
+        node: expect.objectContaining({ tag: "surfaces" }),
+        root: expect.objectContaining({}),
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
@@ -479,19 +483,29 @@ describe("schemaLib", () => {
 
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       3,
-      { xmlPath: [{ index: 0, tag: "root" }] },
+      {
+        node: expect.objectContaining({ tag: "root" }),
+        root: expect.objectContaining({}),
+        xmlPath: [{ index: 0, tag: "root" }],
+      },
       { kind: "attribute", key: "unknown_attr", value: "0" },
     );
 
     expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
       1,
-      { xmlPath: [{ index: 0, tag: "root" }] },
+      {
+        node: expect.objectContaining({ tag: "root" }),
+        root: expect.objectContaining({}),
+        xmlPath: [{ index: 0, tag: "root" }],
+      },
       "surfaces",
     );
 
     expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
       2,
       {
+        node: expect.objectContaining({ tag: "surface" }),
+        root: expect.objectContaining({}),
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
@@ -501,10 +515,6 @@ describe("schemaLib", () => {
       "position",
     );
 
-    expect(data.surfaces).toEqual([
-      {
-        position: { x: 1, y: 2, z: 3 },
-      },
-    ]);
+    expect(data.surfaces).toEqual([{ position: { x: 1, y: 2, z: 3 } }]);
   });
 });

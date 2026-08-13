@@ -1,12 +1,14 @@
 import type { SwXmlNode } from "../../parser";
-import { assertString, safeParse } from "../internal";
+import { unwrapResult, validateSchemaInput } from "../internal";
 import {
   OptionalSchema,
+  SchemaError,
+  type Result,
   type Schema,
   type SchemaInput,
   type SchemaParseContext,
+  type SchemaParseFieldAttributeResult,
   type SchemaParseOptions,
-  type SchemaSafeParseResult,
   type SchemaSerializeResult,
 } from "..";
 
@@ -14,27 +16,42 @@ import {
  * A schema that parses XML text values as strings.
  */
 export class StringSchema implements Schema<string> {
-  parse(value: SchemaInput, _ctx?: SchemaParseContext, _options?: SchemaParseOptions): string {
-    assertString(value, "string");
+  readonly name = "string";
 
-    return value;
+  safeParseValue(
+    input: SchemaInput,
+    _ctx: SchemaParseContext,
+    _options?: SchemaParseOptions,
+  ): Result<string, SchemaError> {
+    const r = validateSchemaInput(input, "string", this.name);
+    if (!r.success) return r;
+    const value = r.data;
+
+    return {
+      success: true,
+      data: value,
+    };
   }
 
-  parseField(
+  parseValue(input: SchemaInput, ctx: SchemaParseContext, options?: SchemaParseOptions): string {
+    return unwrapResult(this.safeParseValue(input, ctx, options));
+  }
+
+  safeParseField(
     parent: SwXmlNode,
     key: string,
-    ctx?: SchemaParseContext,
+    ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): string {
-    return this.parse(parent.attr(key), ctx, options);
-  }
-
-  safeParse(
-    value: SchemaInput,
-    ctx?: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): SchemaSafeParseResult<string> {
-    return safeParse(() => this.parse(value, ctx, options));
+  ): SchemaParseFieldAttributeResult<string> {
+    const r = this.safeParseValue(parent.attr(key), ctx, options);
+    if (r.success) {
+      return {
+        success: true,
+        data: { value: r.data, source: "attribute" },
+      };
+    } else {
+      return r;
+    }
   }
 
   serializeField(value: unknown): SchemaSerializeResult {
