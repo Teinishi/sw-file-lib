@@ -45,7 +45,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
         createSwXmlIssue("invalid_union", {
           message: "Value does not match any union schema.",
           unionErrors: errors,
-          value: input,
+          input: input,
         }),
       ]),
     };
@@ -82,6 +82,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
         createSwXmlIssue("invalid_union", {
           message: "Value does not match any union schema.",
           unionErrors: errors,
+          input: { element: parent, key },
         }),
       ]),
     };

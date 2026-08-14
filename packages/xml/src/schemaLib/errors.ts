@@ -52,15 +52,19 @@ export interface SchemaIssueMap {
     expected: ExpectedSchemaInputType;
   };
 
-  invalid_list_item_tag: {};
-
   invalid_union: {
+    /**
+     * Errors returned by each union branch.
+     */
     unionErrors: readonly SchemaError[];
 
     /**
-     * The original value that caused the issue.
+     * The input that failed to match any union branch.
+     *
+     * When parsing a field, this is the parent element and field key because
+     * the union could have matched either an attribute or a child element.
      */
-    value?: SchemaInput;
+    input: SchemaInput | { element: SwXmlNode; key: string };
   };
 
   duplicate_elements: {};

@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
-import { x } from "@xml";
+import { parseSwXml, x } from "@xml";
 
 describe("schemaLib parse", () => {
   describe("primitive", () => {
@@ -404,6 +404,268 @@ describe("schemaLib parse", () => {
           }[];
         };
       }>();
+    });
+  });
+
+  describe("errors", () => {
+    test("safeParseValue returns invalid_type when a primitive receives an XML element", () => {
+      const tree = parseSwXml("<value/>");
+      const element = tree.nodes[0]!;
+
+      const result = x.string().safeParseValue(element, {
+        xmlPath: [{ index: 0, tag: "value" }],
+        root: tree,
+        element,
+        schemaPath: [],
+      });
+
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error("Unexpected parse success");
+
+      expect(result.error).toBeInstanceOf(x.SchemaError);
+      expect(result.error.message).toBe("<root>: Expected string, received <value>.");
+      expect(result.error.issues).toMatchObject([
+        {
+          code: "invalid_type",
+          path: [],
+          expected: "string",
+          value: element,
+        },
+      ]);
+    });
+
+    test("safeParse returns path-aware invalid values and missing fields", () => {
+      const schema = x.object({
+        name: x.string(),
+        enabled: x.boolean(),
+        transform: x.object({
+          x: x.number(),
+          y: x.number(),
+        }),
+      });
+
+      const result = schema.safeParse(
+        '<root name="body" enabled="yes"><transform x="left"/></root>',
+        "root",
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error("Unexpected parse success");
+
+      expect(result.error).toBeInstanceOf(x.SchemaError);
+      expect(result.error.message).toBe(
+        'enabled: Expected "true" or "false", received "yes". (3 issues total)',
+      );
+      expect(result.error.issues).toMatchObject([
+        {
+          code: "invalid_value",
+          path: ["enabled"],
+          expected: "boolean_string",
+          value: "yes",
+        },
+        {
+          code: "invalid_value",
+          path: ["transform", "x"],
+          expected: "numeric_string",
+          value: "left",
+        },
+        {
+          code: "missing_required_field",
+          path: ["transform", "y"],
+          expected: "string",
+        },
+      ]);
+    });
+
+    test("parseTree throws SchemaError with the same structured issues", () => {
+      const schema = x.object({
+        size: x.number(),
+      });
+
+      let error: unknown;
+      try {
+        schema.parseTree('<root size="large"/>', "root");
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeInstanceOf(x.SchemaError);
+      if (!(error instanceof x.SchemaError)) throw new Error("Unexpected error");
+
+      expect(error.message).toBe('size: Expected a numeric string, received "large".');
+      expect(error.issues).toMatchObject([
+        {
+          code: "invalid_value",
+          path: ["size"],
+          expected: "numeric_string",
+          value: "large",
+        },
+      ]);
+    });
+
+    test("safeParse reports unknown attributes and child elements", () => {
+      const schema = x.object({
+        known: x.string(),
+        child: x.object({
+          id: x.number(),
+        }),
+      });
+
+      const result = schema.safeParse(
+        '<root known="ok" extra="attr"><child id="1"/><extraChild/></root>',
+        "root",
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error("Unexpected parse success");
+
+      expect(result.error.issues).toMatchObject([
+        {
+          code: "unknown_attribute",
+          path: [],
+          key: "extra",
+          value: "attr",
+        },
+        {
+          code: "unknown_child",
+          path: [],
+          child: expect.objectContaining({ tag: "extraChild" }),
+        },
+      ]);
+    });
+
+    test("unknownField ignore suppresses unknown field issues", () => {
+      const schema = x.object({
+        known: x.string(),
+      });
+
+      const result = schema.safeParse('<root known="ok" extra="attr"><extraChild/></root>', "root", {
+        unknownField: "ignore",
+      });
+
+      expect(result).toEqual({
+        success: true,
+        data: { known: "ok" },
+      });
+    });
+
+    test("safeParse reports duplicate child elements for single-child fields", () => {
+      const schema = x.object({
+        position: x.object({
+          x: x.number(),
+        }),
+      });
+
+      const result = schema.safeParse(
+        '<root><position x="1"/><position x="2"/></root>',
+        "root",
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error("Unexpected parse success");
+
+      expect(result.error.issues).toMatchObject([
+        {
+          code: "duplicate_elements",
+          path: ["position"],
+          message: "Expected record of unique tags, got 2 of <position>.",
+        },
+      ]);
+    });
+
+    test("duplicateChildElement last selects the last matching child", () => {
+      const schema = x.object({
+        position: x.object({
+          x: x.number(),
+        }),
+      });
+
+      const result = schema.safeParse(
+        '<root><position x="1"/><position x="2"/></root>',
+        "root",
+        { duplicateChildElement: "last" },
+      );
+
+      expect(result).toEqual({
+        success: true,
+        data: {
+          position: { x: 2 },
+        },
+      });
+    });
+
+    test("safeParse reports union errors with each branch error preserved", () => {
+      const schema = x.object({
+        value: x.union([x.boolean(), x.number()]),
+      });
+
+      const tree = parseSwXml('<root value="maybe"/>');
+      const root = tree.nodes[0]!;
+      const result = schema.safeParse(tree, "root");
+
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error("Unexpected parse success");
+
+      expect(result.error.issues).toMatchObject([
+        {
+          code: "invalid_union",
+          path: ["value"],
+          input: {
+            element: root,
+            key: "value",
+          },
+          unionErrors: [
+            {
+              issues: [
+                {
+                  code: "invalid_value",
+                  path: [],
+                  expected: "boolean_string",
+                  value: "maybe",
+                },
+              ],
+            },
+            {
+              issues: [
+                {
+                  code: "invalid_value",
+                  path: [],
+                  expected: "numeric_string",
+                  value: "maybe",
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+    });
+
+    test("safeParse reports list item errors with item indexes", () => {
+      const schema = x.object({
+        items: x.list(
+          "item",
+          x.object({
+            id: x.number(),
+          }),
+        ),
+      });
+
+      const result = schema.safeParse(
+        '<root><items><item id="1"/><item id="two"/></items></root>',
+        "root",
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error("Unexpected parse success");
+
+      expect(result.error.issues).toMatchObject([
+        {
+          code: "invalid_value",
+          path: ["items", 1, "id"],
+          expected: "numeric_string",
+          value: "two",
+        },
+      ]);
     });
   });
 });
