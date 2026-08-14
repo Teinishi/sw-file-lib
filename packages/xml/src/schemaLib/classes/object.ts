@@ -16,6 +16,7 @@ import {
   type ExtendShape,
   type Result,
   type SchemaParseFieldResult,
+  SchemaSerializeError,
 } from "..";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
@@ -154,12 +155,20 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     };
   }
 
+  safeSerialize(
+    data: InferShape<T>,
+    rootTag: string,
+    writer?: XmlWriter | XmlWriterOptions,
+  ): Result<XmlWriter, SchemaSerializeError> {
+    return serializeElement(this.serializeField(data), rootTag, writer);
+  }
+
   serialize(
     data: InferShape<T>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
-    return serializeElement(this.serializeField(data), rootTag, writer);
+    return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
   optional(): OptionalSchema<InferShape<T>> {

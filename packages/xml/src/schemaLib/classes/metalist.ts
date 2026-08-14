@@ -17,6 +17,7 @@ import {
   type ObjectShape,
   type Result,
   type SchemaParseFieldResult,
+  SchemaSerializeError,
 } from "..";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
@@ -162,7 +163,10 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
       const item = value.items[index];
       const r = itemSchema.serializeField(item);
       if (r.kind === "failed") {
-        return { kind: "failed", error: prependSchemaSerializeIssuePath(r.error, ["items", index]) };
+        return {
+          kind: "failed",
+          error: prependSchemaSerializeIssuePath(r.error, ["items", index]),
+        };
       }
       children.push([itemTag, r.write]);
     }
@@ -183,12 +187,20 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     };
   }
 
+  safeSerialize(
+    data: InferMetaList<M, I>,
+    rootTag: string,
+    writer?: XmlWriter | XmlWriterOptions,
+  ): Result<XmlWriter, SchemaSerializeError> {
+    return serializeElement(this.serializeField(data), rootTag, writer);
+  }
+
   serialize(
     data: InferMetaList<M, I>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
-    return serializeElement(this.serializeField(data), rootTag, writer);
+    return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
   optional(): OptionalSchema<InferMetaList<M, I>> {

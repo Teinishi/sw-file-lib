@@ -190,6 +190,15 @@ export interface ElementSchema<T> extends Schema<T> {
   serializeField: (value: unknown) => ElementSchemaSerializeResult;
 
   /**
+   * Serializes data into an XmlWriter without throwing an error.
+   */
+  safeSerialize: (
+    data: T,
+    rootTag: string,
+    writer?: XmlWriter | XmlWriterOptions,
+  ) => Result<XmlWriter, SchemaSerializeError>;
+
+  /**
    * Serializes data into an XmlWriter.
    */
   serialize: (data: T, rootTag: string, writer?: XmlWriter | XmlWriterOptions) => XmlWriter;

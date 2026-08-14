@@ -425,9 +425,12 @@ export function serializeElement(
   serializeResult: ElementSchemaSerializeResult,
   rootTag: string,
   writer?: XmlWriter | XmlWriterOptions,
-): XmlWriter {
+): Result<XmlWriter, SchemaSerializeError> {
   if (serializeResult.kind === "failed") {
-    throw serializeResult.error;
+    return {
+      success: false,
+      error: serializeResult.error,
+    };
   }
 
   if (!(writer instanceof XmlWriter)) {
@@ -435,5 +438,8 @@ export function serializeElement(
   }
 
   serializeResult.write(rootTag, writer);
-  return writer;
+  return {
+    success: true,
+    data: writer,
+  };
 }
