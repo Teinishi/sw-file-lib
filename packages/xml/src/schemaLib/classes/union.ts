@@ -14,10 +14,23 @@ import {
 import type { SwXmlNode } from "../../parser";
 import { createSwXmlIssue, unwrapResult } from "../internal";
 
+/**
+ * The schema list accepted by a union schema.
+ */
 export type SchemaTuple = readonly Schema<any>[];
 
+/**
+ * Infers the value produced by any branch of a union schema.
+ */
 export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
 
+/**
+ * A schema that tries multiple schemas from left to right.
+ *
+ * Parsing succeeds with the first branch that matches. Parse errors keep the
+ * errors returned by each branch, and serialization errors report the direct
+ * branch schema names as the expected value.
+ */
 export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
   readonly name = "union";
 
@@ -119,6 +132,9 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
   }
 }
 
+/**
+ * Creates a schema that accepts any value accepted by one of the given schemas.
+ */
 export function union<T extends SchemaTuple>(schemas: T): UnionSchema<T> {
   return new UnionSchema(schemas);
 }

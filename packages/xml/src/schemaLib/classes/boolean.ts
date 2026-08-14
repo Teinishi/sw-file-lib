@@ -18,7 +18,10 @@ import {
 } from "../internal";
 
 /**
- * A schema that parses XML text values as booleans.
+ * A schema that parses XML attribute values as booleans.
+ *
+ * The XML strings `"true"` and `"false"` are accepted. Serialization writes
+ * booleans back as those same strings.
  */
 export class BooleanSchema implements Schema<boolean> {
   readonly name = "boolean";
@@ -85,7 +88,7 @@ export class BooleanSchema implements Schema<boolean> {
 }
 
 /**
- * Creates a schema that parses XML text values as booleans.
+ * Creates a schema that parses XML attribute values as booleans.
  */
 export function boolean(): BooleanSchema {
   return new BooleanSchema();

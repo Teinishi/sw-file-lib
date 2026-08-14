@@ -33,6 +33,9 @@ import {
   validateSchemaInput,
 } from "../internal";
 
+/**
+ * Infers the value produced by a metalist schema.
+ */
 export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
   meta: InferShape<M>;
   items: Infer<U>[];
@@ -187,6 +190,9 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     };
   }
 
+  /**
+   * Serializes a metalist value into an XML element without throwing.
+   */
   safeSerialize(
     data: InferMetaList<M, I>,
     rootTag: string,
@@ -195,6 +201,12 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     return serializeElement(this.serializeField(data), rootTag, writer);
   }
 
+  /**
+   * Serializes a metalist value into an XML element.
+   *
+   * @throws {@link SchemaSerializeError} when metadata or any item cannot be
+   * serialized.
+   */
   serialize(
     data: InferMetaList<M, I>,
     rootTag: string,
@@ -237,6 +249,9 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
   }
 }
 
+/**
+ * A metalist schema whose item schema is an object schema.
+ */
 export class ObjectMetaListSchema<M extends Shape, I extends Shape> extends MetaListSchema<
   M,
   ObjectSchema<I>
@@ -259,7 +274,10 @@ export class ObjectMetaListSchema<M extends Shape, I extends Shape> extends Meta
 }
 
 /**
- * Creates a schema that parses XML list elements as JavaScript arrays.
+ * Creates a schema for list elements that also carry metadata fields.
+ *
+ * Metadata fields are read from the list element itself, while items are read
+ * from repeated child elements with `itemTag`.
  */
 export function metalist<M extends Shape, I extends ElementSchema<any>>(
   itemTag: string,

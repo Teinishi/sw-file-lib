@@ -12,6 +12,9 @@ import { unwrapResult } from "../internal";
 
 /**
  * A schema wrapper that accepts undefined values.
+ *
+ * Missing fields are omitted from parsed objects, and undefined values are
+ * omitted during serialization.
  */
 export class OptionalSchema<T> {
   readonly name = "optional";

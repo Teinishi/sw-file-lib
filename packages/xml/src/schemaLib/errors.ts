@@ -70,17 +70,30 @@ export interface SchemaIssueMap {
   duplicate_elements: {};
 
   unknown_attribute: {
+    /**
+     * The unknown attribute name.
+     */
     key: string;
+
+    /**
+     * The raw attribute value.
+     */
     value: string;
   };
 
   unknown_child: {
+    /**
+     * The unknown child element.
+     */
     child: SwXmlNode;
   };
 }
 
 export type SchemaIssue<T extends keyof SchemaIssueMap> = SchemaIssueBase<T> & SchemaIssueMap[T];
 
+/**
+ * Any schema validation issue produced by the parser.
+ */
 export type AnySchemaIssue = {
   [T in keyof SchemaIssueMap]: SchemaIssue<T>;
 }[keyof SchemaIssueMap];
@@ -102,11 +115,34 @@ export class SchemaError extends Error {
 }
 
 export interface SchemaSerializeIssue {
+  /**
+   * The path to the value that could not be serialized.
+   */
   path: SchemaPath;
+
+  /**
+   * Human-readable description of the serialization failure.
+   */
   message: string;
+
+  /**
+   * The expected value shape or type.
+   */
   expected?: string;
+
+  /**
+   * The schema that detected the failure.
+   */
   schema?: string;
+
+  /**
+   * The original value that caused the issue.
+   */
   value?: unknown;
+
+  /**
+   * Nested serialization errors, used for union schemas.
+   */
   errors?: readonly SchemaSerializeError[];
 }
 
@@ -135,6 +171,9 @@ export function prependSchemaIssuePath(error: SchemaError, path: SchemaPath): Sc
   );
 }
 
+/**
+ * Prepends path segments to every issue in a schema serialization error.
+ */
 export function prependSchemaSerializeIssuePath(
   error: SchemaSerializeError,
   path: SchemaPath,
@@ -163,6 +202,9 @@ function formatSerializeIssues(issues: readonly SchemaSerializeIssue[]): string 
   return `${formatSchemaPath(first.path)}: ${first.message}${suffix}`;
 }
 
+/**
+ * Formats a schema path for error messages.
+ */
 export function formatSchemaPath(path: SchemaPath): string {
   if (path.length === 0) return "<root>";
 

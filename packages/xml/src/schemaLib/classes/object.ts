@@ -155,6 +155,9 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     };
   }
 
+  /**
+   * Serializes an object value into an XML element without throwing.
+   */
   safeSerialize(
     data: InferShape<T>,
     rootTag: string,
@@ -163,6 +166,11 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     return serializeElement(this.serializeField(data), rootTag, writer);
   }
 
+  /**
+   * Serializes an object value into an XML element.
+   *
+   * @throws {@link SchemaSerializeError} when any field cannot be serialized.
+   */
   serialize(
     data: InferShape<T>,
     rootTag: string,
@@ -214,7 +222,9 @@ export function object<T extends Shape>(shape: T): ObjectSchema<T> {
 }
 
 /**
- * Syntax sugar for `x.object(...).partial()`
+ * Creates an object schema where every field is optional.
+ *
+ * This is syntax sugar for `x.object(...).partial()`.
  */
 export function partialObject<T extends Shape>(shape: T): ObjectSchema<PartialShape<T>> {
   return object(shape).partial();

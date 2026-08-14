@@ -136,6 +136,9 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     };
   }
 
+  /**
+   * Serializes an array value into an XML element without throwing.
+   */
   safeSerialize(
     data: Infer<T>[],
     rootTag: string,
@@ -144,6 +147,12 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     return serializeElement(this.serializeField(data), rootTag, writer);
   }
 
+  /**
+   * Serializes an array value into an XML element.
+   *
+   * @throws {@link SchemaSerializeError} when the value or any item cannot be
+   * serialized.
+   */
   serialize(data: Infer<T>[], rootTag: string, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
@@ -160,6 +169,9 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
   }
 }
 
+/**
+ * A list schema whose item schema is an object schema.
+ */
 export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T>> {
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
@@ -177,7 +189,7 @@ export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T
 }
 
 /**
- * Creates a schema that parses XML list elements as JavaScript arrays.
+ * Creates a schema that parses repeated child elements as a JavaScript array.
  */
 export function list<T extends ElementSchema<any>>(
   itemTag: string,

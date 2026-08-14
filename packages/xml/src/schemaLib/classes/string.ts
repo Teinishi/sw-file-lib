@@ -13,7 +13,7 @@ import type { SwXmlNode } from "../../parser";
 import { createSchemaSerializeTypeError, unwrapResult, validateSchemaInput } from "../internal";
 
 /**
- * A schema that parses XML text values as strings.
+ * A schema that parses XML attribute values as strings.
  */
 export class StringSchema implements Schema<string> {
   readonly name = "string";
@@ -68,7 +68,7 @@ export class StringSchema implements Schema<string> {
 }
 
 /**
- * Creates a schema that parses XML text values as strings.
+ * Creates a schema that parses XML attribute values as strings.
  */
 export function string(): StringSchema {
   return new StringSchema();

@@ -18,7 +18,10 @@ import {
 } from "../internal";
 
 /**
- * A schema that parses XML text values as numbers.
+ * A schema that parses XML attribute values as numbers.
+ *
+ * Values are parsed with JavaScript's `Number` conversion. `NaN` is rejected
+ * unless {@link SchemaParseOptions.allowNaN} is enabled.
  */
 export class NumberSchema implements Schema<number> {
   readonly name = "number";
@@ -85,7 +88,7 @@ export class NumberSchema implements Schema<number> {
 }
 
 /**
- * Creates a schema that parses XML text values as numbers.
+ * Creates a schema that parses XML attribute values as numbers.
  */
 export function number(): NumberSchema {
   return new NumberSchema();
