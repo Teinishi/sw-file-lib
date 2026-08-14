@@ -1,5 +1,5 @@
 import type { SwXmlNode, SwXmlNodeList } from "../parser";
-import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
+import type { XmlWriter, XmlWriterOptions } from "../writer";
 import type { ObjectSchema, OptionalSchema } from "./classes";
 import type { SchemaError, SchemaSerializeError } from "./errors";
 import type { SchemaParseContext, SchemaParseOptions } from "./parseOptions";

@@ -25,7 +25,7 @@ import {
   type DuplicateChildElementData,
 } from "..";
 import { parseSwXml, SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
-import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer";
 
 export function newSchemaParseContext(root: SwXmlNodeList): SchemaParseContext {
   return {

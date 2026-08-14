@@ -20,7 +20,7 @@ import {
   SchemaSerializeError,
 } from "..";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
-import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
+import { type XmlWriter, type XmlWriterOptions } from "../../writer";
 import {
   checkUnknownFields,
   createSchemaSerializeTypeError,

@@ -2,102 +2,69 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import {
-  ComponentDefinitionBuilder,
   parseSwXml,
-  RawXmlTreeList,
-  SwXmlNode,
-  SwXmlNodeList,
   safeParseComponentDefinitionXml,
   ComponentDefinitionSchema,
   x,
+  componentDefinitionUtils,
 } from "@xml";
 import { searchRom } from "../../../internalUtils/src/testUtils";
 
-describe("component definition", () => {
-  test("ComponentDefinitionBuilder", async () => {
+describe("componentDefinition", () => {
+  test("build component definition", async () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const builder = new ComponentDefinitionBuilder();
+    const schema = ComponentDefinitionSchema.extend((_) => ({
+      unknown_attr: x.string().optional(),
+    }));
 
-    builder.addAttribute("name", "(M) Test Cube 1");
-    builder.addAttribute("category", 0);
-    builder.addAttribute("type", 0);
-    builder.addAttribute("mass", 1);
-    builder.addAttribute("value", 2);
-    builder.addAttribute("flags", 0);
-    builder.addAttribute("tags", "basic");
-    builder.addAttribute("mesh_data_name", "test_cube_1.mesh");
-    builder.addAttribute("unknown_attr", "anything");
+    const data: x.Infer<typeof schema> = {};
 
-    builder.addSurfacesCuboid({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, [0, 1, 2, 3, 4, 5], {
-      shape: 0,
-    });
-    builder.addBuoyancySurfacesCuboid(
+    data.name = "(M) Test Cube 1";
+    data.category = 0;
+    data.type = 0;
+    data.mass = 1;
+    data.value = 2;
+    data.flags = 0;
+    data.tags = "basic";
+    data.mesh_data_name = "test_cube_1.mesh";
+    data.unknown_attr = "anything";
+
+    data.surfaces = componentDefinitionUtils.createCuboidSurfaces(
       { x: 0, y: 0, z: 0 },
       { x: 0, y: 0, z: 0 },
       [0, 1, 2, 3, 4, 5],
-      {
-        shape: 1,
-      },
-    );
-    builder.addVoxels({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { flags: 1 });
-
-    builder.addElement("tooltip_properties", [
-      ["description", ""],
-      ["short_description", ""],
-    ]);
-    builder.addElement("reward_properties", [
-      ["tier", 0],
-      ["number_rewarded", 2000],
-    ]);
-
-    expect(builder.toXml({ indent: "\t" })).toBe(xml);
-  });
-
-  test("parse 1", () => {
-    const tree = parseSwXml(
-      '<root abc="def" 01="23">hello<position x="1" y="2" z="3"/><empty></empty></root>',
+      { shape: 0 },
     );
 
-    expect(tree).toEqual(
-      new SwXmlNodeList([
-        new SwXmlNode(
-          "root",
-          new Map([
-            ["abc", "def"],
-            ["01", "23"],
-          ]),
-          [
-            new SwXmlNode(
-              "position",
-              new Map([
-                ["x", "1"],
-                ["y", "2"],
-                ["z", "3"],
-              ]),
-              [],
-            ),
-            new SwXmlNode("empty", new Map(), []),
-          ],
-        ),
-      ]),
+    data.buoyancy_surfaces = componentDefinitionUtils.createCuboidSurfaces(
+      { x: 0, y: 0, z: 0 },
+      { x: 0, y: 0, z: 0 },
+      [0, 1, 2, 3, 4, 5],
+      { shape: 1 },
     );
 
-    expect(tree.getRawTree("root")).toEqual({
-      abc: "def",
-      "01": "23",
-      position: { x: "1", y: "2", z: "3" },
-      empty: null,
-    });
-  });
-
-  test("parse 2", () => {
-    const tree = parseSwXml('<list><item id="0"/><item id="1"/><item id="2"/></list>');
-
-    expect(tree.getRawTree("list")).toEqual(
-      new RawXmlTreeList("item", [{ id: "0" }, { id: "1" }, { id: "2" }]),
+    data.voxels = componentDefinitionUtils.createVoxels(
+      { x: 0, y: 0, z: 0 },
+      { x: 0, y: 0, z: 0 },
+      { flags: 1 },
     );
+
+    data.tooltip_properties = {
+      description: "",
+      short_description: "",
+    };
+
+    data.reward_properties = {
+      tier: 0,
+      number_rewarded: 2000,
+    };
+
+    componentDefinitionUtils.calculateVoxelBounds(data, ["voxel", "voxel_physics"]);
+
+    const serialized = schema.serialize(data, "definition", { indent: "\t" }).toString();
+    expect(serialized).toBe(xml);
   });
 
   test("parse test_cube_1.xml", async () => {

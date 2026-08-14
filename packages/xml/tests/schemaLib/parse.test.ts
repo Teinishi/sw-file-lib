@@ -539,9 +539,13 @@ describe("schemaLib parse", () => {
         known: x.string(),
       });
 
-      const result = schema.safeParse('<root known="ok" extra="attr"><extraChild/></root>', "root", {
-        unknownField: "ignore",
-      });
+      const result = schema.safeParse(
+        '<root known="ok" extra="attr"><extraChild/></root>',
+        "root",
+        {
+          unknownField: "ignore",
+        },
+      );
 
       expect(result).toEqual({
         success: true,
@@ -556,10 +560,7 @@ describe("schemaLib parse", () => {
         }),
       });
 
-      const result = schema.safeParse(
-        '<root><position x="1"/><position x="2"/></root>',
-        "root",
-      );
+      const result = schema.safeParse('<root><position x="1"/><position x="2"/></root>', "root");
 
       expect(result.success).toBe(false);
       if (result.success) throw new Error("Unexpected parse success");
@@ -580,11 +581,9 @@ describe("schemaLib parse", () => {
         }),
       });
 
-      const result = schema.safeParse(
-        '<root><position x="1"/><position x="2"/></root>',
-        "root",
-        { duplicateChildElement: "last" },
-      );
+      const result = schema.safeParse('<root><position x="1"/><position x="2"/></root>', "root", {
+        duplicateChildElement: "last",
+      });
 
       expect(result).toEqual({
         success: true,
