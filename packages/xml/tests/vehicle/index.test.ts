@@ -14,9 +14,9 @@ describe("vehicle", () => {
 
         try {
           parseVehicleXml(buf, {
-            duplicateChildElement(_ctx, target) {
+            duplicateChildElement(data, _ctx) {
               // bodies[*].components[*].o.microprocessor_definition.group.components[*].object.out1
-              return target === "out1" ? "last" : "error";
+              return data.tag === "out1" ? "last" : "error";
             },
           });
         } catch (e) {

@@ -1,4 +1,4 @@
-import type { SwXmlNode, SwXmlStructureError } from "../parser";
+import type { SwXmlNode } from "../parser";
 import { type SchemaInput, type SchemaPath } from "./types";
 
 /**
@@ -63,9 +63,7 @@ export interface SchemaIssueMap {
     value?: SchemaInput;
   };
 
-  structure_error: {
-    structureError: SwXmlStructureError;
-  };
+  duplicate_elements: {};
 
   unknown_attribute: {
     key: string;

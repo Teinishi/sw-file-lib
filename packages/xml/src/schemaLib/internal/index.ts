@@ -6,7 +6,6 @@ import {
   type SchemaIssue,
   type SchemaIssueBase,
   type SchemaIssueMap,
-  type UnknownFieldCallback,
   type UnknownFieldMode,
   type AnySchemaIssue,
   type Shape,
@@ -21,21 +20,17 @@ import {
   type SchemaParseFieldChildResult,
   type SwXmlPath,
   type SchemaPath,
+  type UnknownFieldData,
+  type DuplicateChildElementData,
 } from "..";
-import {
-  parseSwXml,
-  SwXmlNode,
-  SwXmlNodeList,
-  SwXmlStructureError,
-  type DuplicateChildElementMode,
-} from "../../parser";
+import { parseSwXml, SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
 import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 
 export function newSchemaParseContext(root: SwXmlNodeList): SchemaParseContext {
   return {
     xmlPath: [],
     root,
-    node: undefined,
+    element: undefined,
     schemaPath: [],
   };
 }
@@ -45,7 +40,7 @@ export function extendSchemaParseContext(
   extendXmlPath: SwXmlPath,
   extendSchemaPath: SchemaPath,
 ): SchemaParseContext {
-  let node = ctx.node;
+  let node = ctx.element;
   if (ctx.xmlPath.length === 0) {
     const i = extendXmlPath[0]?.index;
     if (i !== undefined) {
@@ -63,7 +58,7 @@ export function extendSchemaParseContext(
   return {
     xmlPath: ctx.xmlPath.concat(extendXmlPath),
     root: ctx.root,
-    node,
+    element: node,
     schemaPath: ctx.schemaPath.concat(extendSchemaPath),
   };
 }
@@ -220,8 +215,8 @@ export function checkUnknownFields(
     }
 
     const mode = evaluateUnknownFieldMode(
-      ctx,
       { kind: "attribute", key, value: attrValue },
+      ctx,
       options,
     );
     if (mode === "ignore") continue;
@@ -244,7 +239,7 @@ export function checkUnknownFields(
       if (s === "child" || s === "failed") continue;
     }
 
-    const mode = evaluateUnknownFieldMode(ctx, { kind: "child", index, child }, options);
+    const mode = evaluateUnknownFieldMode({ kind: "child", index, child }, ctx, options);
     if (mode === "ignore") continue;
 
     issues.push(
@@ -259,62 +254,27 @@ export function checkUnknownFields(
 }
 
 export function evaluateUnknownFieldMode(
+  data: UnknownFieldData,
   ctx: SchemaParseContext,
-  target: Parameters<UnknownFieldCallback>[1],
   options?: SchemaParseOptions,
 ): UnknownFieldMode {
   if (typeof options?.unknownField === "function") {
-    return options.unknownField(ctx, target);
+    return options.unknownField(data, ctx);
   } else {
     return options?.unknownField ?? "error";
   }
 }
 
 export function evaluateDuplicateChildElementMode(
+  data: DuplicateChildElementData,
   ctx: SchemaParseContext,
-  target: string,
   options?: SchemaParseOptions,
 ): DuplicateChildElementMode {
   if (typeof options?.duplicateChildElement === "function") {
-    return options.duplicateChildElement(ctx, target);
+    return options.duplicateChildElement(data, ctx);
   } else {
     return options?.duplicateChildElement ?? "error";
   }
-}
-
-export function selectChild(
-  nodeList: SwXmlNodeList,
-  tag: string,
-  ctx: SchemaParseContext,
-  options?: SchemaParseOptions,
-): { value: SwXmlNode; siblingIndex: number } | undefined {
-  let result;
-
-  try {
-    if (nodeList.countChild(tag) === 1) {
-      result = nodeList.child(tag);
-    } else {
-      const mode = evaluateDuplicateChildElementMode(ctx, tag, options);
-      result = nodeList.selectChild(tag, mode);
-    }
-  } catch (e) {
-    if (e instanceof SwXmlStructureError) {
-      throw new SchemaError([
-        createSwXmlIssue("structure_error", {
-          message: e.message,
-          structureError: e,
-        }),
-      ]);
-    }
-    throw e;
-  }
-
-  if (!result) return;
-
-  return {
-    value: result.value,
-    siblingIndex: result.index,
-  };
 }
 
 export function unwrapResult<T, E>(result: Result<T, E>): T {
@@ -323,6 +283,55 @@ export function unwrapResult<T, E>(result: Result<T, E>): T {
   } else {
     throw result.error;
   }
+}
+
+function selectChild(
+  nodeList: SwXmlNodeList,
+  tag: string,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+):
+  | { kind: "ok"; value: SwXmlNode; siblingIndex: number }
+  | { kind: "duplicate"; tag: string; candidates: SwXmlNode[] }
+  | { kind: "missing" } {
+  let selected: SwXmlNode;
+  let siblingIndex: number;
+
+  const candidates: SwXmlNode[] = [];
+  let firstIndex = -1;
+  let lastIndex = -1;
+  for (const [index, child] of nodeList.nodes.entries()) {
+    if (child.tag !== tag) continue;
+    if (firstIndex === -1) firstIndex = index;
+    lastIndex = index;
+    candidates.push(child);
+  }
+
+  if (candidates.length === 0) {
+    return { kind: "missing" };
+  }
+
+  if (candidates.length === 1) {
+    selected = candidates[0]!;
+    siblingIndex = firstIndex;
+  } else {
+    const mode = evaluateDuplicateChildElementMode({ tag, candidates }, ctx, options);
+    if (mode === "first") {
+      selected = candidates[0]!;
+      siblingIndex = firstIndex;
+    } else if (mode === "last") {
+      selected = candidates[candidates.length - 1]!;
+      siblingIndex = lastIndex;
+    } else {
+      return { kind: "duplicate", tag, candidates };
+    }
+  }
+
+  return {
+    kind: "ok",
+    value: selected,
+    siblingIndex,
+  };
 }
 
 export function safeParseChild<T>(
@@ -334,10 +343,19 @@ export function safeParseChild<T>(
   prependPath: string[] = [],
 ): SchemaParseFieldChildResult<T> {
   const child = selectChild(parent, key, ctx, options);
-  if (child === undefined) {
+  if (child.kind === "missing") {
     return {
       success: false,
       error: createMissingRequiredFieldError("xml_element", schema.name),
+    };
+  } else if (child.kind === "duplicate") {
+    return {
+      success: false,
+      error: new SchemaError([
+        createSwXmlIssue("duplicate_elements", {
+          message: `Expected record of unique tags, got ${child.candidates.length} of <${child.tag}>.`,
+        }),
+      ]),
     };
   }
 

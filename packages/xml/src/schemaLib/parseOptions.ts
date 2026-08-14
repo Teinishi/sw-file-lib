@@ -21,7 +21,7 @@ export interface SchemaParseContext {
   /**
    * The XML element currently being parsed.
    */
-  readonly node: SwXmlNode | undefined;
+  readonly element: SwXmlNode | undefined;
 
   /**
    * The path to the field in parsed JavaScript object where the issue was detected.
@@ -38,6 +38,27 @@ export interface SchemaParseContext {
 export type UnknownFieldMode = "error" | "ignore";
 
 /**
+ * The data passed to the {@link UnknownFieldCallback}.
+ */
+export type UnknownFieldData =
+  | {
+      /** An unknown attribute detected. */
+      kind: "attribute";
+      /** The attribute name. Use `ctx.element.attrs` to access all attributes. */
+      key: string;
+      /** The raw attribute value. */
+      value: string;
+    }
+  | {
+      /** An unknown child element detected. */
+      kind: "child";
+      /** The zero-based index of the child among its siblings. Use `ctx.element.nodes` to access all siblings. */
+      index: number;
+      /** The unknown child element. */
+      child: SwXmlNode;
+    };
+
+/**
  * Callback invoked when an attribute or child element is not defined
  * by the current schema.
  *
@@ -45,24 +66,8 @@ export type UnknownFieldMode = "error" | "ignore";
  * and decide whether parsing should fail or continue.
  */
 export type UnknownFieldCallback = (
+  data: UnknownFieldData,
   ctx: SchemaParseContext,
-  target:
-    | {
-        /** An unknown attribute. */
-        kind: "attribute";
-        /** The attribute name. */
-        key: string;
-        /** The raw attribute value. */
-        value: string;
-      }
-    | {
-        /** An unknown child element. */
-        kind: "child";
-        /** The zero-based index of the child among its siblings. */
-        index: number;
-        /** The unknown child element. */
-        child: SwXmlNode;
-      },
 ) => UnknownFieldMode;
 
 /**
@@ -75,6 +80,11 @@ export type UnknownFieldCallback = (
  */
 export type DuplicateChildElementMode = "error" | "last" | "first";
 
+export type DuplicateChildElementData = {
+  tag: string;
+  candidates: SwXmlNode[];
+};
+
 /**
  * Callback invoked when multiple child elements are found for a schema
  * field that expects a unique child element.
@@ -82,15 +92,13 @@ export type DuplicateChildElementMode = "error" | "last" | "first";
  * The callback can inspect the location of the duplicate elements and
  * decide which occurrence should be used, or whether parsing should fail.
  *
+ * @param data The duplicated child tag and matching candidate elements.
  * @param ctx The location of the element containing the duplicate children.
- * @param target The tag name of the duplicated child element.
  */
 export type DuplicateChildElementCallback = (
+  data: DuplicateChildElementData,
   ctx: SchemaParseContext,
-  target: string,
 ) => DuplicateChildElementMode;
-// todo: ^候補リストを渡すことも検討
-
 /**
  * Options controlling the behavior of schema parsing when the XML does
  * not exactly match the schema.

@@ -445,8 +445,8 @@ describe("schemaLib", () => {
     );
 
     const options = {
-      unknownField: ((_ctx, _target) => "ignore") satisfies x.UnknownFieldCallback,
-      duplicateChildElement: ((_ctx, _target) => "last") satisfies x.DuplicateChildElementCallback,
+      unknownField: ((_data, _ctx) => "ignore") satisfies x.UnknownFieldCallback,
+      duplicateChildElement: ((_data, _ctx) => "last") satisfies x.DuplicateChildElementCallback,
     };
 
     const unknownFieldSpy = vi.spyOn(options, "unknownField");
@@ -456,68 +456,80 @@ describe("schemaLib", () => {
 
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       1,
+      { kind: "child", index: 2, child: expect.objectContaining({ tag: "unknown_child" }) },
       {
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
           { index: 0, tag: "surface" },
         ],
-        node: expect.objectContaining({ tag: "surface" }),
+        element: expect.objectContaining({ tag: "surface" }),
         root: expect.objectContaining({}),
         schemaPath: ["surfaces", 0],
       },
-      { kind: "child", index: 2, child: expect.objectContaining({ tag: "unknown_child" }) },
     );
 
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       2,
+      { kind: "child", index: 1, child: expect.objectContaining({ tag: "unknown_item" }) },
       {
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
         ],
-        node: expect.objectContaining({ tag: "surfaces" }),
+        element: expect.objectContaining({ tag: "surfaces" }),
         root: expect.objectContaining({}),
         schemaPath: ["surfaces"],
       },
-      { kind: "child", index: 1, child: expect.objectContaining({ tag: "unknown_item" }) },
     );
 
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       3,
+      { kind: "attribute", key: "unknown_attr", value: "0" },
       {
         xmlPath: [{ index: 0, tag: "root" }],
-        node: expect.objectContaining({ tag: "root" }),
+        element: expect.objectContaining({ tag: "root" }),
         root: expect.objectContaining({}),
         schemaPath: [],
       },
-      { kind: "attribute", key: "unknown_attr", value: "0" },
     );
 
     expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
       1,
       {
+        tag: "surfaces",
+        candidates: [
+          expect.objectContaining({ tag: "surfaces" }),
+          expect.objectContaining({ tag: "surfaces" }),
+        ],
+      },
+      {
         xmlPath: [{ index: 0, tag: "root" }],
-        node: expect.objectContaining({ tag: "root" }),
+        element: expect.objectContaining({ tag: "root" }),
         root: expect.objectContaining({}),
         schemaPath: [],
       },
-      "surfaces",
     );
 
     expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
       2,
+      {
+        tag: "position",
+        candidates: [
+          expect.objectContaining({ tag: "position" }),
+          expect.objectContaining({ tag: "position" }),
+        ],
+      },
       {
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
           { index: 0, tag: "surface" },
         ],
-        node: expect.objectContaining({ tag: "surface" }),
+        element: expect.objectContaining({ tag: "surface" }),
         root: expect.objectContaining({}),
         schemaPath: ["surfaces", 0],
       },
-      "position",
     );
 
     expect(data.surfaces).toEqual([{ position: { x: 1, y: 2, z: 3 } }]);
