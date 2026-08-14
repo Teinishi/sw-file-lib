@@ -161,7 +161,7 @@ describe("schemaLib serialization", () => {
     expect(error.issues).toMatchObject([
       {
         path: ["value"],
-        expected: "union",
+        expected: "number | boolean",
         schema: "union",
         value: { nested: true },
         errors: [

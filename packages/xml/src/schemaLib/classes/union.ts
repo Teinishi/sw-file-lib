@@ -89,6 +89,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
 
   serializeField(value: unknown): SchemaSerializeResult {
     const errors: SchemaSerializeError[] = [];
+    const expected = this.schemas.map((schema) => schema.name).join(" | ");
 
     for (const schema of this.schemas) {
       const r = schema.serializeField(value);
@@ -103,7 +104,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
         {
           path: [],
           message: "Value does not match any union schema.",
-          expected: "union",
+          expected,
           schema: this.name,
           value,
           errors,
