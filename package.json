@@ -20,7 +20,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "test": "node --env-file-if-exists=.env.test.local ./node_modules/vitest/vitest.mjs",
+    "test": "vitest",
     "typecheck": "tsc --noEmit",
     "check": "pnpm lint && pnpm fmt:check && pnpm typecheck && vitest run",
     "release": "bumpp",
