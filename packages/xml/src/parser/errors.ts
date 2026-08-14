@@ -1,22 +1,11 @@
-import type { DuplicateChildElementMode } from ".";
-
 /**
- * Machine-readable parser error codes.
+ * Error codes for unexpected conversion failures in conversion from fast-xml-parser result to internal node tree.
  */
 export type SwXmlParseErrorCode =
   | "invalid_xml"
   | "invalid_parser_output"
   | "invalid_attribute_output"
   | "invalid_child_output";
-
-/**
- * Machine-readable XML structure error codes.
- */
-export type SwXmlStructureErrorCode =
-  | "duplicate_child_element"
-  | "invalid_list_shape"
-  | "empty_list"
-  | "unknown_node_shape";
 
 /**
  * An error thrown when an XML document cannot be parsed into a Stormworks XML node tree.
@@ -35,6 +24,15 @@ export class SwXmlParseError extends Error {
 }
 
 /**
+ * Machine-readable XML structure error codes.
+ */
+export type SwXmlStructureErrorCode =
+  | "duplicate_child_element"
+  | "invalid_list_shape"
+  | "empty_list"
+  | "unknown_node_shape";
+
+/**
  * Additional metadata for XML structure errors.
  */
 export interface SwXmlStructureErrorDetails {
@@ -47,11 +45,6 @@ export interface SwXmlStructureErrorDetails {
    * The child tag name involved in the error.
    */
   childTag?: string;
-
-  /**
-   * How duplicate child elements were being handled.
-   */
-  duplicateChildElement?: DuplicateChildElementMode;
 
   /**
    * The child tag names that were found, when useful for diagnostics.

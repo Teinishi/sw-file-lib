@@ -55,7 +55,7 @@ export class SwXmlNodeList {
       throw new SwXmlStructureError(
         "duplicate_child_element",
         `Expected record of unique tags, got ${matches.length} of <${tag}>.`,
-        { childTag: tag, duplicateChildElement: "error" },
+        { childTag: tag },
       );
     }
     return matches[0];
@@ -163,7 +163,6 @@ export class SwXmlNode extends SwXmlNodeList {
             {
               tag: this.tag,
               childTag: child.tag,
-              duplicateChildElement,
             },
           );
         }
