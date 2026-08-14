@@ -175,9 +175,21 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
 export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T>> {
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
+   *
+   * Pass a shape object directly when the new item fields do not depend on the
+   * existing item shape. Pass a callback when you need to reference existing
+   * item fields.
+   *
+   * @example
+   * ```ts
+   * const withId = items.extendItem({ id: x.number() });
+   * const withNestedZ = items.extendItem((s) => ({
+   *   position: s.position.extend({ z: x.number() }),
+   * }));
+   * ```
    */
-  extendItem<U extends Shape>(factory: (shape: T) => U): ObjectListSchema<ExtendShape<T, U>> {
-    return new ObjectListSchema(this.itemTag, this.itemSchema.extend(factory));
+  extendItem<U extends Shape>(shape: U | ((s: T) => U)): ObjectListSchema<ExtendShape<T, U>> {
+    return new ObjectListSchema(this.itemTag, this.itemSchema.extend(shape));
   }
 
   /**

@@ -8,9 +8,9 @@ describe("schemaLib transformations", () => {
         name: x.string(),
       });
 
-      const extended = schema.extend(() => ({
+      const extended = schema.extend({
         size: x.number(),
-      }));
+      });
 
       const result = extended.parse(`<root name="hello" size="10"/>`, "root");
 
@@ -98,9 +98,9 @@ describe("schemaLib transformations", () => {
             name: x.string(),
           }),
         )
-        .extendItem(() => ({
+        .extendItem({
           size: x.number(),
-        }));
+        });
 
       const result = schema.parse(
         `<root>
@@ -207,9 +207,9 @@ describe("schemaLib transformations", () => {
             name: x.string(),
           }),
         )
-        .extendItem(() => ({
+        .extendItem({
           size: x.number(),
-        }));
+        });
 
       const result = schema.parse(
         `<root category="test">
@@ -270,9 +270,9 @@ describe("schemaLib transformations", () => {
             name: x.string(),
           }),
         )
-        .extendMeta(() => ({
+        .extendMeta({
           version: x.number(),
-        }));
+        });
 
       const result = schema.parse(
         `<root category="test" version="2">

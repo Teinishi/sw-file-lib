@@ -228,11 +228,23 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
 
   /**
    * Returns a new metalist schema by adding new fields or overwriting existing fields to the meta schema.
+   *
+   * Pass a shape object directly when the new metadata fields do not depend on
+   * the existing metadata shape. Pass a callback when you need to reference
+   * existing metadata fields.
+   *
+   * @example
+   * ```ts
+   * const withName = list.extendMeta({ name: x.string() });
+   * const withNestedZ = list.extendMeta((s) => ({
+   *   position: s.position.extend({ z: x.number() }),
+   * }));
+   * ```
    */
-  extendMeta<U extends Shape>(factory: (shape: M) => U): MetaListSchema<ExtendShape<M, U>, I> {
+  extendMeta<U extends Shape>(shape: U | ((s: M) => U)): MetaListSchema<ExtendShape<M, U>, I> {
     return new MetaListSchema(
       this.itemTag,
-      new ObjectSchema(this.metaShape).extend(factory).shape,
+      new ObjectSchema(this.metaShape).extend(shape).shape,
       this.itemSchema,
     );
   }
@@ -258,11 +270,23 @@ export class ObjectMetaListSchema<M extends Shape, I extends Shape> extends Meta
 > {
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
+   *
+   * Pass a shape object directly when the new item fields do not depend on the
+   * existing item shape. Pass a callback when you need to reference existing
+   * item fields.
+   *
+   * @example
+   * ```ts
+   * const withId = list.extendItem({ id: x.number() });
+   * const withNestedZ = list.extendItem((s) => ({
+   *   position: s.position.extend({ z: x.number() }),
+   * }));
+   * ```
    */
   extendItem<U extends Shape>(
-    factory: (shape: I) => U,
+    shape: U | ((s: I) => U),
   ): ObjectMetaListSchema<M, ExtendShape<I, U>> {
-    return new ObjectMetaListSchema(this.itemTag, this.metaShape, this.itemSchema.extend(factory));
+    return new ObjectMetaListSchema(this.itemTag, this.metaShape, this.itemSchema.extend(shape));
   }
 
   /**

@@ -170,9 +170,9 @@ describe("schemaLib", () => {
       nested: s.nested.extend((s) => ({
         level1: s.level1.extend((s) => ({
           level2: s.level2.extend((s) => ({
-            level3: s.level3.extend((_) => ({
+            level3: s.level3.extend({
               new_attribute: x.boolean(),
-            })),
+            }),
           })),
         })),
       })),
@@ -223,9 +223,9 @@ describe("schemaLib", () => {
     });
 
     const schema2 = schema1.extend((s) => ({
-      position: s.position.extend((_) => ({
+      position: s.position.extend({
         z: x.number(),
-      })),
+      }),
       list: x.list(
         "item",
         x.object({
@@ -259,9 +259,9 @@ describe("schemaLib", () => {
     });
 
     const schema3 = schema2.extend((s) => ({
-      list: s.list.extendItem((_) => ({
+      list: s.list.extendItem({
         num: x.number().optional(),
-      })),
+      }),
     }));
 
     const xml3 =

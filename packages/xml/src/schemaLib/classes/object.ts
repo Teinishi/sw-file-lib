@@ -196,9 +196,24 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
 
   /**
    * Returns a new object schema by adding new fields or overwriting existing fields.
+   *
+   * Pass a shape object directly when the new fields do not depend on the
+   * existing shape. Pass a callback when you need to reference existing fields,
+   * such as extending a nested object schema.
+   *
+   * @example
+   * ```ts
+   * const withId = base.extend({ id: x.number() });
+   * const withNestedZ = base.extend((s) => ({
+   *   position: s.position.extend({ z: x.number() }),
+   * }));
+   * ```
    */
-  extend<U extends Shape>(factory: (shape: T) => U): ExtendObjectSchema<T, U> {
-    const newShape: ExtendShape<T, U> = { ...this.shape, ...factory(this.shape) };
+  extend<U extends Shape>(shape: U | ((s: T) => U)): ExtendObjectSchema<T, U> {
+    const newShape: ExtendShape<T, U> = {
+      ...this.shape,
+      ...(typeof shape === "function" ? shape(this.shape) : shape),
+    };
     return new ObjectSchema(newShape);
   }
 

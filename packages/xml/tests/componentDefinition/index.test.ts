@@ -15,9 +15,9 @@ describe("componentDefinition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const schema = ComponentDefinitionSchema.extend((_) => ({
+    const schema = ComponentDefinitionSchema.extend({
       unknown_attr: x.string().optional(),
-    }));
+    });
 
     const data: x.Infer<typeof schema> = {};
 
@@ -71,10 +71,10 @@ describe("componentDefinition", () => {
     const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
-    const schema = ComponentDefinitionSchema.extend((_) => ({
+    const schema = ComponentDefinitionSchema.extend({
       type: x.string(),
       unknown_attr: x.string(),
-    }));
+    });
 
     const definition = schema.parse(parseSwXml(xml), "definition");
 
