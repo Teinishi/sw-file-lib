@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
-import { x } from "@xml";
+import { x } from "../../src";
 
 describe("schemaLib transformations", () => {
   describe("extend", () => {

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { parseSwXml, RawXmlTreeList, SwXmlNode, SwXmlNodeList } from "@xml";
+import { parseSwXml, RawXmlTreeList, SwXmlNode, SwXmlNodeList } from "../../src";
 
 describe("parser", () => {
   test("parse 1", () => {

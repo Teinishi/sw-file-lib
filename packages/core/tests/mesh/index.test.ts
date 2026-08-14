@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
+import { searchRom } from "../../../internalUtils/src/testUtils";
 import {
   meshDataFromBytes,
   meshDataToBytes,
   meshOrPhysDataFromBytes,
   physDataFromBytes,
   physDataToBytes,
-} from "@core";
-import { searchRom } from "../../../internalUtils/src/testUtils";
+} from "../../src";
 
 describe("mesh roundtrip", () => {
   test("test_cube_1.mesh", async () => {

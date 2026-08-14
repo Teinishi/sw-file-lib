@@ -37,6 +37,9 @@ importers:
 
   packages/xml:
     dependencies:
+      '@sw-file-lib/core':
+        specifier: workspace:*
+        version: link:../core
       fast-xml-parser:
         specifier: ^5.10.1
         version: 5.10.1

@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
+import { searchRom } from "../../../internalUtils/src/testUtils";
 import {
   parseSwXml,
   safeParseComponentDefinitionXml,
   ComponentDefinitionSchema,
   x,
   componentDefinitionUtils,
-} from "@xml";
-import { searchRom } from "../../../internalUtils/src/testUtils";
+} from "../../src";
 
 describe("componentDefinition", () => {
   test("build component definition", async () => {

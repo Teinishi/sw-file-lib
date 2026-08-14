@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
-import { parseSwXml, x } from "@xml";
+import { parseSwXml, x } from "../../src";
 
 describe("schemaLib parse", () => {
   describe("primitive", () => {
