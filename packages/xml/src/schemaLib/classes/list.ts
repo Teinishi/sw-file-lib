@@ -47,9 +47,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     if (!r.success) return r;
     const value = r.data;
 
-    const { items, issues } = parseList(value, this.itemTag, this.itemSchema, ctx, options, [
-      "items",
-    ]);
+    const { items, issues } = parseList(value, this.itemTag, this.itemSchema, ctx, options);
 
     const issues2 = checkUnknownFields(value, null, this.itemTag, ctx, options);
 
@@ -82,7 +80,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaParseFieldResult<Infer<T>[]> {
-    return safeParseChild(this, parent, key, ctx, options);
+    return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
   safeParse(

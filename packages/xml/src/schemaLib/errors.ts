@@ -1,18 +1,5 @@
 import type { SwXmlNode, SwXmlStructureError } from "../parser";
-import { type SchemaInput } from "./types";
-
-/**
- * A path segment in a parsed Stormworks XML value.
- *
- * String segments represent object fields. Number segments represent list item
- * indexes.
- */
-export type SchemaPathSegment = string | number;
-
-/**
- * A path to a value in a parsed Stormworks XML value.
- */
-export type SchemaPath = readonly SchemaPathSegment[];
+import { type SchemaInput, type SchemaPath } from "./types";
 
 /**
  * Describe the expected type of the value given to schema parse function. Used for error data.
@@ -115,10 +102,7 @@ export class SchemaError extends Error {
 /**
  * Prepends path segments to every issue in a schema error.
  */
-export function prependSchemaIssuePath(
-  error: SchemaError,
-  path: readonly SchemaPathSegment[],
-): SchemaError {
+export function prependSchemaIssuePath(error: SchemaError, path: SchemaPath): SchemaError {
   return new SchemaError(
     error.issues.map((issue) => ({
       ...issue,

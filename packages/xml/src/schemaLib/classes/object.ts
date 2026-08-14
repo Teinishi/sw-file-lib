@@ -92,7 +92,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaParseFieldResult<InferShape<T>> {
-    return safeParseChild(this, parent, key, ctx, options);
+    return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
   safeParse(

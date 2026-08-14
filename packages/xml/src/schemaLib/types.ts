@@ -15,6 +15,67 @@ export type Result<T, E> =
     };
 
 /**
+ * A path identifying an element in an XML document.
+ *
+ * Each segment contains the zero-based index of the element among its
+ * sibling elements and the element's tag name.
+ *
+ * The path starts with the root element.
+ *
+ * @example
+ * For the following XML:
+ *
+ * ```xml
+ * <root>
+ *   <a/>
+ *   <b>
+ *     <c/>
+ *   </b>
+ * </root>
+ * ```
+ *
+ * the path to `<c>` is:
+ *
+ * ```ts
+ * [
+ *   { index: 0, tag: "root" },
+ *   { index: 1, tag: "b" },
+ *   { index: 0, tag: "c" },
+ * ]
+ * ```
+ */
+export type SwXmlPath = readonly { index: number; tag: string }[];
+
+/**
+ * A path identifying a value in the parsed JavaScript object.
+ *
+ * Each segment is either an object property name or a zero-based array index.
+ * Unlike {@link SwXmlPath}, this path represents the structure of the parsed
+ * value rather than the structure of the XML document.
+ *
+ * @example
+ * For a parsed value such as:
+ *
+ * ```ts
+ * {
+ *   root: {
+ *     items: [
+ *       { name: "foo" },
+ *       { name: "bar" },
+ *     ],
+ *   },
+ * }
+ * ```
+ *
+ * the path to `"bar"` is:
+ *
+ * ```ts
+ * ["root", "items", 1, "name"]
+ * ```
+ */
+export type SchemaPath = readonly (string | number)[];
+
+/**
  * A value accepted by schemas.
  *
  * Top-level schemas usually receive an {@link SwXmlNode}. Primitive schemas may

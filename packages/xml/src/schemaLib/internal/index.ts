@@ -1,5 +1,4 @@
 import {
-  newSchemaParseContext,
   SchemaError,
   type SchemaInput,
   type SchemaParseContext,
@@ -21,6 +20,7 @@ import {
   type ElementSchema,
   type SchemaParseFieldChildResult,
   type SwXmlPath,
+  type SchemaPath,
 } from "..";
 import {
   parseSwXml,
@@ -31,29 +31,40 @@ import {
 } from "../../parser";
 import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 
+export function newSchemaParseContext(root: SwXmlNodeList): SchemaParseContext {
+  return {
+    xmlPath: [],
+    root,
+    node: undefined,
+    schemaPath: [],
+  };
+}
+
 export function extendSchemaParseContext(
   ctx: SchemaParseContext,
-  extendPath: SwXmlPath,
+  extendXmlPath: SwXmlPath,
+  extendSchemaPath: SchemaPath,
 ): SchemaParseContext {
   let node = ctx.node;
   if (ctx.xmlPath.length === 0) {
-    const i = extendPath[0]?.index;
+    const i = extendXmlPath[0]?.index;
     if (i !== undefined) {
       node = ctx.root.nodes[i];
     }
-    for (const seg of extendPath.slice(1)) {
+    for (const seg of extendXmlPath.slice(1)) {
       node = node?.nodes[seg.index];
     }
   } else {
-    for (const seg of extendPath) {
+    for (const seg of extendXmlPath) {
       node = node?.nodes[seg.index];
     }
   }
 
   return {
-    xmlPath: ctx.xmlPath.concat(extendPath),
+    xmlPath: ctx.xmlPath.concat(extendXmlPath),
     root: ctx.root,
     node,
+    schemaPath: ctx.schemaPath.concat(extendSchemaPath),
   };
 }
 
@@ -171,7 +182,11 @@ export function parseList<T>(
   for (const [index, child] of value.nodes.entries()) {
     if (child.tag !== itemTag) continue;
 
-    const newCtx = extendSchemaParseContext(ctx, [{ index, tag: child.tag }]);
+    const newCtx = extendSchemaParseContext(
+      ctx,
+      [{ index, tag: child.tag }],
+      [...prependPath, index],
+    );
 
     const result = itemSchema.safeParseValue(child, newCtx, options);
     if (!result.success) {
@@ -272,7 +287,7 @@ export function selectChild(
   tag: string,
   ctx: SchemaParseContext,
   options?: SchemaParseOptions,
-): { value: SwXmlNode; newCtx: SchemaParseContext } | undefined {
+): { value: SwXmlNode; siblingIndex: number } | undefined {
   let result;
 
   try {
@@ -298,7 +313,7 @@ export function selectChild(
 
   return {
     value: result.value,
-    newCtx: extendSchemaParseContext(ctx, [{ index: result.index, tag }]),
+    siblingIndex: result.index,
   };
 }
 
@@ -316,6 +331,7 @@ export function safeParseChild<T>(
   key: string,
   ctx: SchemaParseContext,
   options?: SchemaParseOptions,
+  prependPath: string[] = [],
 ): SchemaParseFieldChildResult<T> {
   const child = selectChild(parent, key, ctx, options);
   if (child === undefined) {
@@ -324,7 +340,13 @@ export function safeParseChild<T>(
       error: createMissingRequiredFieldError("xml_element", schema.name),
     };
   }
-  const r = schema.safeParseValue(child.value, child.newCtx, options);
+
+  const newCtx = extendSchemaParseContext(
+    ctx,
+    [{ index: child.siblingIndex, tag: key }],
+    prependPath,
+  );
+  const r = schema.safeParseValue(child.value, newCtx, options);
   if (!r.success) return r;
   return {
     success: true,

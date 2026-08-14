@@ -457,13 +457,14 @@ describe("schemaLib", () => {
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       1,
       {
-        node: expect.objectContaining({ tag: "surface" }),
-        root: expect.objectContaining({}),
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
           { index: 0, tag: "surface" },
         ],
+        node: expect.objectContaining({ tag: "surface" }),
+        root: expect.objectContaining({}),
+        schemaPath: ["surfaces", 0],
       },
       { kind: "child", index: 2, child: expect.objectContaining({ tag: "unknown_child" }) },
     );
@@ -471,12 +472,13 @@ describe("schemaLib", () => {
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       2,
       {
-        node: expect.objectContaining({ tag: "surfaces" }),
-        root: expect.objectContaining({}),
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
         ],
+        node: expect.objectContaining({ tag: "surfaces" }),
+        root: expect.objectContaining({}),
+        schemaPath: ["surfaces"],
       },
       { kind: "child", index: 1, child: expect.objectContaining({ tag: "unknown_item" }) },
     );
@@ -484,9 +486,10 @@ describe("schemaLib", () => {
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       3,
       {
+        xmlPath: [{ index: 0, tag: "root" }],
         node: expect.objectContaining({ tag: "root" }),
         root: expect.objectContaining({}),
-        xmlPath: [{ index: 0, tag: "root" }],
+        schemaPath: [],
       },
       { kind: "attribute", key: "unknown_attr", value: "0" },
     );
@@ -494,9 +497,10 @@ describe("schemaLib", () => {
     expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
       1,
       {
+        xmlPath: [{ index: 0, tag: "root" }],
         node: expect.objectContaining({ tag: "root" }),
         root: expect.objectContaining({}),
-        xmlPath: [{ index: 0, tag: "root" }],
+        schemaPath: [],
       },
       "surfaces",
     );
@@ -504,13 +508,14 @@ describe("schemaLib", () => {
     expect(duplicateChildElementSpy).toHaveBeenNthCalledWith(
       2,
       {
-        node: expect.objectContaining({ tag: "surface" }),
-        root: expect.objectContaining({}),
         xmlPath: [
           { index: 0, tag: "root" },
           { index: 1, tag: "surfaces" },
           { index: 0, tag: "surface" },
         ],
+        node: expect.objectContaining({ tag: "surface" }),
+        root: expect.objectContaining({}),
+        schemaPath: ["surfaces", 0],
       },
       "position",
     );

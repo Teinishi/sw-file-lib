@@ -1,36 +1,5 @@
 import type { SwXmlNode, SwXmlNodeList } from "../parser";
-
-/**
- * A path identifying an element in an XML document.
- *
- * Each segment contains the zero-based index of the element among its
- * sibling elements and the element's tag name.
- *
- * The path starts with the root element.
- *
- * @example
- * For the following XML:
- *
- * ```xml
- * <root>
- *   <a/>
- *   <b>
- *     <c/>
- *   </b>
- * </root>
- * ```
- *
- * the path to `<c>` is:
- *
- * ```ts
- * [
- *   { index: 0, tag: "root" },
- *   { index: 1, tag: "b" },
- *   { index: 0, tag: "c" },
- * ]
- * ```
- */
-export type SwXmlPath = readonly { index: number; tag: string }[];
+import type { SchemaPath, SwXmlPath } from "./types";
 
 /**
  * Context information provided to schema parsing callbacks.
@@ -44,19 +13,20 @@ export interface SchemaParseContext {
    */
   readonly xmlPath: SwXmlPath;
 
+  /**
+   * The root of the XML tree currently parsing.
+   */
   readonly root: SwXmlNodeList;
 
+  /**
+   * The XML element currently being parsed.
+   */
   readonly node: SwXmlNode | undefined;
 
-  // todo: node, tree, schemaPath, schema の追加検討
-}
-
-export function newSchemaParseContext(root: SwXmlNodeList): SchemaParseContext {
-  return {
-    xmlPath: [],
-    root,
-    node: undefined,
-  };
+  /**
+   * The path to the field in parsed JavaScript object where the issue was detected.
+   */
+  readonly schemaPath: SchemaPath;
 }
 
 /**

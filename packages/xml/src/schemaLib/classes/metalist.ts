@@ -100,7 +100,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): SchemaParseFieldResult<InferMetaList<M, I>> {
-    return safeParseChild(this, parent, key, ctx, options);
+    return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
   safeParse(
