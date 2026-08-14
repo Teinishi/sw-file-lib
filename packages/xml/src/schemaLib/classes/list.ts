@@ -1,6 +1,7 @@
 import {
   OptionalSchema,
   SchemaError,
+  prependSchemaSerializeIssuePath,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -19,6 +20,7 @@ import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 import {
   checkUnknownFields,
+  createSchemaSerializeTypeError,
   parseList,
   safeParseChild,
   safeParseTree,
@@ -101,17 +103,18 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
 
   serializeField(value: unknown): ElementSchemaSerializeResult {
     if (!Array.isArray(value)) {
-      return { kind: "failed" };
+      return { kind: "failed", error: createSchemaSerializeTypeError("array", value, this.name) };
     }
 
     const { itemTag, itemSchema } = this;
 
     const children: WriteElementCallback[] = [];
 
-    for (const item of value) {
+    for (let index = 0; index < value.length; index++) {
+      const item = value[index];
       const r = itemSchema.serializeField(item);
       if (r.kind === "failed") {
-        return { kind: "failed" };
+        return { kind: "failed", error: prependSchemaSerializeIssuePath(r.error, [index]) };
       }
       children.push(r.write);
     }

@@ -1,5 +1,6 @@
 import {
   SchemaError,
+  SchemaSerializeError,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -86,6 +87,22 @@ export function createMissingRequiredFieldError(
   ]);
 }
 
+export function createSchemaSerializeTypeError(
+  expected: string,
+  value: unknown,
+  schemaName: string,
+): SchemaSerializeError {
+  return new SchemaSerializeError([
+    {
+      path: [],
+      message: `Expected ${expected} for ${schemaName} serialization, received ${describeSchemaSerializeValue(value)}.`,
+      expected,
+      schema: schemaName,
+      value,
+    },
+  ]);
+}
+
 export function validateSchemaInput<E extends ExpectedSchemaInputType>(
   input: SchemaInput,
   expected: E,
@@ -117,6 +134,13 @@ export function describeSchemaInput(value: SchemaInput): string {
   if (value === undefined) return "undefined";
   if (typeof value === "string") return "string";
   if (isSwXmlNode(value)) return `<${value.tag}>`;
+  return typeof value;
+}
+
+function describeSchemaSerializeValue(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+  if (Array.isArray(value)) return "array";
   return typeof value;
 }
 
@@ -403,7 +427,7 @@ export function serializeElement(
   writer?: XmlWriter | XmlWriterOptions,
 ): XmlWriter {
   if (serializeResult.kind === "failed") {
-    throw new Error("todo: error message");
+    throw serializeResult.error;
   }
 
   if (!(writer instanceof XmlWriter)) {

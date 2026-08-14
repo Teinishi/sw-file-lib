@@ -97,6 +97,28 @@ export class SchemaError extends Error {
   }
 }
 
+export interface SchemaSerializeIssue {
+  path: SchemaPath;
+  message: string;
+  expected?: string;
+  schema?: string;
+  value?: unknown;
+  errors?: readonly SchemaSerializeError[];
+}
+
+/**
+ * An error thrown when a JavaScript value cannot be serialized by a schema.
+ */
+export class SchemaSerializeError extends Error {
+  readonly issues: SchemaSerializeIssue[];
+
+  constructor(issues: readonly SchemaSerializeIssue[]) {
+    super(formatSerializeIssues(issues));
+    this.name = "SchemaSerializeError";
+    this.issues = [...issues];
+  }
+}
+
 /**
  * Prepends path segments to every issue in a schema error.
  */
@@ -109,8 +131,28 @@ export function prependSchemaIssuePath(error: SchemaError, path: SchemaPath): Sc
   );
 }
 
+export function prependSchemaSerializeIssuePath(
+  error: SchemaSerializeError,
+  path: SchemaPath,
+): SchemaSerializeError {
+  return new SchemaSerializeError(
+    error.issues.map((issue) => ({
+      ...issue,
+      path: [...path, ...issue.path],
+    })),
+  );
+}
+
 function formatIssues(issues: readonly AnySchemaIssue[]): string {
   if (issues.length === 0) return "Stormworks XML schema validation failed.";
+
+  const first = issues[0]!;
+  const suffix = issues.length === 1 ? "" : ` (${issues.length} issues total)`;
+  return `${formatSchemaPath(first.path)}: ${first.message}${suffix}`;
+}
+
+function formatSerializeIssues(issues: readonly SchemaSerializeIssue[]): string {
+  if (issues.length === 0) return "Stormworks XML schema serialization failed.";
 
   const first = issues[0]!;
   const suffix = issues.length === 1 ? "" : ` (${issues.length} issues total)`;

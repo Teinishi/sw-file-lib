@@ -10,7 +10,12 @@ import {
   type SchemaSerializeResult,
 } from "..";
 import type { SwXmlNode } from "../../parser";
-import { createSwXmlIssue, unwrapResult, validateSchemaInput } from "../internal";
+import {
+  createSchemaSerializeTypeError,
+  createSwXmlIssue,
+  unwrapResult,
+  validateSchemaInput,
+} from "../internal";
 
 /**
  * A schema that parses XML text values as numbers.
@@ -70,7 +75,7 @@ export class NumberSchema implements Schema<number> {
     if (typeof value === "number") {
       return { kind: "attribute", value: String(value) };
     } else {
-      return { kind: "failed" };
+      return { kind: "failed", error: createSchemaSerializeTypeError("number", value, this.name) };
     }
   }
 

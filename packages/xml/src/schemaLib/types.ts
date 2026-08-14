@@ -1,7 +1,7 @@
 import type { SwXmlNode, SwXmlNodeList } from "../parser";
 import type { XmlWriter, XmlWriterOptions } from "../writer/XmlWriter";
 import type { ObjectSchema, OptionalSchema } from "./classes";
-import type { SchemaError } from "./errors";
+import type { SchemaError, SchemaSerializeError } from "./errors";
 import type { SchemaParseContext, SchemaParseOptions } from "./parseOptions";
 
 export type Result<T, E> =
@@ -99,6 +99,7 @@ export type WriteElementCallback = (name: string, writer: XmlWriter) => void;
 
 export interface SchemaSerializeFailResult {
   kind: "failed";
+  error: SchemaSerializeError;
 }
 
 export type ElementSchemaSerializeResult =

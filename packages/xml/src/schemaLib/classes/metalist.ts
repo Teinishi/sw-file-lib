@@ -2,6 +2,7 @@ import { isStringKeyRecord } from "@core";
 import {
   OptionalSchema,
   SchemaError,
+  prependSchemaSerializeIssuePath,
   type SchemaInput,
   type SchemaParseContext,
   type SchemaParseOptions,
@@ -21,6 +22,7 @@ import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 import {
   checkUnknownFields,
+  createSchemaSerializeTypeError,
   parseList,
   parseShape,
   safeParseChild,
@@ -128,7 +130,10 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
       !isStringKeyRecord(value.meta) ||
       !Array.isArray(value.items)
     ) {
-      return { kind: "failed" };
+      return {
+        kind: "failed",
+        error: createSchemaSerializeTypeError("{ meta: object; items: array }", value, this.name),
+      };
     }
 
     const { itemTag, itemSchema } = this;
@@ -146,15 +151,18 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
         case "element":
           children.push([key, r.write]);
           break;
+        case "omitted":
+          break;
         case "failed":
-          return { kind: "failed" };
+          return { kind: "failed", error: prependSchemaSerializeIssuePath(r.error, ["meta", key]) };
       }
     }
 
-    for (const item of value.items) {
+    for (let index = 0; index < value.items.length; index++) {
+      const item = value.items[index];
       const r = itemSchema.serializeField(item);
       if (r.kind === "failed") {
-        return { kind: "failed" };
+        return { kind: "failed", error: prependSchemaSerializeIssuePath(r.error, ["items", index]) };
       }
       children.push([itemTag, r.write]);
     }

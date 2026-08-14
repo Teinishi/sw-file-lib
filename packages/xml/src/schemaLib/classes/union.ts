@@ -1,6 +1,7 @@
 import {
   OptionalSchema,
   SchemaError,
+  SchemaSerializeError,
   type Infer,
   type Result,
   type Schema,
@@ -87,13 +88,28 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
   }
 
   serializeField(value: unknown): SchemaSerializeResult {
+    const errors: SchemaSerializeError[] = [];
+
     for (const schema of this.schemas) {
       const r = schema.serializeField(value);
       if (r.kind !== "failed") {
         return r;
       }
+      errors.push(r.error);
     }
-    return { kind: "failed" };
+    return {
+      kind: "failed",
+      error: new SchemaSerializeError([
+        {
+          path: [],
+          message: "Value does not match any union schema.",
+          expected: "union",
+          schema: this.name,
+          value,
+          errors,
+        },
+      ]),
+    };
   }
 
   optional(): OptionalSchema<InferUnion<T>> {

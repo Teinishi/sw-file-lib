@@ -10,7 +10,7 @@ import {
   type SchemaSerializeResult,
 } from "..";
 import type { SwXmlNode } from "../../parser";
-import { unwrapResult, validateSchemaInput } from "../internal";
+import { createSchemaSerializeTypeError, unwrapResult, validateSchemaInput } from "../internal";
 
 /**
  * A schema that parses XML text values as strings.
@@ -58,7 +58,7 @@ export class StringSchema implements Schema<string> {
     if (typeof value === "string") {
       return { kind: "attribute", value: value };
     } else {
-      return { kind: "failed" };
+      return { kind: "failed", error: createSchemaSerializeTypeError("string", value, this.name) };
     }
   }
 

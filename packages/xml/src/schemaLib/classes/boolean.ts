@@ -10,7 +10,12 @@ import {
   type SchemaSerializeResult,
 } from "..";
 import { SwXmlNode } from "../../parser";
-import { createSwXmlIssue, unwrapResult, validateSchemaInput } from "../internal";
+import {
+  createSchemaSerializeTypeError,
+  createSwXmlIssue,
+  unwrapResult,
+  validateSchemaInput,
+} from "../internal";
 
 /**
  * A schema that parses XML text values as booleans.
@@ -67,7 +72,10 @@ export class BooleanSchema implements Schema<boolean> {
     if (typeof value === "boolean") {
       return { kind: "attribute", value: value ? "true" : "false" };
     } else {
-      return { kind: "failed" };
+      return {
+        kind: "failed",
+        error: createSchemaSerializeTypeError("boolean", value, this.name),
+      };
     }
   }
 

@@ -2,6 +2,7 @@ import { isStringKeyRecord } from "@core";
 import {
   OptionalSchema,
   SchemaError,
+  prependSchemaSerializeIssuePath,
   type InferShape,
   type PartialShape,
   type SchemaInput,
@@ -20,6 +21,7 @@ import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer/XmlWriter";
 import {
   checkUnknownFields,
+  createSchemaSerializeTypeError,
   parseShape,
   safeParseChild,
   safeParseTree,
@@ -113,7 +115,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
 
   serializeField(value: unknown): ElementSchemaSerializeResult {
     if (!isStringKeyRecord(value)) {
-      return { kind: "failed" };
+      return { kind: "failed", error: createSchemaSerializeTypeError("object", value, this.name) };
     }
 
     const attributes: [string, string][] = [];
@@ -129,8 +131,10 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
         case "element":
           children.push([key, r.write]);
           break;
+        case "omitted":
+          break;
         case "failed":
-          return { kind: "failed" };
+          return { kind: "failed", error: prependSchemaSerializeIssuePath(r.error, [key]) };
       }
     }
 

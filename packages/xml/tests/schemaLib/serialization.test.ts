@@ -83,4 +83,110 @@ describe("schemaLib serialization", () => {
 
     expect(result2).toEqual(result1);
   });
+
+  test("serialize throws a path-aware error for nested object fields", () => {
+    const schema = x.object({
+      items: x.list(
+        "item",
+        x.object({
+          name: x.string(),
+          size: x.number(),
+        }),
+      ),
+    });
+
+    let error: unknown;
+    try {
+      schema.serialize({ items: [{ name: "alpha", size: "large" }] } as never, "root");
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(x.SchemaSerializeError);
+    if (!(error instanceof x.SchemaSerializeError)) throw new Error("Unexpected error");
+
+    expect(error.message).toBe(
+      "items[0].size: Expected number for number serialization, received string.",
+    );
+    expect(error.issues).toMatchObject([
+      {
+        path: ["items", 0, "size"],
+        expected: "number",
+        schema: "number",
+        value: "large",
+      },
+    ]);
+  });
+
+  test("serialize reports the invalid root value", () => {
+    const schema = x.object({
+      name: x.string(),
+    });
+
+    let error: unknown;
+    try {
+      schema.serialize("invalid" as never, "root");
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(x.SchemaSerializeError);
+    if (!(error instanceof x.SchemaSerializeError)) throw new Error("Unexpected error");
+
+    expect(error.issues).toMatchObject([
+      {
+        path: [],
+        expected: "object",
+        schema: "object",
+        value: "invalid",
+      },
+    ]);
+  });
+
+  test("serialize keeps union branch errors", () => {
+    const schema = x.object({
+      value: x.union([x.number(), x.boolean()]),
+    });
+
+    let error: unknown;
+    try {
+      schema.serialize({ value: { nested: true } } as never, "root");
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(x.SchemaSerializeError);
+    if (!(error instanceof x.SchemaSerializeError)) throw new Error("Unexpected error");
+
+    expect(error.issues).toMatchObject([
+      {
+        path: ["value"],
+        expected: "union",
+        schema: "union",
+        value: { nested: true },
+        errors: [
+          {
+            issues: [
+              {
+                path: [],
+                expected: "number",
+                schema: "number",
+                value: { nested: true },
+              },
+            ],
+          },
+          {
+            issues: [
+              {
+                path: [],
+                expected: "boolean",
+                schema: "boolean",
+                value: { nested: true },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
 });
