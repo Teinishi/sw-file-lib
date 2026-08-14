@@ -163,7 +163,7 @@ export interface Schema<T> {
    * Parses a Stormworks XML node or attribute value.
    *
    * This is a low-level operation used by schema implementations. For parsing
-   * a full XML tree, prefer {@link ElementSchema.parseTree}.
+   * a full XML tree, prefer {@link ElementSchema.parse}.
    *
    * @throws {@link SchemaError} when the value does not match the schema.
    */
@@ -222,7 +222,7 @@ export interface ElementSchema<T> extends Schema<T> {
    *
    * @throws {@link SchemaError} when the value does not match the schema.
    */
-  parseTree: (
+  parse: (
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,

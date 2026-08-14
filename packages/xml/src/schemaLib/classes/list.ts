@@ -94,7 +94,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     return safeParseTree(this, tree, rootTag, options);
   }
 
-  parseTree(
+  parse(
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,

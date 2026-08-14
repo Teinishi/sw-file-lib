@@ -209,7 +209,7 @@ export function parseVehicleXml(
   options: ParseOptions = {},
 ): Vehicle {
   const tree = parseSwXml(input);
-  return VehicleSchema.parseTree(tree, "vehicle", options);
+  return VehicleSchema.parse(tree, "vehicle", options);
 }
 
 /**

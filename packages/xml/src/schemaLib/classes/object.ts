@@ -106,7 +106,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     return safeParseTree(this, tree, rootTag, options);
   }
 
-  parseTree(
+  parse(
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,

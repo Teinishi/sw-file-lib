@@ -76,7 +76,7 @@ describe("componentDefinition", () => {
       unknown_attr: x.string(),
     }));
 
-    const definition = schema.parseTree(parseSwXml(xml), "definition");
+    const definition = schema.parse(parseSwXml(xml), "definition");
 
     const name: string | undefined = definition.name;
     expect(name).toBe("(M) Test Cube 1");

@@ -12,7 +12,7 @@ describe("schemaLib transformations", () => {
         size: x.number(),
       }));
 
-      const result = extended.parseTree(`<root name="hello" size="10"/>`, "root");
+      const result = extended.parse(`<root name="hello" size="10"/>`, "root");
 
       expect(result).toEqual({
         name: "hello",
@@ -35,7 +35,7 @@ describe("schemaLib transformations", () => {
         size: x.number(),
       }));
 
-      const result = extended.parseTree(`<root name="hello" size="10"/>`, "root");
+      const result = extended.parse(`<root name="hello" size="10"/>`, "root");
 
       expect(result).toEqual({
         name: "hello",
@@ -54,7 +54,7 @@ describe("schemaLib transformations", () => {
 
       const omitted = schema.omit(["size", "enabled"]);
 
-      const result = omitted.parseTree(`<root name="hello" size="10" enabled="true"/>`, "root", {
+      const result = omitted.parse(`<root name="hello" size="10" enabled="true"/>`, "root", {
         unknownField: "ignore",
       });
 
@@ -79,7 +79,7 @@ describe("schemaLib transformations", () => {
         )
         .renameItemTag("entry");
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root>
             <entry name="a"/>
             <entry name="b"/>
@@ -102,7 +102,7 @@ describe("schemaLib transformations", () => {
           size: x.number(),
         }));
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root>
             <item name="a" size="1"/>
             <item name="b" size="2"/>
@@ -135,7 +135,7 @@ describe("schemaLib transformations", () => {
         )
         .omitItem(["size"]);
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root>
             <item name="a" size="1" enabled="true"/>
           </root>`,
@@ -180,7 +180,7 @@ describe("schemaLib transformations", () => {
         )
         .renameItemTag("entry");
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root category="test">
             <entry name="a"/>
             <entry name="b"/>
@@ -211,7 +211,7 @@ describe("schemaLib transformations", () => {
           size: x.number(),
         }));
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root category="test">
             <item name="a" size="1"/>
             <item name="b" size="2"/>
@@ -243,7 +243,7 @@ describe("schemaLib transformations", () => {
         )
         .omitItem(["name"]);
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root category="test">
             <item name="a"/>
           </root>`,
@@ -274,7 +274,7 @@ describe("schemaLib transformations", () => {
           version: x.number(),
         }));
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root category="test" version="2">
             <item name="a"/>
           </root>`,
@@ -314,7 +314,7 @@ describe("schemaLib transformations", () => {
         )
         .omitMeta(["version"]);
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root category="test">
             <item name="a"/>
           </root>`,

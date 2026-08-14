@@ -37,7 +37,7 @@ describe("schemaLib serialization", () => {
 </root>
 `;
 
-    const result = schema.parseTree(xml, "root");
+    const result = schema.parse(xml, "root");
 
     const serialized = schema
       .serialize(result, "root", {
@@ -70,7 +70,7 @@ describe("schemaLib serialization", () => {
   </items>
 </root>`;
 
-    const result1 = schema.parseTree(xml, "root");
+    const result1 = schema.parse(xml, "root");
 
     const serialized = schema
       .serialize(result1, "root", {
@@ -79,7 +79,7 @@ describe("schemaLib serialization", () => {
       })
       .toString();
 
-    const result2 = schema.parseTree(serialized, "root");
+    const result2 = schema.parse(serialized, "root");
 
     expect(result2).toEqual(result1);
   });

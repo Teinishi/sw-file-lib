@@ -168,7 +168,7 @@ export function parseMicrocontrollerXml(
   options: ParseOptions = {},
 ): Microcontroller {
   const tree = parseSwXml(input);
-  return MicrocontrollerSchema.parseTree(tree, "microprocessor", options);
+  return MicrocontrollerSchema.parse(tree, "microprocessor", options);
 }
 
 /**

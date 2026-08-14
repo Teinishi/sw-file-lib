@@ -6,7 +6,7 @@ describe("schemaLib parse", () => {
     test("string", () => {
       const schema = x.object({ value: x.string() });
 
-      const result = schema.parseTree('<root value="hello"/>', "root");
+      const result = schema.parse('<root value="hello"/>', "root");
 
       expect(result.value).toBe("hello");
       expectTypeOf(result.value).toEqualTypeOf<string>();
@@ -15,7 +15,7 @@ describe("schemaLib parse", () => {
     test("number", () => {
       const schema = x.object({ value: x.number() });
 
-      const result = schema.parseTree('<root value="123"/>', "root");
+      const result = schema.parse('<root value="123"/>', "root");
 
       expect(result.value).toBe(123);
       expectTypeOf(result.value).toEqualTypeOf<number>();
@@ -24,7 +24,7 @@ describe("schemaLib parse", () => {
     test("boolean", () => {
       const schema = x.object({ value: x.boolean() });
 
-      const result = schema.parseTree('<root value="true"/>', "root");
+      const result = schema.parse('<root value="true"/>', "root");
 
       expect(result.value).toBe(true);
       expectTypeOf(result.value).toEqualTypeOf<boolean>();
@@ -35,7 +35,7 @@ describe("schemaLib parse", () => {
         name: x.object({ text: x.string() }),
       });
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root>
           some ignored text
           <name text="hello"/>
@@ -60,7 +60,7 @@ describe("schemaLib parse", () => {
         }),
       });
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root name="hello">
           <position x="1" y="2"/>
         </root>`,
@@ -91,7 +91,7 @@ describe("schemaLib parse", () => {
         value: x.string(),
       });
 
-      const result = schema.parseTree(`<root value="hello"/>`, "root");
+      const result = schema.parse(`<root value="hello"/>`, "root");
 
       expect(result).toEqual({
         value: "hello",
@@ -108,7 +108,7 @@ describe("schemaLib parse", () => {
         }),
       );
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root>
           <item name="a"/>
           <item name="b"/>
@@ -130,7 +130,7 @@ describe("schemaLib parse", () => {
         }),
       );
 
-      const result = schema.parseTree(`<root/>`, "root");
+      const result = schema.parse(`<root/>`, "root");
 
       expect(result).toEqual([]);
       expectTypeOf(result).toExtend<{ name: string }[]>();
@@ -150,7 +150,7 @@ describe("schemaLib parse", () => {
         }),
       );
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root name="hoge">
           <item name="a"/>
           <item name="b"/>
@@ -188,7 +188,7 @@ describe("schemaLib parse", () => {
         }),
       );
 
-      const result = schema.parseTree(
+      const result = schema.parse(
         `<root name="hoge">
           <position x="10"/>
           <item value="1"/>
@@ -216,7 +216,7 @@ describe("schemaLib parse", () => {
         size: x.number().optional(),
       });
 
-      const result = schema.parseTree(`<root name="hello"/>`, "root");
+      const result = schema.parse(`<root name="hello"/>`, "root");
 
       expect(result).toEqual({
         name: "hello",
@@ -234,7 +234,7 @@ describe("schemaLib parse", () => {
         size: x.number().optional(),
       });
 
-      const result = schema.parseTree(`<root name="hello" size="42"/>`, "root");
+      const result = schema.parse(`<root name="hello" size="42"/>`, "root");
 
       expect(result).toEqual({
         name: "hello",
@@ -251,7 +251,7 @@ describe("schemaLib parse", () => {
         })
         .partial();
 
-      const result = schema.parseTree(`<root name="hello"/>`, "root");
+      const result = schema.parse(`<root name="hello"/>`, "root");
 
       expect(result).toEqual({
         name: "hello",
@@ -270,7 +270,7 @@ describe("schemaLib parse", () => {
         size: x.number(),
       });
 
-      const result = schema.parseTree(`<root size="10"/>`, "root");
+      const result = schema.parse(`<root size="10"/>`, "root");
 
       expect(result).toEqual({
         size: 10,
@@ -287,8 +287,8 @@ describe("schemaLib parse", () => {
     test("parses boolean or string", () => {
       const schema = x.object({ value: x.union([x.boolean(), x.string()]) });
 
-      const trueResult = schema.parseTree('<root value="true"/>', "root");
-      const stringResult = schema.parseTree('<root value="hello"/>', "root");
+      const trueResult = schema.parse('<root value="true"/>', "root");
+      const stringResult = schema.parse('<root value="hello"/>', "root");
 
       expect(trueResult.value).toBe(true);
       expect(stringResult.value).toBe("hello");
@@ -299,8 +299,8 @@ describe("schemaLib parse", () => {
     test("parses number or string", () => {
       const schema = x.object({ value: x.union([x.number(), x.string()]) });
 
-      const numberResult = schema.parseTree('<root value="123"/>', "root");
-      const stringResult = schema.parseTree('<root value="hello"/>', "root");
+      const numberResult = schema.parse('<root value="123"/>', "root");
+      const stringResult = schema.parse('<root value="hello"/>', "root");
 
       expect(numberResult.value).toBe(123);
       expect(stringResult.value).toBe("hello");
@@ -311,7 +311,7 @@ describe("schemaLib parse", () => {
     test("tries schemas from left to right", () => {
       const schema = x.object({ value: x.union([x.boolean(), x.string()]) });
 
-      const result = schema.parseTree('<root value="false"/>', "root");
+      const result = schema.parse('<root value="false"/>', "root");
 
       expect(result.value).toBe(false);
       expectTypeOf(result.value).toEqualTypeOf<boolean | string>();
@@ -327,9 +327,9 @@ describe("schemaLib parse", () => {
         ]),
       });
 
-      const attributeResult = schema.parseTree('<root value="hello"/>', "root");
+      const attributeResult = schema.parse('<root value="hello"/>', "root");
 
-      const childResult = schema.parseTree('<root><value num="123"/></root>', "root");
+      const childResult = schema.parse('<root><value num="123"/></root>', "root");
 
       expect(attributeResult).toEqual({ value: "hello" });
       expect(childResult).toEqual({ value: { num: 123 } });
@@ -374,7 +374,7 @@ describe("schemaLib parse", () => {
 </root>
 `;
 
-      const result = schema.parseTree(xml, "root");
+      const result = schema.parse(xml, "root");
 
       expect(result).toEqual({
         name: "hello",
@@ -477,14 +477,14 @@ describe("schemaLib parse", () => {
       ]);
     });
 
-    test("parseTree throws SchemaError with the same structured issues", () => {
+    test("parse throws SchemaError with the same structured issues", () => {
       const schema = x.object({
         size: x.number(),
       });
 
       let error: unknown;
       try {
-        schema.parseTree('<root size="large"/>', "root");
+        schema.parse('<root size="large"/>', "root");
       } catch (e) {
         error = e;
       }

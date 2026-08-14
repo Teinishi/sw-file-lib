@@ -25,7 +25,7 @@ describe("schemaLib", () => {
   </metalist>
 </root>
 `;
-    const result = schema.parseTree(xml, "root");
+    const result = schema.parse(xml, "root");
     expect(result).toEqual({
       name: "hello",
       position: { x: 1 },
@@ -53,7 +53,7 @@ describe("schemaLib", () => {
     const xml =
       '<types string="hello" integer="123" decimal="45.67" trueValue="true" falseValue="false"/>';
 
-    const result = schema.parseTree(parseSwXml(xml), "types");
+    const result = schema.parse(parseSwXml(xml), "types");
 
     expect(result).toEqual({
       string: "hello",
@@ -78,7 +78,7 @@ describe("schemaLib", () => {
     const xml =
       '<union stringOrNumber="hello" numberOrBoolean="123" stringOrBoolean="false" allTypes="42"/>';
 
-    const result = schema.parseTree(parseSwXml(xml), "union");
+    const result = schema.parse(parseSwXml(xml), "union");
 
     expect(result).toEqual({
       stringOrNumber: "hello",
@@ -101,7 +101,7 @@ describe("schemaLib", () => {
 
     const xml = '<list><item value="123"/><item><value text="hoge"/></item></list>';
 
-    const result = schema.parseTree(parseSwXml(xml), "list");
+    const result = schema.parse(parseSwXml(xml), "list");
 
     expect(result).toEqual([{ value: 123 }, { value: { text: "hoge" } }]);
 
@@ -141,7 +141,7 @@ describe("schemaLib", () => {
 </root>
 `;
 
-    const result = schema.parseTree(parseSwXml(xml), "root");
+    const result = schema.parse(parseSwXml(xml), "root");
 
     expect(result).toEqual({
       nested: {
@@ -191,7 +191,7 @@ describe("schemaLib", () => {
 </root>
 `;
 
-    const result2 = schema2.parseTree(xml2, "root");
+    const result2 = schema2.parse(xml2, "root");
 
     const new_attribute: boolean = result2.nested.level1.level2.level3.new_attribute;
 
@@ -213,7 +213,7 @@ describe("schemaLib", () => {
     });
 
     const xml1 = '<root name="hello"><position x="1" y="2"/></root>';
-    const result1 = schema1.parseTree(xml1, "root");
+    const result1 = schema1.parse(xml1, "root");
     expect(result1).toEqual({
       name: "hello",
       position: {
@@ -247,7 +247,7 @@ describe("schemaLib", () => {
 
     const xml2 =
       '<root name="hello"><position x="1" y="2" z="3"/><list><item name="alpha"/></list></root>';
-    const result2 = schema2.parseTree(xml2, "root");
+    const result2 = schema2.parse(xml2, "root");
     expect(result2).toEqual({
       name: "hello",
       position: {
@@ -266,7 +266,7 @@ describe("schemaLib", () => {
 
     const xml3 =
       '<root name="hello"><position x="1" y="2" z="3"/><list><item name="alpha"/><item name="beta" num="2"/></list></root>';
-    const result3 = schema3.parseTree(xml3, "root");
+    const result3 = schema3.parse(xml3, "root");
     expect(result3).toEqual({
       name: "hello",
       position: {
@@ -354,7 +354,7 @@ describe("schemaLib", () => {
 </test>
 `;
 
-    const result = schema.parseTree(parseSwXml(xml), "test");
+    const result = schema.parse(parseSwXml(xml), "test");
 
     expect(result).toEqual({
       name: "Test Document",
@@ -452,7 +452,7 @@ describe("schemaLib", () => {
     const unknownFieldSpy = vi.spyOn(options, "unknownField");
     const duplicateChildElementSpy = vi.spyOn(options, "duplicateChildElement");
 
-    const data = schema.parseTree(tree, "root", options);
+    const data = schema.parse(tree, "root", options);
 
     expect(unknownFieldSpy).toHaveBeenNthCalledWith(
       1,

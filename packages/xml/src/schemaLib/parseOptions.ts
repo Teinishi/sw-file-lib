@@ -133,7 +133,7 @@ export interface SchemaParseOptions {
    *   value: x.number(),
    * });
    *
-   * schema.parseTree(
+   * schema.parse(
    *   '<root value="not-a-number"/>',
    *   "root",
    *   { allowNaN: true },

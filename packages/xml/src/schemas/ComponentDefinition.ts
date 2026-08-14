@@ -276,7 +276,7 @@ export function parseComponentDefinitionXml(
   options: ParseOptions = {},
 ): ComponentDefinition {
   const tree = parseSwXml(input);
-  return ComponentDefinitionSchema.parseTree(tree, "definition", options);
+  return ComponentDefinitionSchema.parse(tree, "definition", options);
 }
 
 /**

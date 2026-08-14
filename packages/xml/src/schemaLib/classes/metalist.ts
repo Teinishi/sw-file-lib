@@ -117,7 +117,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     return safeParseTree(this, tree, rootTag, options);
   }
 
-  parseTree(
+  parse(
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
