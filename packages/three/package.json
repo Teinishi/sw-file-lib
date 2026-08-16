@@ -13,7 +13,7 @@
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@sw-file-lib/core": "workspace:*",
     "three": "^0.185.1"
   },

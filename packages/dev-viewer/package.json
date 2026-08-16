@@ -1,0 +1,24 @@
+{
+  "name": "dev-viewer",
+  "description": "Development only 3D viewer for three.js development.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.40",
+    "three": "^0.185.1",
+    "@sw-file-lib/core": "workspace:*",
+    "@sw-file-lib/three": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/tsconfig": "^0.9.1",
+    "vite": "^8.2.0",
+    "vue-tsc": "^3.3.8"
+  }
+}
