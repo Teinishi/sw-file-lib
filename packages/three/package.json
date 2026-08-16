@@ -1,0 +1,23 @@
+{
+  "name": "@sw-file-lib/three",
+  "version": "0.1.0",
+  "description": "Stormworks-style materials and geometry conversion for three.js.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@sw-file-lib/core": "workspace:*",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.4"
+  }
+}
