@@ -4,17 +4,30 @@
   "description": "TypeScript library for reading and writing Stormworks XML file formats.",
   "keywords": [],
   "license": "MIT",
-  "author": "",
+  "author": "Teinishi",
   "files": [
     "dist"
   ],
   "type": "module",
   "exports": {
-    ".": "./dist/index.mjs",
+    ".": {
+      "development": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
     "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit",
+    "build": "tsdown",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@sw-file-lib/core": "workspace:*",
     "fast-xml-parser": "^5.10.1"
+  },
+  "devDependencies": {
+    "@sw-file-lib/test-utils": "workspace:*"
   }
 }

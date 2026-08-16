@@ -4,20 +4,30 @@
   "description": "Stormworks-style materials and geometry conversion for three.js.",
   "keywords": [],
   "license": "MIT",
-  "author": "",
+  "author": "Teinishi",
   "files": [
     "dist"
   ],
   "type": "module",
   "exports": {
-    ".": "./dist/index.mjs",
+    ".": {
+      "development": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
     "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit",
+    "build": "tsdown",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.4"
   },
   "peerDependencies": {
     "@sw-file-lib/core": "workspace:*",
     "three": "^0.185.1"
-  },
-  "devDependencies": {
-    "@types/three": "^0.185.4"
   }
 }

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { searchRom } from "../../../internalUtils/src/testUtils";
+import { searchRom } from "@sw-file-lib/test-utils";
 import {
   meshDataFromBytes,
   meshDataToBytes,
@@ -12,8 +12,8 @@ import {
 
 describe("mesh roundtrip", () => {
   test("test_cube_1.mesh", async () => {
-    const binPath = path.join(__dirname, "data/test_cube_1.mesh");
-    const jsonPath = path.join(__dirname, "/data/test_cube_1.mesh.json");
+    const binPath = path.join(import.meta.dirname, "data/test_cube_1.mesh");
+    const jsonPath = path.join(import.meta.dirname, "/data/test_cube_1.mesh.json");
 
     const buf = await fs.readFile(binPath);
     const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));
@@ -26,8 +26,8 @@ describe("mesh roundtrip", () => {
   });
 
   test("test_cube_1.phys", async () => {
-    const binPath = path.join(__dirname, "data/test_cube_1.phys");
-    const jsonPath = path.join(__dirname, "/data/test_cube_1.phys.json");
+    const binPath = path.join(import.meta.dirname, "data/test_cube_1.phys");
+    const jsonPath = path.join(import.meta.dirname, "/data/test_cube_1.phys.json");
 
     const buf = await fs.readFile(binPath);
     const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));

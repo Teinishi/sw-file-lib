@@ -9,7 +9,7 @@ importers:
   .:
     devDependencies:
       '@types/node':
-        specifier: ^26.1.1
+        specifier: ^26.1.2
         version: 26.1.2
       bumpp:
         specifier: ^11.1.0
@@ -33,7 +33,11 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@26.1.2)(vite@8.2.1(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
-  packages/core: {}
+  packages/core:
+    devDependencies:
+      '@sw-file-lib/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
 
   packages/dev-viewer:
     dependencies:
@@ -63,6 +67,8 @@ importers:
         specifier: ^3.3.8
         version: 3.3.10(typescript@7.0.2)
 
+  packages/test-utils: {}
+
   packages/three:
     dependencies:
       '@sw-file-lib/core':
@@ -84,6 +90,10 @@ importers:
       fast-xml-parser:
         specifier: ^5.10.1
         version: 5.10.1
+    devDependencies:
+      '@sw-file-lib/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
 
 packages:
 

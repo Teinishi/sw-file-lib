@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "lib": ["ES2023", "DOM"],
+    "composite": true
+  },
+  "include": ["src/**/*.ts"]
+}

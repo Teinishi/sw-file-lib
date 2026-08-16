@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { searchRom } from "../../../internalUtils/src/testUtils";
+import { searchRom } from "@sw-file-lib/test-utils";
 import {
   parseSwXml,
   safeParseComponentDefinitionXml,
@@ -12,7 +12,7 @@ import {
 
 describe("componentDefinition", () => {
   test("build component definition", async () => {
-    const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
+    const xmlPath = path.join(import.meta.dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
     const schema = ComponentDefinitionSchema.extend({
@@ -68,7 +68,7 @@ describe("componentDefinition", () => {
   });
 
   test("parse test_cube_1.xml", async () => {
-    const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
+    const xmlPath = path.join(import.meta.dirname, "data/test_cube_1.xml");
     const xml = await fs.readFile(xmlPath, "utf8");
 
     const schema = ComponentDefinitionSchema.extend({

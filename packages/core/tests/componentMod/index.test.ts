@@ -5,9 +5,9 @@ import { componentModFromBytes, componentModToBytes } from "../../src";
 
 describe("component mod roundtrip", () => {
   test("test_cube_1.bin", async () => {
-    const binPath = path.join(__dirname, "data/test_cube_1.bin");
-    const xmlPath = path.join(__dirname, "data/test_cube_1.xml");
-    const meshPath = path.join(__dirname, "data/test_cube_1.mesh");
+    const binPath = path.join(import.meta.dirname, "data/test_cube_1.bin");
+    const xmlPath = path.join(import.meta.dirname, "data/test_cube_1.xml");
+    const meshPath = path.join(import.meta.dirname, "data/test_cube_1.mesh");
 
     const buf = await fs.readFile(binPath);
     const definition = await fs.readFile(xmlPath, "utf8");

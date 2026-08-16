@@ -1,5 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { createSwMaterials } from "@sw-file-lib/three";
+
+const materials = createSwMaterials();
+</script>
 
 <template>
-  <h1>Hello world!</h1>
+  <div>{{ Object.keys(materials) }}</div>
 </template>

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { describe, test } from "vitest";
-import { searchEnvPath } from "../../../internalUtils/src/testUtils";
+import { searchEnvPath } from "@sw-file-lib/test-utils";
 import { parseVehicleXml } from "../../src";
 
 describe("vehicle", () => {

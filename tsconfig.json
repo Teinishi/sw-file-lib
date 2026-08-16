@@ -1,23 +1,11 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "lib": ["es2023"],
-    "moduleDetection": "force",
     "module": "preserve",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
+    "lib": ["ES2023"],
     "types": ["node"],
-    "strict": true,
-    "noUnusedLocals": true,
     "declaration": true,
-    "emitDeclarationOnly": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "strictFunctionTypes": true
+    "emitDeclarationOnly": true
   },
-  "include": ["packages/*/src", "packages/*/tests"]
+  "files": [],
+  "references": [{ "path": "./packages/core" }]
 }
