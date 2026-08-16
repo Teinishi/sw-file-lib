@@ -22,9 +22,7 @@ export interface DisposeSwObjectOptions {
  * This helper does not dispose anything; use it when your application needs to
  * inspect or dispose resources with custom ownership rules.
  */
-export function collectSwObjectResources(
-  object: THREE.Object3D,
-): SwObjectResources {
+export function collectSwObjectResources(object: THREE.Object3D): SwObjectResources {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
 

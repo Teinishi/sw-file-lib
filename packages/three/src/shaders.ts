@@ -63,10 +63,7 @@ export function createUniformStore(defaults: SwUniformPatch = {}): SwUniformStor
 }
 
 /** Apply typed uniform values to an existing uniform store. */
-export function applyUniformPatch(
-  store: SwUniformStore,
-  patch: SwUniformPatch = {},
-): void {
+export function applyUniformPatch(store: SwUniformStore, patch: SwUniformPatch = {}): void {
   Object.entries(patch).forEach(([name, uniform]) => {
     const value = createUniformRuntimeValue(uniform);
     if (store[name]) {

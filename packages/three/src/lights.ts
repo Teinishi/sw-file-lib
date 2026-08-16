@@ -35,9 +35,7 @@ export function createSwLights(
 }
 
 /** Create a group containing the default Stormworks-style lights. */
-export function createSwLightGroup(
-  options: CreateSwLightsOptions = {},
-): THREE.Group {
+export function createSwLightGroup(options: CreateSwLightsOptions = {}): THREE.Group {
   const group = new THREE.Group();
 
   createSwLights(options).forEach((light) => {

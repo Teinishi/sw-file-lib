@@ -57,9 +57,7 @@ export interface CreateSwMaterialsOptions {
  * object-local color and shader state. Share the returned set only when objects
  * should intentionally share uniform updates.
  */
-export function createSwMaterials(
-  options: CreateSwMaterialsOptions = {},
-): SwMaterialSet {
+export function createSwMaterials(options: CreateSwMaterialsOptions = {}): SwMaterialSet {
   const uniformStores = createSwUniformStores(options.uniforms);
 
   return {
@@ -77,9 +75,7 @@ export function createSwMaterials(
  * Default opaque and glass uniforms are included before the optional patch is
  * applied.
  */
-export function createSwUniformStores(
-  uniforms: SwUniforms = {},
-): SwUniformStores {
+export function createSwUniformStores(uniforms: SwUniforms = {}): SwUniformStores {
   const opaque = createUniformStore(createDefaultOpaqueUniforms());
   const glass = createUniformStore(createDefaultGlassUniforms());
   const additive = createUniformStore();
@@ -94,10 +90,7 @@ export function createSwUniformStores(
 }
 
 /** Apply material-family uniform patches to an existing Stormworks material set. */
-export function applySwUniforms(
-  materials: SwMaterialSet,
-  uniforms: SwUniforms = {},
-): void {
+export function applySwUniforms(materials: SwMaterialSet, uniforms: SwUniforms = {}): void {
   applyUniformPatch(materials.uniforms.opaque, uniforms.opaque);
   applyUniformPatch(materials.uniforms.glass, uniforms.glass);
   applyUniformPatch(materials.uniforms.additive, uniforms.additive);
