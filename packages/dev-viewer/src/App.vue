@@ -16,6 +16,7 @@ type LoadedObject = {
 const loadedObjects = reactive<LoadedObject[]>([]);
 const isDragging = ref(false);
 const errorMessage = ref("");
+const fileInput = ref<HTMLInputElement>();
 const physMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
 
 let nextObjectId = 1;
@@ -28,7 +29,7 @@ async function addFiles(fileList: FileList | File[]) {
   const files = [...fileList].filter((file) => /\.(mesh|phys)$/i.test(file.name));
 
   if (files.length === 0) {
-    errorMessage.value = ".mesh または .phys ファイルをドロップしてください。";
+    errorMessage.value = "Please drop .mesh or .phys files.";
     return;
   }
 
@@ -49,7 +50,7 @@ async function addFiles(fileList: FileList | File[]) {
         visible: true,
       });
     } catch (error) {
-      errorMessage.value = `${file.name} の読み込みに失敗しました: ${
+      errorMessage.value = `Failed to load ${file.name}: ${
         error instanceof Error ? error.message : String(error)
       }`;
     }
@@ -59,6 +60,31 @@ async function addFiles(fileList: FileList | File[]) {
 function setVisible(item: LoadedObject, visible: boolean) {
   item.visible = visible;
   item.object.visible = visible;
+}
+
+function openFileDialog() {
+  fileInput.value?.click();
+}
+
+function onFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement;
+
+  if (input.files) {
+    void addFiles(input.files);
+  }
+
+  input.value = "";
+}
+
+function removeObject(item: LoadedObject) {
+  const index = loadedObjects.findIndex((loadedObject) => loadedObject.id === item.id);
+  if (index >= 0) {
+    loadedObjects.splice(index, 1);
+  }
+}
+
+function clearObjects() {
+  loadedObjects.splice(0);
 }
 
 function onDragEnter(event: DragEvent) {
@@ -101,6 +127,22 @@ function onDrop(event: DragEvent) {
     <aside class="object-panel">
       <h1>Mesh Viewer</h1>
 
+      <input
+        ref="fileInput"
+        class="file-input"
+        type="file"
+        accept=".mesh,.phys"
+        multiple
+        @change="onFileSelect"
+      />
+
+      <div class="actions">
+        <button type="button" @click="openFileDialog">Select File</button>
+        <button type="button" :disabled="loadedObjects.length === 0" @click="clearObjects">
+          Clear
+        </button>
+      </div>
+
       <div class="drop-zone">
         <span>D&D</span>
         <p>.mesh / .phys</p>
@@ -110,7 +152,7 @@ function onDrop(event: DragEvent) {
 
       <ul v-if="loadedObjects.length > 0" class="object-list">
         <li v-for="item in loadedObjects" :key="item.id" class="object-item">
-          <label>
+          <label class="visibility-control">
             <input
               type="checkbox"
               :checked="item.visible"
@@ -119,10 +161,16 @@ function onDrop(event: DragEvent) {
             <span class="object-name">{{ item.name }}</span>
             <span class="object-kind">{{ item.kind }}</span>
           </label>
+          <button
+            class="delete-button"
+            type="button"
+            :aria-label="`Remove ${item.name}`"
+            @click="removeObject(item)"
+          >
+            Remove
+          </button>
         </li>
       </ul>
-
-      <p v-else class="empty">ファイルをドロップするとここに表示されます。</p>
     </aside>
   </main>
 </template>
@@ -183,6 +231,38 @@ function onDrop(event: DragEvent) {
   font-weight: 700;
 }
 
+.file-input {
+  display: none;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.actions button,
+.delete-button {
+  min-height: 32px;
+  padding: 0 10px;
+  color: #f2f5f8;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+}
+
+.actions button:hover:not(:disabled),
+.delete-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.actions button:disabled {
+  color: #788390;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .drop-zone {
   display: grid;
   gap: 4px;
@@ -219,16 +299,24 @@ function onDrop(event: DragEvent) {
   list-style: none;
 }
 
-.object-item label {
+.object-item {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  min-height: 34px;
   padding: 7px 8px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
+}
+
+.visibility-control {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  min-height: 34px;
 }
 
 .object-item input {
@@ -252,6 +340,12 @@ function onDrop(event: DragEvent) {
   text-transform: uppercase;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
+}
+
+.delete-button {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
 }
 
 .empty {
