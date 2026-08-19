@@ -6,14 +6,13 @@ import {
   createDefaultOpaqueUniforms,
   createGlassMaterial,
   createOpaqueMaterial,
-  createPhysMaterial,
   createUniformStore,
   type SwUniformPatch,
   type SwUniformStore,
 } from ".";
 
-/** Material families used by Stormworks render and physics mesh helpers. */
-export type SwMaterialKind = "opaque" | "glass" | "additive" | "phys";
+/** Material families for Stormworks mesh. */
+export type SwMaterialKind = "opaque" | "glass" | "additive";
 
 /** Uniform patches keyed by Stormworks material family. */
 export type SwUniforms = Partial<Record<SwMaterialKind, SwUniformPatch>>;
@@ -26,8 +25,6 @@ export interface SwUniformStores {
   glass: SwUniformStore;
   /** Uniforms used by the additive render material. */
   additive: SwUniformStore;
-  /** Uniforms used by the physics mesh material. */
-  phys: SwUniformStore;
 }
 
 /** Materials and their uniform stores used by Stormworks object creation helpers. */
@@ -38,8 +35,6 @@ export interface SwMaterialSet {
   glass: THREE.ShaderMaterial;
   /** Material used for shader id `2` submeshes. */
   additive: THREE.MeshBasicMaterial;
-  /** Material used for meshes created from `phys` files. */
-  phys: THREE.MeshLambertMaterial;
   /** Uniform stores attached to this material set. */
   uniforms: SwUniformStores;
 }
@@ -64,7 +59,6 @@ export function createSwMaterials(options: CreateSwMaterialsOptions = {}): SwMat
     opaque: createOpaqueMaterial(uniformStores.opaque),
     glass: createGlassMaterial(uniformStores.glass),
     additive: createAdditiveMaterial(uniformStores.additive),
-    phys: createPhysMaterial(uniformStores.phys),
     uniforms: uniformStores,
   };
 }
@@ -79,14 +73,12 @@ export function createSwUniformStores(uniforms: SwUniforms = {}): SwUniformStore
   const opaque = createUniformStore(createDefaultOpaqueUniforms());
   const glass = createUniformStore(createDefaultGlassUniforms());
   const additive = createUniformStore();
-  const phys = createUniformStore();
 
   applyUniformPatch(opaque, uniforms.opaque);
   applyUniformPatch(glass, uniforms.glass);
   applyUniformPatch(additive, uniforms.additive);
-  applyUniformPatch(phys, uniforms.phys);
 
-  return { opaque, glass, additive, phys };
+  return { opaque, glass, additive };
 }
 
 /** Apply material-family uniform patches to an existing Stormworks material set. */
@@ -94,44 +86,4 @@ export function applySwUniforms(materials: SwMaterialSet, uniforms: SwUniforms =
   applyUniformPatch(materials.uniforms.opaque, uniforms.opaque);
   applyUniformPatch(materials.uniforms.glass, uniforms.glass);
   applyUniformPatch(materials.uniforms.additive, uniforms.additive);
-  applyUniformPatch(materials.uniforms.phys, uniforms.phys);
-}
-
-/**
- * Enable or disable wireframe rendering on materials that support it.
- *
- * The target can be either a Three.js object tree or an iterable of materials.
- * Materials without a `wireframe` property are ignored.
- */
-export function setSwWireframe(
-  objectOrMaterials: THREE.Object3D | Iterable<THREE.Material>,
-  enabled: boolean,
-): void {
-  const materials =
-    objectOrMaterials instanceof THREE.Object3D
-      ? collectObjectMaterials(objectOrMaterials)
-      : Array.from(objectOrMaterials);
-
-  materials.forEach((material) => {
-    if ("wireframe" in material) {
-      material.wireframe = enabled;
-    }
-  });
-}
-
-function collectObjectMaterials(object: THREE.Object3D): THREE.Material[] {
-  const materials = new Set<THREE.Material>();
-
-  object.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return;
-
-    const material = child.material;
-    if (Array.isArray(material)) {
-      material.forEach((item) => materials.add(item));
-    } else {
-      materials.add(material);
-    }
-  });
-
-  return Array.from(materials);
 }

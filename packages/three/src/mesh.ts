@@ -1,14 +1,6 @@
 import * as THREE from "three";
-import type { MeshData, PhysData } from "@sw-file-lib/core";
+import type { MeshData, PhysData, PhysGroup } from "@sw-file-lib/core";
 import { createSwMaterials, type SwMaterialSet } from "./materials";
-
-/** Options shared by helpers that create Three.js objects from parsed Stormworks data. */
-export interface CreateSwObjectOptions {
-  /** Optional display name assigned to the root Three.js object. */
-  name?: string;
-  /** Materials used by the created object. Defaults to a fresh material set. */
-  materials?: SwMaterialSet;
-}
 
 /** Options used when creating a render mesh object from parsed `mesh` data. */
 export interface CreateSwMeshOptions {
@@ -22,25 +14,6 @@ export interface CreateSwMeshOptions {
 export interface CreateSwPhysMeshOptions {
   /** Optional display name assigned to the created group. */
   name?: string;
-  /** Material set whose `phys` material is used for each child mesh. */
-  materials?: SwMaterialSet;
-}
-
-/**
- * Create a Three.js object from parsed Stormworks mesh-related data.
- *
- * Render mesh files become a single `THREE.Mesh`. Physics mesh files become a
- * `THREE.Group` containing one mesh per physics section.
- */
-export function createSwObject(
-  data: MeshData | PhysData,
-  options: CreateSwObjectOptions = {},
-): THREE.Object3D {
-  if (data.kind === "mesh") {
-    return createSwMesh(data, options);
-  }
-
-  return createSwPhysMeshGroup(data, options);
 }
 
 /**
@@ -69,42 +42,24 @@ export function createSwMesh(
  */
 export function createSwPhysMeshGroup(
   mesh: PhysData,
+  material: THREE.Material,
   options: CreateSwPhysMeshOptions = {},
 ): THREE.Group {
   const group = new THREE.Group();
-  const materials = options.materials ?? createSwMaterials();
-
-  group.name = options.name ?? "";
 
   mesh.groups.forEach((g) => {
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(g.vertices.length * 3);
-
-    g.vertices.forEach((vertex, index) => {
-      const offset = index * 3;
-      positions[offset] = vertex.x;
-      positions[offset + 1] = vertex.y;
-      positions[offset + 2] = -vertex.z;
-    });
-
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setIndex(
-      g.indices.length > 0 ? g.indices : createFallbackTriangleIndices(g.vertices.length),
-    );
-    geometry.computeVertexNormals();
-    geometry.computeBoundingSphere();
-
-    group.add(new THREE.Mesh(geometry, materials.phys));
+    const geometry = createSwPhysGroupGeometry(g);
+    group.add(new THREE.Mesh(geometry, material));
   });
 
+  group.name = options.name ?? "";
   return group;
 }
 
 /**
  * Create buffer geometry for parsed Stormworks render mesh data.
  *
- * The geometry includes `position`, `normal`, and `color` attributes, reversed
- * triangle winding, and material groups derived from submesh shader ids.
+ * The geometry includes `position`, `normal`, and `color` attributes, and material groups derived from group shader ids.
  */
 export function createSwMeshGeometry(mesh: MeshData): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
@@ -130,6 +85,34 @@ export function createSwMeshGeometry(mesh: MeshData): THREE.BufferGeometry {
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geometry.setIndex(mesh.indices);
   addSubmeshGroups(geometry, mesh);
+  geometry.computeBoundingSphere();
+
+  return geometry;
+}
+
+/**
+ * Create buffer geometry for parsed Stormworks phys group.
+ *
+ * The geometry includes `position` attributes.
+ */
+export function createSwPhysGroupGeometry(physGroup: PhysGroup): THREE.BufferGeometry {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(physGroup.vertices.length * 3);
+
+  physGroup.vertices.forEach((vertex, index) => {
+    const offset = index * 3;
+    positions[offset] = vertex.x;
+    positions[offset + 1] = vertex.y;
+    positions[offset + 2] = -vertex.z;
+  });
+
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setIndex(
+    physGroup.indices.length > 0
+      ? physGroup.indices
+      : createFallbackTriangleIndices(physGroup.vertices.length),
+  );
+  geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
 
   return geometry;

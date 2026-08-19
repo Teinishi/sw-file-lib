@@ -187,23 +187,6 @@ export function createAdditiveMaterial(
   return material;
 }
 
-/** Create the material used for phys files. */
-export function createPhysMaterial(
-  uniforms = createUniformStore(),
-  materialParameters?: THREE.MeshLambertMaterialParameters,
-) {
-  const material = new THREE.MeshLambertMaterial({
-    color: 0xa0a0a0,
-    ...materialParameters,
-  });
-
-  material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms);
-  };
-
-  return material;
-}
-
 function createUniformRuntimeValue(
   uniform: SwUniformValue,
 ): number | THREE.Vector2 | THREE.Vector3 | THREE.Vector4 | THREE.Color {
