@@ -9,10 +9,25 @@
     "allowArbitraryExtensions": true,
 
     /* Linting */
+
+    "target": "esnext",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+
+    "resolveJsonModule": true,
+
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "strictFunctionTypes": true,
+    "erasableSyntaxOnly": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
