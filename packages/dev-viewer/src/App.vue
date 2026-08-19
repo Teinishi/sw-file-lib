@@ -1,7 +1,260 @@
 <script setup lang="ts">
+import * as THREE from "three";
+import { computed, markRaw, reactive, ref } from "vue";
+import { meshOrPhysDataFromBytes } from "@sw-file-lib/core";
+import { createSwMesh, createSwPhysMeshGroup } from "@sw-file-lib/three";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
+
+type LoadedObject = {
+  id: number;
+  name: string;
+  kind: "mesh" | "phys";
+  object: THREE.Object3D;
+  visible: boolean;
+};
+
+const loadedObjects = reactive<LoadedObject[]>([]);
+const isDragging = ref(false);
+const errorMessage = ref("");
+const physMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
+
+let nextObjectId = 1;
+let dragDepth = 0;
+
+const sceneObjects = computed(() => loadedObjects.map((item) => item.object));
+
+async function addFiles(fileList: FileList | File[]) {
+  errorMessage.value = "";
+  const files = [...fileList].filter((file) => /\.(mesh|phys)$/i.test(file.name));
+
+  if (files.length === 0) {
+    errorMessage.value = ".mesh または .phys ファイルをドロップしてください。";
+    return;
+  }
+
+  for (const file of files) {
+    try {
+      const bytes = await file.arrayBuffer();
+      const data = meshOrPhysDataFromBytes(bytes);
+      const object =
+        data.kind === "mesh"
+          ? createSwMesh(data, { name: file.name })
+          : createSwPhysMeshGroup(data, physMaterial, { name: file.name });
+
+      loadedObjects.push({
+        id: nextObjectId++,
+        name: file.name,
+        kind: data.kind,
+        object: markRaw(object),
+        visible: true,
+      });
+    } catch (error) {
+      errorMessage.value = `${file.name} の読み込みに失敗しました: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+    }
+  }
+}
+
+function setVisible(item: LoadedObject, visible: boolean) {
+  item.visible = visible;
+  item.object.visible = visible;
+}
+
+function onDragEnter(event: DragEvent) {
+  event.preventDefault();
+  dragDepth++;
+  isDragging.value = true;
+}
+
+function onDragOver(event: DragEvent) {
+  event.preventDefault();
+}
+
+function onDragLeave() {
+  dragDepth = Math.max(0, dragDepth - 1);
+  isDragging.value = dragDepth > 0;
+}
+
+function onDrop(event: DragEvent) {
+  event.preventDefault();
+  dragDepth = 0;
+  isDragging.value = false;
+
+  if (event.dataTransfer?.files) {
+    void addFiles(event.dataTransfer.files);
+  }
+}
 </script>
 
 <template>
-  <ViewerCanvas />
+  <main
+    class="dev-viewer"
+    :class="{ 'is-dragging': isDragging }"
+    @dragenter="onDragEnter"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+  >
+    <ViewerCanvas class="canvas" :objects="sceneObjects" />
+
+    <aside class="object-panel">
+      <h1>Mesh Viewer</h1>
+
+      <div class="drop-zone">
+        <span>D&D</span>
+        <p>.mesh / .phys</p>
+      </div>
+
+      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+
+      <ul v-if="loadedObjects.length > 0" class="object-list">
+        <li v-for="item in loadedObjects" :key="item.id" class="object-item">
+          <label>
+            <input
+              type="checkbox"
+              :checked="item.visible"
+              @change="setVisible(item, ($event.target as HTMLInputElement).checked)"
+            />
+            <span class="object-name">{{ item.name }}</span>
+            <span class="object-kind">{{ item.kind }}</span>
+          </label>
+        </li>
+      </ul>
+
+      <p v-else class="empty">ファイルをドロップするとここに表示されます。</p>
+    </aside>
+  </main>
 </template>
+
+<style scoped>
+.dev-viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #20242a;
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.dev-viewer::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  content: "";
+  border: 2px solid transparent;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.dev-viewer.is-dragging::after {
+  background: rgba(82, 144, 210, 0.16);
+  border-color: #78b7ff;
+}
+
+.object-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(320px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 14px;
+  overflow: hidden;
+  color: #f2f5f8;
+  background: rgba(31, 35, 41, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.object-panel h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.drop-zone {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  color: #c8d2dd;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+}
+
+.drop-zone span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f2f5f8;
+}
+
+.drop-zone p,
+.empty,
+.error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.error {
+  color: #ffb3ad;
+}
+
+.object-list {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.object-item label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.object-item input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.object-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.object-kind {
+  padding: 2px 6px;
+  font-size: 11px;
+  color: #aeb9c5;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.empty {
+  color: #aeb9c5;
+}
+</style>

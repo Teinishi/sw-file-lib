@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { createSwLightGroup } from "@sw-file-lib/three";
+
+const props = defineProps<{
+  objects: THREE.Object3D[];
+}>();
 
 const container = ref<HTMLDivElement>();
 
@@ -17,9 +21,32 @@ let context:
 
 let resizeObserver: ResizeObserver | undefined;
 let animationFrame: number | undefined;
+const managedObjects = new WeakSet<THREE.Object3D>();
+
+function syncSceneObjects() {
+  if (context === undefined) return;
+
+  const currentObjects = new Set(props.objects);
+
+  const children = [...context.scene.children];
+  for (const child of children) {
+    if (managedObjects.has(child) && !currentObjects.has(child)) {
+      context.scene.remove(child);
+      managedObjects.delete(child);
+    }
+  }
+
+  for (const object of props.objects) {
+    if (object.parent !== context.scene) {
+      managedObjects.add(object);
+      context.scene.add(object);
+    }
+  }
+}
 
 function init(container: HTMLElement) {
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x20242a);
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
   camera.position.x = 1;
@@ -38,14 +65,10 @@ function init(container: HTMLElement) {
   controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
   controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshStandardMaterial();
-  const cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
-
   scene.add(createSwLightGroup());
 
   context = { scene, renderer, camera, controls };
+  syncSceneObjects();
 }
 
 function animate() {
@@ -85,6 +108,8 @@ onUnmounted(() => {
   resizeObserver?.disconnect();
   context?.renderer.dispose();
 });
+
+watch(() => props.objects, syncSceneObjects);
 </script>
 
 <template>
