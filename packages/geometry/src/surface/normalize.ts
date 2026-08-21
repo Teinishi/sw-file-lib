@@ -1,3 +1,4 @@
+import type { DeepReadonly } from "ts-essentials";
 import {
   addVec3,
   detMat3,
@@ -14,7 +15,9 @@ import {
 } from ".";
 import { getSurfaceOrientation } from "../internal/surface";
 
-export function normalizeSurfaceData(components: ComponentSurfaceData[]): SurfaceData[] {
+export function normalizeSurfaceData(
+  components: DeepReadonly<ComponentSurfaceData[]>,
+): SurfaceData[] {
   const result: SurfaceData[] = [];
 
   for (const component of components) {
@@ -37,9 +40,8 @@ export function normalizeSurfaceData(components: ComponentSurfaceData[]): Surfac
       if (cMat) matrix = mulMat3(cMat, matrix);
 
       const item: SurfaceData = {
-        componentPosition: component.position,
-        componentMatrix: component.matrix,
-        localPosition: surface.position,
+        componentPosition: cPos,
+        localPosition: lPos,
         position,
         matrix,
         isFlipped: detMat3(matrix) < 0,
@@ -48,6 +50,7 @@ export function normalizeSurfaceData(components: ComponentSurfaceData[]): Surfac
         rotation,
       };
 
+      if (component.matrix !== undefined) item.componentMatrix = [...component.matrix];
       if (surface.color) item.color = surface.color;
 
       result.push(item);

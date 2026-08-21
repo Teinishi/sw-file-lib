@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@sw-file-lib/core": "workspace:*",
+    "@sw-file-lib/geometry": "workspace:*",
+    "@sw-file-lib/internal-utils": "workspace:*",
     "@sw-file-lib/three": "workspace:*",
     "@sw-file-lib/xml": "workspace:*",
     "three": "^0.185.1",

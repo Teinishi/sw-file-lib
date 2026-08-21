@@ -296,3 +296,7 @@ export const BLOCK_SURFACE_DEFINITIONS = {
 } as const;
 
 export type BasicBlockType = keyof typeof BLOCK_SURFACE_DEFINITIONS;
+
+export function isBasicBlockType(value: unknown): value is BasicBlockType {
+  return typeof value === "string" && value in BLOCK_SURFACE_DEFINITIONS;
+}

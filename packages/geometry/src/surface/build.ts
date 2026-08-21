@@ -2,22 +2,27 @@ import type { DeepReadonly } from "ts-essentials";
 import type { Vec3, Mat3 } from "@sw-file-lib/core";
 import { offsetPolygon3D } from "@sw-file-lib/internal-utils";
 import {
+  cullSurfaces,
   SURFACE_SHAPES,
   type BasicSurfaceShape,
   type BuildSurfaceGeometryOptions,
+  type ComponentSurfaceData,
   type SurfaceData,
 } from ".";
 import { GeometryBuilder } from "..";
+import { normalizeSurfaceData } from "./normalize";
 
 const SURFACE_EDGE_WIDTH = 0.003;
 const SURFACE_EDGE_COLOR = { r: 25, g: 25, b: 25 };
 
-const SURFACE_INNER_RINGS = Object.fromEntries(
-  Object.entries(SURFACE_SHAPES).map(([key, value]) => [
-    key,
-    offsetPolygon3D(value, SURFACE_EDGE_WIDTH),
-  ]),
-) as Record<BasicSurfaceShape, Vec3[]>;
+const innerRingCache: Record<BasicSurfaceShape, Vec3[]> = {} as Record<BasicSurfaceShape, Vec3[]>;
+
+function getInnerRing(shape: BasicSurfaceShape) {
+  if (!innerRingCache[shape]) {
+    innerRingCache[shape] = offsetPolygon3D(SURFACE_SHAPES[shape], SURFACE_EDGE_WIDTH);
+  }
+  return innerRingCache[shape];
+}
 
 export function buildSurfaceGeometry(
   shape: BasicSurfaceShape,
@@ -34,7 +39,7 @@ export function buildSurfaceGeometry(
   if (n < 3) return builder;
 
   if (edge) {
-    const innerRing = SURFACE_INNER_RINGS[shape];
+    const innerRing = getInnerRing(shape);
 
     for (let i = 0; i < n; i++) {
       const v0 = outerRing[i]!;
@@ -69,6 +74,18 @@ export function buildSurfacesGeometry(
   }
 
   return builder;
+}
+
+export function buildNormalizedSurfacesGeometry(
+  components: DeepReadonly<ComponentSurfaceData[]>,
+  options?: DeepReadonly<BuildSurfaceGeometryOptions>,
+) {
+  const surfaces = normalizeSurfaceData(components);
+  const culledSurfaces = cullSurfaces(surfaces);
+  return buildSurfacesGeometry(
+    surfaces.filter((_, i) => !culledSurfaces.has(i)),
+    options,
+  );
 }
 
 function stormToThreeMat3(m: Readonly<Mat3>): Mat3 {

@@ -6,7 +6,7 @@ import { createSwMaterials, type SwMaterialSet } from "./materials";
 export interface CreateSwMeshOptions {
   /** Optional display name assigned to the created mesh. */
   name?: string;
-  /** Materials used for opaque, glass, and additive submeshes. */
+  /** Materials used for opaque, glass, and additive groups. */
   materials?: SwMaterialSet;
 }
 
@@ -20,7 +20,7 @@ export interface CreateSwPhysMeshOptions {
  * Create a renderable Three.js mesh from parsed Stormworks `mesh` data.
  *
  * The returned mesh owns its geometry. It uses material groups mapped from the
- * file's submesh shader ids: opaque, glass, and additive.
+ * file's group shader ids: opaque, glass, and additive.
  */
 export function createSwMesh(
   mesh: MeshData,
@@ -84,7 +84,7 @@ export function createSwMeshGeometry(mesh: MeshData): THREE.BufferGeometry {
   geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geometry.setIndex(mesh.indices);
-  addSubmeshGroups(geometry, mesh);
+  setGroups(geometry, mesh);
   geometry.computeBoundingSphere();
 
   return geometry;
@@ -122,7 +122,7 @@ function createFallbackTriangleIndices(vertexCount: number): number[] {
   return Array.from({ length: vertexCount }, (_, index) => index);
 }
 
-function addSubmeshGroups(geometry: THREE.BufferGeometry, mesh: MeshData): void {
+function setGroups(geometry: THREE.BufferGeometry, mesh: MeshData): void {
   geometry.clearGroups();
 
   if (mesh.groups.length === 0) {

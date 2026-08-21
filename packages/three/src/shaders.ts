@@ -98,7 +98,7 @@ export function createDefaultGlassUniforms(): SwUniformPatch {
   };
 }
 
-/** Create the default opaque material used for shaderId 0 submeshes. */
+/** Create the default opaque material used for shaderId 0 groups. */
 export function createOpaqueMaterial(
   uniforms = createUniformStore(createDefaultOpaqueUniforms()),
   materialParameters?: THREE.MeshStandardMaterialParameters,
@@ -148,7 +148,7 @@ reflectedLight.directDiffuse += diffuseColor.rgb * incidence * distanceFactor * 
   return material;
 }
 
-/** Create the default glass material used for shaderId 1 submeshes. */
+/** Create the default glass material used for shaderId 1 groups. */
 export function createGlassMaterial(
   uniforms = createUniformStore(createDefaultGlassUniforms()),
   materialParameters?: THREE.ShaderMaterialParameters,
@@ -167,7 +167,7 @@ export function createGlassMaterial(
   });
 }
 
-/** Create the default additive material used for shaderId 2 submeshes. */
+/** Create the default additive material used for shaderId 2 groups. */
 export function createAdditiveMaterial(
   uniforms = createUniformStore(),
   materialParameters?: THREE.MeshBasicMaterialParameters,

@@ -1,14 +1,28 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { meshOrPhysDataFromBytes } from "@sw-file-lib/core";
-import { createSwMesh, createSwPhysMeshGroup } from "@sw-file-lib/three";
+import { meshOrPhysDataFromBytes, parseMat3, type Mat3 } from "@sw-file-lib/core";
+import {
+  buildNormalizedSurfacesGeometry,
+  Orientation,
+  type ComponentSurfaceData,
+} from "@sw-file-lib/geometry";
+import { mulMat3 } from "@sw-file-lib/internal-utils";
+import {
+  createSwMesh,
+  createSwPhysMeshGroup,
+  createOpaqueMaterial,
+  createUniformStore,
+  bufferGeometryFromBuilder,
+} from "@sw-file-lib/three";
+import { VehicleSchema } from "@sw-file-lib/xml";
+import { BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "./basicBlocks/blocks.ts";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
 type LoadedObject = {
   id: number;
   name: string;
-  kind: "mesh" | "phys";
+  kind: "mesh" | "phys" | "vehicle";
   object: THREE.Object3D;
   visible: boolean;
 };
@@ -24,31 +38,100 @@ let dragDepth = 0;
 
 const sceneObjects = computed(() => loadedObjects.map((item) => item.object));
 
+function transposeMat3(m: Mat3): Mat3 {
+  return [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
+}
+
+function loadMesh(bytes: ArrayBuffer, name: string) {
+  const data = meshOrPhysDataFromBytes(bytes);
+  const object =
+    data.kind === "mesh"
+      ? createSwMesh(data, { name })
+      : createSwPhysMeshGroup(data, physMaterial, { name });
+
+  loadedObjects.push({
+    id: nextObjectId++,
+    name,
+    kind: data.kind,
+    object: markRaw(object),
+    visible: true,
+  });
+}
+
+function loadVehicle(text: string, name: string) {
+  const vehicle = VehicleSchema.parse(text, "vehicle");
+
+  const components: ComponentSurfaceData[] = [];
+
+  for (const body of vehicle.bodies ?? []) {
+    for (const component of body.components ?? []) {
+      const componentType = component.d ?? "01_block";
+
+      const surfaces: ComponentSurfaceData["surfaces"] = [];
+
+      if (isBasicBlockType(componentType)) {
+        for (const surface of BLOCK_SURFACE_DEFINITIONS[componentType]) {
+          surfaces.push({
+            position: surface.position,
+            orientation: surface.orientation,
+            rotation: surface.rotation,
+            shape: surface.shape,
+            // todo: color
+          });
+        }
+      }
+
+      let matrix: Mat3 = (component.o?.r !== undefined && parseMat3(component.o.r)) || [
+        0, 0, 1, -1, 0, 0, 0, -1, 0,
+      ];
+      matrix = transposeMat3(matrix);
+      if (component.t !== undefined) {
+        if ((component.t & 1) !== 0) matrix = mulMat3(matrix, Orientation.FlipX.toMat3());
+        if ((component.t & 2) !== 0) matrix = mulMat3(matrix, Orientation.FlipY.toMat3());
+        if ((component.t & 4) !== 0) matrix = mulMat3(matrix, Orientation.FlipZ.toMat3());
+      }
+
+      components.push({
+        position: component.o?.vp,
+        matrix,
+        surfaces,
+      });
+    }
+  }
+
+  const builder = buildNormalizedSurfacesGeometry(components, { edge: true });
+  const geometry = bufferGeometryFromBuilder(builder);
+  const material = createOpaqueMaterial(
+    createUniformStore({ overrideColor: { type: "int", value: 0 } }),
+  );
+  const object = new THREE.Mesh(geometry, material);
+  object.name = name;
+
+  loadedObjects.push({
+    id: nextObjectId++,
+    name,
+    kind: "vehicle",
+    object: markRaw(object),
+    visible: true,
+  });
+}
+
 async function addFiles(fileList: FileList | File[]) {
   errorMessage.value = "";
-  const files = [...fileList].filter((file) => /\.(mesh|phys)$/i.test(file.name));
+  const files = [...fileList].filter((file) => /\.(mesh|phys|xml)$/i.test(file.name));
 
   if (files.length === 0) {
-    errorMessage.value = "Please drop .mesh or .phys files.";
+    errorMessage.value = "Please drop .mesh, .phys, or .xml files.";
     return;
   }
 
   for (const file of files) {
     try {
-      const bytes = await file.arrayBuffer();
-      const data = meshOrPhysDataFromBytes(bytes);
-      const object =
-        data.kind === "mesh"
-          ? createSwMesh(data, { name: file.name })
-          : createSwPhysMeshGroup(data, physMaterial, { name: file.name });
-
-      loadedObjects.push({
-        id: nextObjectId++,
-        name: file.name,
-        kind: data.kind,
-        object: markRaw(object),
-        visible: true,
-      });
+      if (file.name.endsWith(".xml")) {
+        loadVehicle(await file.text(), file.name);
+      } else {
+        loadMesh(await file.arrayBuffer(), file.name);
+      }
     } catch (error) {
       errorMessage.value = `Failed to load ${file.name}: ${
         error instanceof Error ? error.message : String(error)
@@ -125,13 +208,13 @@ function onDrop(event: DragEvent) {
     <ViewerCanvas class="canvas" :objects="sceneObjects" />
 
     <aside class="object-panel">
-      <h1>Mesh Viewer</h1>
+      <h1>Stormworks Three.js Integration Demo</h1>
 
       <input
         ref="fileInput"
         class="file-input"
         type="file"
-        accept=".mesh,.phys"
+        accept=".mesh,.phys,.xml"
         multiple
         @change="onFileSelect"
       />
@@ -145,7 +228,7 @@ function onDrop(event: DragEvent) {
 
       <div class="drop-zone">
         <span>D&D</span>
-        <p>.mesh / .phys</p>
+        <p>.mesh / .phys / .xml</p>
       </div>
 
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>

@@ -1,3 +1,4 @@
+export * from "./geometry";
 export * from "./lights";
 export * from "./materials";
 export * from "./mesh";

@@ -2,11 +2,8 @@ import type { DeepReadonly } from "ts-essentials";
 import { addVec3, crossVec3, dotVec3, mulVec3, normalizeVec3, subVec3 } from ".";
 import type { Vec3 } from "./internal";
 
-export function offsetPolygon3D(
-  vertices: DeepReadonly<Vec3[]>,
-  offset: number,
-): DeepReadonly<Vec3[]> {
-  if (vertices.length < 3) return vertices;
+export function offsetPolygon3D(vertices: DeepReadonly<Vec3[]>, offset: number): Vec3[] {
+  if (vertices.length < 3) return [...vertices];
 
   const v0 = vertices[0]!;
   const v1 = vertices[1]!;

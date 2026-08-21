@@ -48,6 +48,12 @@ importers:
       '@sw-file-lib/core':
         specifier: workspace:*
         version: link:../core
+      '@sw-file-lib/geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      '@sw-file-lib/internal-utils':
+        specifier: workspace:*
+        version: link:../internal-utils
       '@sw-file-lib/three':
         specifier: workspace:*
         version: link:../three

@@ -1,10 +1,7 @@
-import { BufferAttribute, type BufferGeometry } from "three";
+import { BufferAttribute, BufferGeometry } from "three";
 import type { GeometryBuilder } from "@sw-file-lib/geometry";
 
-export function applyGeometryBuilderOnBufferGeometry(
-  builder: GeometryBuilder,
-  buffer: BufferGeometry,
-) {
+export function applyBuilderOnBufferGeometry(builder: GeometryBuilder, buffer: BufferGeometry) {
   buffer.clearGroups();
 
   const { position, normal, color, index, groups } = builder.toBufferGeometryAttributes();
@@ -16,4 +13,10 @@ export function applyGeometryBuilderOnBufferGeometry(
   for (const { start, length, materialIndex } of groups) {
     buffer.addGroup(start, length, materialIndex);
   }
+}
+
+export function bufferGeometryFromBuilder(builder: GeometryBuilder): BufferGeometry {
+  const buffer = new BufferGeometry();
+  applyBuilderOnBufferGeometry(builder, buffer);
+  return buffer;
 }

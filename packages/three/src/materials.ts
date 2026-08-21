@@ -29,11 +29,11 @@ export interface SwUniformStores {
 
 /** Materials and their uniform stores used by Stormworks object creation helpers. */
 export interface SwMaterialSet {
-  /** Material used for shader id `0` submeshes. */
+  /** Material used for shader id `0` groups. */
   opaque: THREE.MeshStandardMaterial;
-  /** Material used for shader id `1` submeshes. */
+  /** Material used for shader id `1` groups. */
   glass: THREE.ShaderMaterial;
-  /** Material used for shader id `2` submeshes. */
+  /** Material used for shader id `2` groups. */
   additive: THREE.MeshBasicMaterial;
   /** Uniform stores attached to this material set. */
   uniforms: SwUniformStores;
