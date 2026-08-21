@@ -1,12 +1,6 @@
 import type { DeepReadonly } from "ts-essentials";
-import {
-  addVec3,
-  eqVec3,
-  mulVec3,
-  subVec3,
-  type Mat3,
-  type Vec3,
-} from "@sw-file-lib/internal-utils";
+import type { Vec3, Mat3 } from "@sw-file-lib/core";
+import { addVec3, eqVec3, mulVec3, subVec3 } from "@sw-file-lib/internal-utils";
 import { SURFACE_EDGE_COVERAGE, surfaceEdgeCoverageExists, type SurfaceData } from ".";
 import { compareCoverage } from "../internal/surface";
 

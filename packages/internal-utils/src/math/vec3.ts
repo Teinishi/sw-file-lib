@@ -1,8 +1,4 @@
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
+import type { Vec3 } from "../internal";
 
 export function partialToFullVec3(val?: Partial<Readonly<Vec3>>): Vec3 {
   return {

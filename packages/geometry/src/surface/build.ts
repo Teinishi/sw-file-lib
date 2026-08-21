@@ -1,5 +1,6 @@
 import type { DeepReadonly } from "ts-essentials";
-import { offsetPolygon3D, type Mat3, type Vec3 } from "@sw-file-lib/internal-utils";
+import type { Vec3, Mat3 } from "@sw-file-lib/core";
+import { offsetPolygon3D } from "@sw-file-lib/internal-utils";
 import {
   SURFACE_SHAPES,
   type BasicSurfaceShape,

@@ -1,6 +1,4 @@
-import type { Vec3 } from ".";
-
-export type Mat3 = [number, number, number, number, number, number, number, number, number];
+import type { Mat3, Vec3 } from "../internal";
 
 export function mulMat3(a: Readonly<Mat3>, b: Readonly<Mat3>): Mat3 {
   const r: Mat3 = [0, 0, 0, 0, 0, 0, 0, 0, 0];

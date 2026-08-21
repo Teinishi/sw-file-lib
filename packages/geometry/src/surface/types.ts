@@ -1,4 +1,4 @@
-import type { Color, Mat3, Vec3 } from "@sw-file-lib/internal-utils";
+import type { Color, Mat3, Vec3 } from "@sw-file-lib/core";
 import type { BasicSurfaceShape } from ".";
 
 export type BasicSurfaceOrientation = 0 | 1 | 2 | 3 | 4 | 5;
