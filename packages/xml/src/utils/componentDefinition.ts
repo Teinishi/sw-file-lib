@@ -1,5 +1,5 @@
 import type { StrictOmit } from "ts-essentials";
-import { maxVec3, minVec3, partialToFullVec3 } from "@sw-file-lib/core";
+import { maxVec3, minVec3, partialToFullVec3 } from "@sw-file-lib/internal-utils";
 import type {
   SwVec3,
   ComponentDefinition,

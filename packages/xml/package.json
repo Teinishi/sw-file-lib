@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@sw-file-lib/core": "workspace:*",
+    "@sw-file-lib/internal-utils": "workspace:*",
     "fast-xml-parser": "^5.10.1"
   },
   "devDependencies": {

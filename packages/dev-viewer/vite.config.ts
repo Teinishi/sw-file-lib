@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@sw-file-lib/core": fileURLToPath(new URL("../core/src/index.ts", import.meta.url)),
+      "@sw-file-lib/xml": fileURLToPath(new URL("../xml/src/index.ts", import.meta.url)),
       "@sw-file-lib/three": fileURLToPath(new URL("../three/src/index.ts", import.meta.url)),
     },
   },

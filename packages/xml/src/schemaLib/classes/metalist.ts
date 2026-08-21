@@ -1,4 +1,4 @@
-import { isStringKeyRecord } from "@sw-file-lib/core";
+import { isStringKeyRecord } from "@sw-file-lib/internal-utils";
 import {
   OptionalSchema,
   SchemaError,

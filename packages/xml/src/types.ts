@@ -1,4 +1,4 @@
-import type { Vec3 } from "@sw-file-lib/core";
+import type { Vec3 } from "@sw-file-lib/internal-utils";
 import type { SchemaParseOptions } from "./schemaLib";
 
 /**

@@ -1,5 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
-import { isRecord, isStringRecord } from "@sw-file-lib/core";
+import { isRecord, isStringRecord } from "@sw-file-lib/internal-utils";
 import { SwXmlParseError } from "./errors";
 import { SwXmlNode, SwXmlNodeList } from "./xmlNode";
 

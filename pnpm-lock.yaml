@@ -34,6 +34,10 @@ importers:
         version: 4.1.10(@types/node@26.1.2)(vite@8.2.1(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/core:
+    dependencies:
+      '@sw-file-lib/internal-utils':
+        specifier: workspace:*
+        version: link:../internal-utils
     devDependencies:
       '@sw-file-lib/test-utils':
         specifier: workspace:*
@@ -47,6 +51,9 @@ importers:
       '@sw-file-lib/three':
         specifier: workspace:*
         version: link:../three
+      '@sw-file-lib/xml':
+        specifier: workspace:*
+        version: link:../xml
       three:
         specifier: ^0.185.1
         version: 0.185.1
@@ -73,6 +80,24 @@ importers:
         specifier: ^3.3.10
         version: 3.3.10(typescript@6.0.3)
 
+  packages/geometry:
+    dependencies:
+      '@sw-file-lib/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sw-file-lib/internal-utils':
+        specifier: workspace:*
+        version: link:../internal-utils
+      earcut:
+        specifier: ^3.2.3
+        version: 3.2.3
+    devDependencies:
+      '@sw-file-lib/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
+
+  packages/internal-utils: {}
+
   packages/test-utils: {}
 
   packages/three:
@@ -80,6 +105,9 @@ importers:
       '@sw-file-lib/core':
         specifier: workspace:*
         version: link:../core
+      '@sw-file-lib/geometry':
+        specifier: workspace:*
+        version: link:../geometry
       three:
         specifier: ^0.185.1
         version: 0.185.1
@@ -93,6 +121,9 @@ importers:
       '@sw-file-lib/core':
         specifier: workspace:*
         version: link:../core
+      '@sw-file-lib/internal-utils':
+        specifier: workspace:*
+        version: link:../internal-utils
       fast-xml-parser:
         specifier: ^5.10.1
         version: 5.10.1
@@ -998,6 +1029,9 @@ packages:
     peerDependenciesMeta:
       oxc-resolver:
         optional: true
+
+  earcut@3.2.3:
+    resolution: {integrity: sha512-vnS4AVwp1KHAF13i1vp1/2D5evWy3k5u/iW/B81QVsUZtV8cv2tU0b2VNFlqvh4kYwrFMDdjPCfAmfyJW9y14Q==}
 
   empathic@2.0.1:
     resolution: {integrity: sha512-YGRs8knHhKHVShLkFET/rWAU8kmHbOV5LwN938RHI0pljAJ1Gf6SzXsSmRaEzcXTtOOmVqJ5+WtQPL5uigY50Q==}
@@ -2075,6 +2109,8 @@ snapshots:
   detect-libc@2.1.2: {}
 
   dts-resolver@3.0.0: {}
+
+  earcut@3.2.3: {}
 
   empathic@2.0.1: {}
 

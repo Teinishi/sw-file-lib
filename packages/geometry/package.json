@@ -1,7 +1,7 @@
 {
-  "name": "@sw-file-lib/core",
+  "name": "@sw-file-lib/geometry",
   "version": "0.1.0",
-  "description": "TypeScript library for reading and writing Stormworks binary file formats.",
+  "description": "Geometry utilities for handling Stormworks 3D geometry operations.",
   "keywords": [],
   "license": "MIT",
   "author": "Teinishi",
@@ -24,7 +24,9 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@sw-file-lib/internal-utils": "workspace:*"
+    "@sw-file-lib/core": "workspace:*",
+    "@sw-file-lib/internal-utils": "workspace:*",
+    "earcut": "^3.2.3"
   },
   "devDependencies": {
     "@sw-file-lib/test-utils": "workspace:*"

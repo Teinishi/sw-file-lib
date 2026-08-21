@@ -23,11 +23,14 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
+  "dependencies": {
+    "@sw-file-lib/core": "workspace:*",
+    "@sw-file-lib/geometry": "workspace:*"
+  },
   "devDependencies": {
     "@types/three": "^0.185.4"
   },
   "peerDependencies": {
-    "@sw-file-lib/core": "workspace:*",
     "three": "^0.185.1"
   }
 }
