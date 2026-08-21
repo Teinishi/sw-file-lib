@@ -15,7 +15,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "build": "pnpm -r typecheck",
+    "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:run": "pnpm -r test:run",
     "dev": "tsdown --watch",

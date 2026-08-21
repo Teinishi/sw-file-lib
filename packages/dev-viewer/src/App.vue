@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { meshOrPhysDataFromBytes, parseMat3, type Mat3 } from "@sw-file-lib/core";
+import { meshOrPhysDataFromBytes, parseColor, parseMat3, type Mat3 } from "@sw-file-lib/core";
 import {
   buildNormalizedSurfacesGeometry,
   Orientation,
@@ -66,19 +66,25 @@ function loadVehicle(text: string, name: string) {
   for (const body of vehicle.bodies ?? []) {
     for (const component of body.components ?? []) {
       const componentType = component.d ?? "01_block";
+      if (!isBasicBlockType(componentType)) continue;
+
+      const blockColor = parseColor(component.o?.bc ?? "x", { r: 255, g: 255, b: 255 });
+      const surfaceColors =
+        component.o?.sc
+          ?.split(",")
+          .slice(1)
+          .map((c) => parseColor(c)) ?? [];
 
       const surfaces: ComponentSurfaceData["surfaces"] = [];
 
-      if (isBasicBlockType(componentType)) {
-        for (const surface of BLOCK_SURFACE_DEFINITIONS[componentType]) {
-          surfaces.push({
-            position: surface.position,
-            orientation: surface.orientation,
-            rotation: surface.rotation,
-            shape: surface.shape,
-            // todo: color
-          });
-        }
+      for (const [index, surface] of Object.entries(BLOCK_SURFACE_DEFINITIONS[componentType])) {
+        surfaces.push({
+          position: surface.position,
+          orientation: surface.orientation,
+          rotation: surface.rotation,
+          shape: surface.shape,
+          color: surfaceColors[Number(index)] ?? blockColor,
+        });
       }
 
       let matrix: Mat3 = (component.o?.r !== undefined && parseMat3(component.o.r)) || [
