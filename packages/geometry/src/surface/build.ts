@@ -6,11 +6,9 @@ import {
   SURFACE_SHAPES,
   type BasicSurfaceShape,
   type BuildSurfaceGeometryOptions,
-  type ComponentSurfaceData,
   type SurfaceData,
 } from ".";
 import { GeometryBuilder } from "..";
-import { normalizeSurfaceData } from "./normalize";
 
 const SURFACE_EDGE_WIDTH = 0.003;
 const SURFACE_EDGE_COLOR = { r: 25, g: 25, b: 25 };
@@ -63,9 +61,16 @@ export function buildSurfacesGeometry(
   surfaces: DeepReadonly<SurfaceData[]>,
   options?: DeepReadonly<BuildSurfaceGeometryOptions>,
 ) {
+  let culledSurfaces: Set<number> | undefined;
+  if (options?.cull ?? true) {
+    culledSurfaces = cullSurfaces(surfaces);
+  }
+
   const builder = new GeometryBuilder();
 
-  for (const surface of surfaces) {
+  for (const [index, surface] of surfaces.entries()) {
+    if (culledSurfaces?.has(index)) continue;
+
     const o = { ...options };
     if (surface.color) o.color = surface.color;
     const s = buildSurfaceGeometry(surface.shape, o);
@@ -74,18 +79,6 @@ export function buildSurfacesGeometry(
   }
 
   return builder;
-}
-
-export function buildNormalizedSurfacesGeometry(
-  components: DeepReadonly<ComponentSurfaceData[]>,
-  options?: DeepReadonly<BuildSurfaceGeometryOptions>,
-) {
-  const surfaces = normalizeSurfaceData(components);
-  const culledSurfaces = cullSurfaces(surfaces);
-  return buildSurfacesGeometry(
-    surfaces.filter((_, i) => !culledSurfaces.has(i)),
-    options,
-  );
 }
 
 function stormToThreeMat3(m: Readonly<Mat3>): Mat3 {

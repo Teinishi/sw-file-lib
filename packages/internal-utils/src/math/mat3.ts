@@ -1,5 +1,9 @@
 import type { Mat3, Vec3 } from "../internal";
 
+export function transposeMat3(m: Mat3): Mat3 {
+  return [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
+}
+
 export function mulMat3(a: Readonly<Mat3>, b: Readonly<Mat3>): Mat3 {
   const r: Mat3 = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (let i = 0; i < 3; i++) {

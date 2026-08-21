@@ -114,6 +114,12 @@ importers:
       '@sw-file-lib/geometry':
         specifier: workspace:*
         version: link:../geometry
+      '@sw-file-lib/internal-utils':
+        specifier: workspace:*
+        version: link:../internal-utils
+      '@sw-file-lib/xml':
+        specifier: workspace:*
+        version: link:../xml
       three:
         specifier: ^0.185.1
         version: 0.185.1

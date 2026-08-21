@@ -1,20 +1,8 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { meshOrPhysDataFromBytes, parseColor, parseMat3, type Mat3 } from "@sw-file-lib/core";
-import {
-  buildNormalizedSurfacesGeometry,
-  Orientation,
-  type ComponentSurfaceData,
-} from "@sw-file-lib/geometry";
-import { mulMat3 } from "@sw-file-lib/internal-utils";
-import {
-  createSwMesh,
-  createSwPhysMeshGroup,
-  createOpaqueMaterial,
-  createUniformStore,
-  bufferGeometryFromBuilder,
-} from "@sw-file-lib/three";
+import { meshOrPhysDataFromBytes } from "@sw-file-lib/core";
+import { createSwMesh, createSwPhysMeshGroup, assembleVehicleGeometry } from "@sw-file-lib/three";
 import { VehicleSchema } from "@sw-file-lib/xml";
 import { BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "./basicBlocks/blocks.ts";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
@@ -38,10 +26,6 @@ let dragDepth = 0;
 
 const sceneObjects = computed(() => loadedObjects.map((item) => item.object));
 
-function transposeMat3(m: Mat3): Mat3 {
-  return [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
-}
-
 function loadMesh(bytes: ArrayBuffer, name: string) {
   const data = meshOrPhysDataFromBytes(bytes);
   const object =
@@ -58,66 +42,32 @@ function loadMesh(bytes: ArrayBuffer, name: string) {
   });
 }
 
-function loadVehicle(text: string, name: string) {
+async function loadVehicle(text: string, name: string) {
   const vehicle = VehicleSchema.parse(text, "vehicle");
 
-  const components: ComponentSurfaceData[] = [];
-
-  for (const body of vehicle.bodies ?? []) {
-    for (const component of body.components ?? []) {
-      const componentType = component.d ?? "01_block";
-      if (!isBasicBlockType(componentType)) continue;
-
-      const blockColor = parseColor(component.o?.bc ?? "x", { r: 255, g: 255, b: 255 });
-      const surfaceColors =
-        component.o?.sc
-          ?.split(",")
-          .slice(1)
-          .map((c) => parseColor(c)) ?? [];
-
-      const surfaces: ComponentSurfaceData["surfaces"] = [];
-
-      for (const [index, surface] of Object.entries(BLOCK_SURFACE_DEFINITIONS[componentType])) {
-        surfaces.push({
-          position: surface.position,
-          orientation: surface.orientation,
-          rotation: surface.rotation,
-          shape: surface.shape,
-          color: surfaceColors[Number(index)] ?? blockColor,
-        });
+  const groups = await assembleVehicleGeometry(vehicle, {
+    async resolve(name) {
+      if (isBasicBlockType(name)) {
+        return {
+          definition: { surfaces: BLOCK_SURFACE_DEFINITIONS[name] },
+        };
+      } else {
+        return undefined;
       }
+    },
+  });
 
-      let matrix: Mat3 = (component.o?.r !== undefined && parseMat3(component.o.r)) || [
-        0, 0, 1, -1, 0, 0, 0, -1, 0,
-      ];
-      matrix = transposeMat3(matrix);
-      if (component.t !== undefined) {
-        if ((component.t & 1) !== 0) matrix = mulMat3(matrix, Orientation.FlipX.toMat3());
-        if ((component.t & 2) !== 0) matrix = mulMat3(matrix, Orientation.FlipY.toMat3());
-        if ((component.t & 4) !== 0) matrix = mulMat3(matrix, Orientation.FlipZ.toMat3());
-      }
-
-      components.push({
-        position: component.o?.vp,
-        matrix,
-        surfaces,
-      });
-    }
+  const vehicleGroup = new THREE.Group();
+  for (const group of groups) {
+    vehicleGroup.add(group.object);
   }
-
-  const builder = buildNormalizedSurfacesGeometry(components, { edge: true });
-  const geometry = bufferGeometryFromBuilder(builder);
-  const material = createOpaqueMaterial(
-    createUniformStore({ overrideColor: { type: "int", value: 0 } }),
-  );
-  const object = new THREE.Mesh(geometry, material);
-  object.name = name;
+  vehicleGroup.name = name;
 
   loadedObjects.push({
     id: nextObjectId++,
     name,
     kind: "vehicle",
-    object: markRaw(object),
+    object: markRaw(vehicleGroup),
     visible: true,
   });
 }
@@ -134,7 +84,7 @@ async function addFiles(fileList: FileList | File[]) {
   for (const file of files) {
     try {
       if (file.name.endsWith(".xml")) {
-        loadVehicle(await file.text(), file.name);
+        await loadVehicle(await file.text(), file.name);
       } else {
         loadMesh(await file.arrayBuffer(), file.name);
       }

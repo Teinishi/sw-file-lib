@@ -1,11 +1,6 @@
 import type { DeepReadonly } from "ts-essentials";
 import { modulo } from "@sw-file-lib/internal-utils";
-import {
-  Orientation,
-  type BasicSurfaceOrientation,
-  type BasicSurfaceRotation,
-  type ShapeEdgeCoverage,
-} from "..";
+import { type ShapeEdgeCoverage } from "..";
 
 export function compareCoverage(
   a: DeepReadonly<ShapeEdgeCoverage>,
@@ -34,44 +29,4 @@ export function compareCoverage(
     isACovered: (na | nb) === nb,
     isBCovered: (na | nb) === na,
   };
-}
-
-// <surface> の orientation と rotation から Orientation オブジェクトへ変換
-// .toMat3() をつければ行列に
-export function getSurfaceOrientation(
-  orientation: BasicSurfaceOrientation,
-  rotation: BasicSurfaceRotation,
-) {
-  let o = Orientation.Identity;
-  switch (rotation) {
-    case 1:
-      o = Orientation.RotateX90;
-      break;
-    case 2:
-      o = Orientation.RotateX180;
-      break;
-    case 3:
-      o = Orientation.RotateX270;
-      break;
-  }
-
-  switch (orientation) {
-    case 1:
-      o = o.multiply(Orientation.RotateZ180);
-      break;
-    case 2:
-      o = o.multiply(Orientation.RotateZ90);
-      break;
-    case 3:
-      o = o.multiply(Orientation.RotateZ270);
-      break;
-    case 4:
-      o = o.multiply(Orientation.RotateZ90).multiply(Orientation.RotateX90);
-      break;
-    case 5:
-      o = o.multiply(Orientation.RotateZ90).multiply(Orientation.RotateX270);
-      break;
-  }
-
-  return o;
 }

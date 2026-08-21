@@ -1,5 +1,5 @@
 export * from "./geometry";
 export * from "./lights";
-export * from "./materials";
+export * from "./material";
 export * from "./mesh";
-export * from "./shaders";
+export * from "./vehicle";

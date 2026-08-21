@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { MeshData, PhysData, PhysGroup } from "@sw-file-lib/core";
-import { createSwMaterials, type SwMaterialSet } from "./materials";
+import { createSwMaterials, type SwMaterialSet } from "./material";
 
 /** Options used when creating a render mesh object from parsed `mesh` data. */
 export interface CreateSwMeshOptions {

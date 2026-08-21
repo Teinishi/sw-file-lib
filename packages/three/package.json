@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "@sw-file-lib/core": "workspace:*",
-    "@sw-file-lib/geometry": "workspace:*"
+    "@sw-file-lib/geometry": "workspace:*",
+    "@sw-file-lib/internal-utils": "workspace:*",
+    "@sw-file-lib/xml": "workspace:*"
   },
   "devDependencies": {
     "@types/three": "^0.185.4"
