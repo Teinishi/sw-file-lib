@@ -65,24 +65,26 @@ export function createSwMeshGeometry(mesh: MeshData): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(mesh.vertices.length * 3);
   const normals = new Float32Array(mesh.vertices.length * 3);
-  const colors = new Float32Array(mesh.vertices.length * 3);
+  const colors = new Float32Array(mesh.vertices.length * 4);
 
   mesh.vertices.forEach((vertex, index) => {
-    const offset = index * 3;
-    positions[offset] = vertex.position.x;
-    positions[offset + 1] = vertex.position.y;
-    positions[offset + 2] = -vertex.position.z;
-    normals[offset] = vertex.normal.x;
-    normals[offset + 1] = vertex.normal.y;
-    normals[offset + 2] = -vertex.normal.z;
-    colors[offset] = vertex.color.r / 255;
-    colors[offset + 1] = vertex.color.g / 255;
-    colors[offset + 2] = vertex.color.b / 255;
+    const offset3 = index * 3;
+    const offset4 = index * 4;
+    positions[offset3] = vertex.position.x;
+    positions[offset3 + 1] = vertex.position.y;
+    positions[offset3 + 2] = -vertex.position.z;
+    normals[offset3] = vertex.normal.x;
+    normals[offset3 + 1] = vertex.normal.y;
+    normals[offset3 + 2] = -vertex.normal.z;
+    colors[offset4] = vertex.color.r / 255;
+    colors[offset4 + 1] = vertex.color.g / 255;
+    colors[offset4 + 2] = vertex.color.b / 255;
+    colors[offset4 + 3] = vertex.color.a !== undefined ? vertex.color.a / 255 : 1;
   });
 
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 4));
   geometry.setIndex(mesh.indices);
   setGroups(geometry, mesh);
   geometry.computeBoundingSphere();

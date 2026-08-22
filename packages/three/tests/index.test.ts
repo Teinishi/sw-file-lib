@@ -106,7 +106,9 @@ test("createSwMeshGeometry flips z at the Three.js boundary and keeps Stormworks
   expect(arrayWithoutNegativeZero(geometry.getAttribute("normal").array)).toEqual([
     0, 0, -1, 0, 0, -1, 0, 0, -1,
   ]);
-  expect(Array.from(geometry.getAttribute("color").array)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  expect(Array.from(geometry.getAttribute("color").array)).toEqual([
+    1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1,
+  ]);
   expect(Array.from(geometry.getIndex()!.array)).toEqual([0, 1, 2]);
   expect(geometry.groups).toEqual([{ start: 0, count: 3, materialIndex: 1 }]);
   expect(geometry.boundingSphere).not.toBeNull();

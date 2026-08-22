@@ -127,9 +127,6 @@ export class GeometryBuilder {
     } else if (materialIndex === 2) {
       color = DEFAULT_ADDITIVE_COLOR;
     }
-    const red = color.r / 255;
-    const green = color.g / 255;
-    const blue = color.b / 255;
 
     const normal = computeNormal(
       getVertexFromFlat(flatVertices, indices[0]!)!,
@@ -147,7 +144,7 @@ export class GeometryBuilder {
     this.positions.push(...flatVertices);
     for (let i = 0; i < flatVertices.length / 3; i++) {
       this.normals.push(normal.x, normal.y, normal.z);
-      this.colors.push(red, green, blue);
+      this.colors.push(color.r, color.g, color.b, color.a ?? 255);
     }
 
     const groupStart = this.indices.length;
@@ -310,7 +307,7 @@ export class GeometryBuilder {
     if (!Number.isInteger(vertexCount)) {
       throw new Error("GeometryBuilder.positions must have a length multiples of 3.");
     }
-    if (vertexCount !== colors.length / 3) {
+    if (vertexCount !== colors.length / 4) {
       throw new Error("Mismatch of size between positions and colors.");
     }
     if (vertexCount !== normals.length / 3) {
@@ -326,10 +323,10 @@ export class GeometryBuilder {
           z: positions[3 * i + 2]!,
         },
         color: {
-          r: Math.round(colors[3 * i]! * 255),
-          g: Math.round(colors[3 * i + 1]! * 255),
-          b: Math.round(colors[3 * i + 2]! * 255),
-          a: 255,
+          r: Math.round(colors[4 * i]!),
+          g: Math.round(colors[4 * i + 1]!),
+          b: Math.round(colors[4 * i + 2]!),
+          a: Math.round(colors[4 * i + 3]!),
         },
         normal: {
           x: normals[3 * i]!,
