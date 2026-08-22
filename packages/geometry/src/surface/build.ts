@@ -1,5 +1,5 @@
 import type { DeepReadonly } from "ts-essentials";
-import type { Vec3, Mat3 } from "@sw-file-lib/core";
+import type { Vec3 } from "@sw-file-lib/core";
 import { offsetPolygon3D } from "@sw-file-lib/internal-utils";
 import {
   cullSurfaces,
@@ -74,21 +74,17 @@ export function buildSurfacesGeometry(
     const o = { ...options };
     if (surface.color) o.color = surface.color;
     const s = buildSurfaceGeometry(surface.shape, o);
-    s.transform(stormToThreeMat3(surface.matrix), stormToThreeVec3(surface.position));
+    s.transform(surface.matrix, scaleStormworksPosition(surface.position));
     builder.merge(s);
   }
 
   return builder;
 }
 
-function stormToThreeMat3(m: Readonly<Mat3>): Mat3 {
-  return [m[0], m[1], -m[2], m[3], m[4], -m[5], -m[6], -m[7], m[8]];
-}
-
-function stormToThreeVec3(v: Readonly<Vec3>): Vec3 {
+function scaleStormworksPosition(v: Readonly<Vec3>): Vec3 {
   return {
     x: 0.25 * v.x,
     y: 0.25 * v.y,
-    z: -0.25 * v.z,
+    z: 0.25 * v.z,
   };
 }

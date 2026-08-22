@@ -6,10 +6,10 @@ export function applyBuilderOnBufferGeometry(builder: GeometryBuilder, buffer: B
 
   const { position, normal, color, index, groups } = builder.toBufferGeometryAttributes();
 
-  buffer.setAttribute("position", new BufferAttribute(position, 3));
-  buffer.setAttribute("normal", new BufferAttribute(normal, 3));
+  buffer.setAttribute("position", new BufferAttribute(stormworksVec3AttributeToThree(position), 3));
+  buffer.setAttribute("normal", new BufferAttribute(stormworksVec3AttributeToThree(normal), 3));
   buffer.setAttribute("color", new BufferAttribute(color, 3));
-  buffer.setIndex(new BufferAttribute(index, 1));
+  buffer.setIndex(new BufferAttribute(new Uint32Array(index), 1));
   for (const { start, length, materialIndex } of groups) {
     buffer.addGroup(start, length, materialIndex);
   }
@@ -19,4 +19,12 @@ export function bufferGeometryFromBuilder(builder: GeometryBuilder): BufferGeome
   const buffer = new BufferGeometry();
   applyBuilderOnBufferGeometry(builder, buffer);
   return buffer;
+}
+
+export function stormworksVec3AttributeToThree(values: Float32Array): Float32Array {
+  const result = new Float32Array(values);
+  for (let i = 2; i < result.length; i += 3) {
+    result[i] = -result[i]!;
+  }
+  return result;
 }

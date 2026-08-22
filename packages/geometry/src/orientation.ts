@@ -23,8 +23,8 @@ export class Orientation {
   // X rotation
   static readonly RotateX90 = new Orientation(
     { axis: "x", sign: 1 },
-    { axis: "z", sign: -1 },
-    { axis: "y", sign: 1 },
+    { axis: "z", sign: 1 },
+    { axis: "y", sign: -1 },
   );
 
   static readonly RotateX180 = new Orientation(
@@ -35,15 +35,15 @@ export class Orientation {
 
   static readonly RotateX270 = new Orientation(
     { axis: "x", sign: 1 },
-    { axis: "z", sign: 1 },
-    { axis: "y", sign: -1 },
+    { axis: "z", sign: -1 },
+    { axis: "y", sign: 1 },
   );
 
   // Y rotation
   static readonly RotateY90 = new Orientation(
-    { axis: "z", sign: 1 },
+    { axis: "z", sign: -1 },
     { axis: "y", sign: 1 },
-    { axis: "x", sign: -1 },
+    { axis: "x", sign: 1 },
   );
 
   static readonly RotateY180 = new Orientation(
@@ -53,15 +53,15 @@ export class Orientation {
   );
 
   static readonly RotateY270 = new Orientation(
-    { axis: "z", sign: -1 },
+    { axis: "z", sign: 1 },
     { axis: "y", sign: 1 },
-    { axis: "x", sign: 1 },
+    { axis: "x", sign: -1 },
   );
 
   // Z rotation
   static readonly RotateZ90 = new Orientation(
-    { axis: "y", sign: -1 },
-    { axis: "x", sign: 1 },
+    { axis: "y", sign: 1 },
+    { axis: "x", sign: -1 },
     { axis: "z", sign: 1 },
   );
 
@@ -72,8 +72,8 @@ export class Orientation {
   );
 
   static readonly RotateZ270 = new Orientation(
-    { axis: "y", sign: 1 },
-    { axis: "x", sign: -1 },
+    { axis: "y", sign: -1 },
+    { axis: "x", sign: 1 },
     { axis: "z", sign: 1 },
   );
 

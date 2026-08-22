@@ -36,13 +36,13 @@ function computeNormal(a: Readonly<Vec3>, b: Readonly<Vec3>, c: Readonly<Vec3>):
   const len = Math.hypot(nx, ny, nz);
 
   if (len === 0) {
-    return { x: 0, y: 0, z: 1 };
+    return { x: 0, y: 0, z: 0 };
   }
 
   return {
-    x: nx / len,
-    y: ny / len,
-    z: nz / len,
+    x: -nx / len,
+    y: -ny / len,
+    z: -nz / len,
   };
 }
 
@@ -291,7 +291,7 @@ export class GeometryBuilder {
       position: new Float32Array(this.positions),
       normal: new Float32Array(this.normals),
       color: new Float32Array(this.colors),
-      index: new Uint32Array(this.indices),
+      index: this.indices,
       groups: this.groups.map((g) => ({ ...g })),
     };
   }
@@ -315,7 +315,7 @@ export class GeometryBuilder {
         position: {
           x: positions[3 * i]!,
           y: positions[3 * i + 1]!,
-          z: -positions[3 * i + 2]!,
+          z: positions[3 * i + 2]!,
         },
         color: {
           r: Math.round(colors[3 * i]! * 255),
@@ -326,7 +326,7 @@ export class GeometryBuilder {
         normal: {
           x: normals[3 * i]!,
           y: normals[3 * i + 1]!,
-          z: -normals[3 * i + 2]!,
+          z: normals[3 * i + 2]!,
         },
       });
     }

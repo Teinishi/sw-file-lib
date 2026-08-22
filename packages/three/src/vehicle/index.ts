@@ -3,6 +3,7 @@ import type { DeepReadonly } from "ts-essentials";
 import { parseColor, parseMat3, type Mat3 } from "@sw-file-lib/core";
 import {
   buildSurfacesGeometry,
+  GeometryBuilder,
   getSurfaceOrientation,
   isValidSurfaceOrientation,
   isValidSurfaceRotation,
@@ -41,6 +42,7 @@ export interface AssembleVehicleOptions {
 
 export interface VehicleRenderGroup {
   bodyId: number | undefined;
+  builder: GeometryBuilder;
   object: THREE.Group;
 }
 
@@ -130,7 +132,11 @@ export async function assembleVehicleGeometry(
     const mesh = new THREE.Mesh(geometry, surfaceMaterial);
     group.add(mesh);
 
-    result.push({ bodyId: body.unique_id, object: group });
+    result.push({
+      bodyId: body.unique_id,
+      builder,
+      object: group,
+    });
   }
 
   return result;

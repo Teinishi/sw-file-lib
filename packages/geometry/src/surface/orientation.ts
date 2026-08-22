@@ -23,13 +23,13 @@ export function getSurfaceOrientation(
   let o = Orientation.Identity;
   switch (rotation) {
     case 1:
-      o = Orientation.RotateX90;
+      o = Orientation.RotateX270;
       break;
     case 2:
       o = Orientation.RotateX180;
       break;
     case 3:
-      o = Orientation.RotateX270;
+      o = Orientation.RotateX90;
       break;
   }
 
@@ -38,16 +38,16 @@ export function getSurfaceOrientation(
       o = o.multiply(Orientation.RotateZ180);
       break;
     case 2:
-      o = o.multiply(Orientation.RotateZ90);
-      break;
-    case 3:
       o = o.multiply(Orientation.RotateZ270);
       break;
+    case 3:
+      o = o.multiply(Orientation.RotateZ90);
+      break;
     case 4:
-      o = o.multiply(Orientation.RotateZ90).multiply(Orientation.RotateX90);
+      o = o.multiply(Orientation.RotateZ270).multiply(Orientation.RotateX270);
       break;
     case 5:
-      o = o.multiply(Orientation.RotateZ90).multiply(Orientation.RotateX270);
+      o = o.multiply(Orientation.RotateZ270).multiply(Orientation.RotateX90);
       break;
   }
 
