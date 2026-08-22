@@ -1,4 +1,4 @@
-import type { Vec3, Mat3 } from "@sw-file-lib/core";
+import type { Vec3, Mat3 } from "@sw-file-lib/core/math";
 
 type Axis = "x" | "y" | "z";
 

@@ -1,6 +1,16 @@
 import * as THREE from "three";
 import type { DeepReadonly } from "ts-essentials";
-import { parseColor, parseMat3, type Mat3 } from "@sw-file-lib/core";
+import { parseColor } from "@sw-file-lib/core/color";
+import {
+  addVec3,
+  detMat3,
+  mulMat3,
+  mulMat3Vec3,
+  parseMat3,
+  partialToFullVec3,
+  transposeMat3,
+  type Mat3,
+} from "@sw-file-lib/core/math";
 import {
   buildSurfacesGeometry,
   GeometryBuilder,
@@ -12,14 +22,6 @@ import {
   type BuildSurfaceGeometryOptions,
   type SurfaceData,
 } from "@sw-file-lib/geometry";
-import {
-  addVec3,
-  detMat3,
-  mulMat3,
-  mulMat3Vec3,
-  partialToFullVec3,
-  transposeMat3,
-} from "@sw-file-lib/internal-utils";
 import type { ComponentDefinition, Vehicle } from "@sw-file-lib/xml";
 import { bufferGeometryFromBuilder, createOpaqueMaterial, createUniformStore } from "..";
 

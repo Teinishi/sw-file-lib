@@ -1,4 +1,5 @@
-import type { Color, Mat3, Vec3 } from "@sw-file-lib/core";
+import type { Color } from "@sw-file-lib/core/color";
+import type { Mat3, Vec3 } from "@sw-file-lib/core/math";
 import type { BasicSurfaceShape } from ".";
 
 export interface ComponentSurfaceData {

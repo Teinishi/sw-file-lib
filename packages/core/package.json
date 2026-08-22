@@ -15,6 +15,16 @@
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
     },
+    "./math": {
+      "development": "./src/math/index.ts",
+      "import": "./dist/math/index.mjs",
+      "types": "./dist/math/index.d.mts"
+    },
+    "./color": {
+      "development": "./src/color/index.ts",
+      "import": "./dist/color/index.mjs",
+      "types": "./dist/color/index.d.mts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -22,9 +32,6 @@
     "build": "tsdown",
     "test": "vitest",
     "test:run": "vitest run"
-  },
-  "dependencies": {
-    "@sw-file-lib/internal-utils": "workspace:*"
   },
   "devDependencies": {
     "@sw-file-lib/test-utils": "workspace:*"

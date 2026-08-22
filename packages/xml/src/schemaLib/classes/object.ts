@@ -1,4 +1,3 @@
-import { isStringKeyRecord } from "@sw-file-lib/internal-utils";
 import {
   OptionalSchema,
   SchemaError,
@@ -18,6 +17,7 @@ import {
   type SchemaParseFieldResult,
   SchemaSerializeError,
 } from "..";
+import { isStringKeyRecord } from "../../internal";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer";
 import {

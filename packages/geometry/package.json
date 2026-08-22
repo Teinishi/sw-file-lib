@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@sw-file-lib/core": "workspace:*",
-    "@sw-file-lib/internal-utils": "workspace:*",
     "earcut": "^3.2.3"
   },
   "devDependencies": {

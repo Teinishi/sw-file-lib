@@ -1,30 +1,11 @@
-export interface Vec2 {
-  x: number;
-  y: number;
-}
-
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export type Mat3 = [number, number, number, number, number, number, number, number, number];
-
-export function parseMat3(value: string): Mat3 | undefined {
-  const parts = value.split(",").map((v) => parseFloat(v.trim()));
-  if (parts.length !== 9 || parts.some((v) => isNaN(v))) return undefined;
-  return parts as Mat3;
-}
-
-export function isMat3(value: unknown): value is Mat3 {
-  return Array.isArray(value) && value.length === 9 && value.every((v) => typeof v === "number");
-}
-
 export interface Color {
+  /* 0-255 */
   r: number;
+  /* 0-255 */
   g: number;
+  /* 0-255 */
   b: number;
+  /* 0-255 */
   a?: number;
 }
 
@@ -41,7 +22,7 @@ export function parseColor(value: string, fallback?: Color): Color | undefined {
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
-  const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : undefined;
+  const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) : undefined;
 
   if ([r, g, b].some((v) => isNaN(v)) || (a !== undefined && isNaN(a))) return fallback;
 

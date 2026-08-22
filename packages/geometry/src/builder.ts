@@ -1,7 +1,15 @@
 import * as earcut from "earcut";
 import type { DeepReadonly } from "ts-essentials";
-import type { MeshData, MeshVertex, Vec2, Vec3, Mat3, Color } from "@sw-file-lib/core";
-import { addVec3, detMat3, mulMat3Vec3 } from "@sw-file-lib/internal-utils";
+import type { MeshData, MeshVertex } from "@sw-file-lib/core";
+import type { Color } from "@sw-file-lib/core/color";
+import {
+  type Vec2,
+  type Vec3,
+  type Mat3,
+  mulMat3Vec3,
+  addVec3,
+  detMat3,
+} from "@sw-file-lib/core/math";
 
 const DEFAULT_OPAQUE_COLOR = {
   r: 255,

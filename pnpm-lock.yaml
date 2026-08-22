@@ -34,10 +34,6 @@ importers:
         version: 4.1.10(@types/node@26.1.2)(vite@8.2.1(@types/node@26.1.2)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/core:
-    dependencies:
-      '@sw-file-lib/internal-utils':
-        specifier: workspace:*
-        version: link:../internal-utils
     devDependencies:
       '@sw-file-lib/test-utils':
         specifier: workspace:*
@@ -51,9 +47,6 @@ importers:
       '@sw-file-lib/geometry':
         specifier: workspace:*
         version: link:../geometry
-      '@sw-file-lib/internal-utils':
-        specifier: workspace:*
-        version: link:../internal-utils
       '@sw-file-lib/three':
         specifier: workspace:*
         version: link:../three
@@ -91,9 +84,6 @@ importers:
       '@sw-file-lib/core':
         specifier: workspace:*
         version: link:../core
-      '@sw-file-lib/internal-utils':
-        specifier: workspace:*
-        version: link:../internal-utils
       earcut:
         specifier: ^3.2.3
         version: 3.2.3
@@ -101,8 +91,6 @@ importers:
       '@sw-file-lib/test-utils':
         specifier: workspace:*
         version: link:../test-utils
-
-  packages/internal-utils: {}
 
   packages/test-utils: {}
 
@@ -114,9 +102,6 @@ importers:
       '@sw-file-lib/geometry':
         specifier: workspace:*
         version: link:../geometry
-      '@sw-file-lib/internal-utils':
-        specifier: workspace:*
-        version: link:../internal-utils
       '@sw-file-lib/xml':
         specifier: workspace:*
         version: link:../xml
@@ -133,9 +118,6 @@ importers:
       '@sw-file-lib/core':
         specifier: workspace:*
         version: link:../core
-      '@sw-file-lib/internal-utils':
-        specifier: workspace:*
-        version: link:../internal-utils
       fast-xml-parser:
         specifier: ^5.10.1
         version: 5.10.1
