@@ -7,7 +7,7 @@ import {
   mulMat3,
   mulMat3Vec3,
   parseMat3,
-  partialToFullVec3,
+  vec3,
   transposeMat3,
   type Mat3,
 } from "@sw-file-lib/core/math";
@@ -78,7 +78,7 @@ export async function assembleVehicleGeometry(
 
       if (data === undefined) continue;
 
-      const componentPosition = partialToFullVec3(component.o?.vp);
+      const componentPosition = vec3(component.o?.vp);
 
       let componentMatrix: Mat3 = [0, 0, 1, -1, 0, 0, 0, -1, 0];
       if (component.o?.r !== undefined) {
@@ -110,7 +110,7 @@ export async function assembleVehicleGeometry(
         if (!isValidSurfaceRotation(rotation)) continue;
         if (!isValidSurfaceShape(shape)) continue;
 
-        const localPosition = partialToFullVec3(surface.position);
+        const localPosition = vec3(surface.position);
         const position = addVec3(
           componentMatrix ? mulMat3Vec3(componentMatrix, localPosition) : localPosition,
           componentPosition,

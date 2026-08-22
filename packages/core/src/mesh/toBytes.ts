@@ -10,6 +10,12 @@ import type {
   PhysGroup,
 } from "./types";
 
+/**
+ * Serialize structured render mesh data to a Stormworks `.mesh` binary payload.
+ *
+ * The input is expected to already use Stormworks' left-handed coordinate
+ * system and Stormworks material ids (`0` opaque, `1` glass, `2` additive).
+ */
 export function meshDataToBytes(data: Readonly<MeshData>) {
   const writer = new MeshWriter();
   writer.writeAscii("mesh");
@@ -38,6 +44,12 @@ export function meshDataToBytes(data: Readonly<MeshData>) {
   return writer.toUint8Array();
 }
 
+/**
+ * Serialize structured physics mesh data to a Stormworks `.phys` binary payload.
+ *
+ * The input coordinates are written as-is in Stormworks' left-handed coordinate
+ * system.
+ */
 export function physDataToBytes(data: Readonly<PhysData>) {
   const writer = new MeshWriter();
   writer.writeAscii("phys");

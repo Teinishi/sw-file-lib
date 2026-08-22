@@ -1,5 +1,5 @@
 import type { StrictOmit } from "ts-essentials";
-import { maxVec3, minVec3, partialToFullVec3 } from "@sw-file-lib/core/math";
+import { maxVec3, minVec3, vec3 } from "@sw-file-lib/core/math";
 import type {
   SwVec3,
   ComponentDefinition,
@@ -12,8 +12,8 @@ function forVoxels(
   to: Readonly<SwVec3>,
   callback: (position: Readonly<SwVec3>) => void,
 ) {
-  const a = partialToFullVec3(from);
-  const b = partialToFullVec3(to);
+  const a = vec3(from);
+  const b = vec3(to);
 
   const { x: x1, y: y1, z: z1 } = minVec3(a, b);
   const { x: x2, y: y2, z: z2 } = maxVec3(a, b);
@@ -32,8 +32,8 @@ function forCuboidSurfaces(
   to: Readonly<SwVec3>,
   callback: (from: Readonly<SwVec3>, to: Readonly<SwVec3>, orientation: number) => void,
 ) {
-  const a = partialToFullVec3(from);
-  const b = partialToFullVec3(to);
+  const a = vec3(from);
+  const b = vec3(to);
   const min = minVec3(a, b);
   const max = maxVec3(a, b);
   callback({ ...min, x: max.x }, max, 0);

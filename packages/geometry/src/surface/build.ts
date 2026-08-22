@@ -48,14 +48,11 @@ function offsetPolygon3D(vertices: DeepReadonly<Vec3[]>, offset: number): Vec3[]
     const prevDir = normalizeVec3(subVec3(curr, prev));
     const nextDir = normalizeVec3(subVec3(next, curr));
 
-    // 面内で内側を向く法線
     const prevInward = normalizeVec3(crossVec3(normal, prevDir));
     const nextInward = normalizeVec3(crossVec3(normal, nextDir));
 
-    // 二等分方向
     const moveDir = normalizeVec3(addVec3(prevInward, nextInward));
 
-    // オフセット距離補正
     const cos = dotVec3(moveDir, prevInward);
 
     result.push(addVec3(curr, mulVec3(moveDir, offset / cos)));
@@ -64,6 +61,13 @@ function offsetPolygon3D(vertices: DeepReadonly<Vec3[]>, offset: number): Vec3[]
   return result;
 }
 
+/**
+ * Build geometry for one Stormworks basic surface shape.
+ *
+ * The returned builder is in Stormworks' left-handed coordinate system. Shape
+ * vertices are expressed in block-local units, where a full block side spans
+ * `0.25`.
+ */
 export function buildSurfaceGeometry(
   shape: BasicSurfaceShape,
   options?: DeepReadonly<BuildSurfaceGeometryOptions>,
@@ -99,6 +103,13 @@ export function buildSurfaceGeometry(
   return builder;
 }
 
+/**
+ * Build merged geometry for resolved Stormworks surfaces.
+ *
+ * Surface positions are interpreted in voxel units and scaled by `0.25`.
+ * Orientation matrices are applied in Stormworks' left-handed coordinate
+ * system. Covered faces are culled by default.
+ */
 export function buildSurfacesGeometry(
   surfaces: DeepReadonly<SurfaceData[]>,
   options?: DeepReadonly<BuildSurfaceGeometryOptions>,

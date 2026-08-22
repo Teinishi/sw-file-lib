@@ -24,11 +24,15 @@ function cullingMapKey(pos: Readonly<Vec3>, normal: Readonly<Vec3>) {
   return `${pos.x},${pos.y},${pos.z}:${normal.x},${normal.y},${normal.z}`;
 }
 
+/**
+ * Return indices of surfaces that are fully hidden by adjacent compatible surfaces.
+ *
+ * This is useful before rendering or exporting generated component surfaces. It
+ * only culls shapes with known edge coverage data.
+ */
 export function cullSurfaces(surfaces: DeepReadonly<SurfaceData[]>) {
-  // カリング用に surface の位置と法線をキーとする Map
   const cullingMap: Map<string, Set<number>> = new Map();
 
-  // カリングによって消える surface の index
   const culledSurfaces: Set<number> = new Set();
 
   for (const [index, surface] of surfaces.entries()) {

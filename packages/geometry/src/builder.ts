@@ -75,25 +75,43 @@ interface GeometryGroup {
   materialIndex: number;
 }
 
+/** Options for {@link GeometryBuilder}. */
 export interface GeometryBuilderOptions {
+  /** Run Earcut refinement after polygon triangulation. */
   refine?: boolean;
 }
 
+/** Options shared by face-building methods. */
 export interface AddFaceOptions {
+  /** Material group index. Stormworks convention is `0` opaque, `1` glass, `2` additive. */
   materialIndex?: number;
+  /** Per-vertex color written for the generated face. Channel values are `0` to `255`. */
   color?: Color;
+  /** Reverse the face normal and triangle winding. */
   flip?: boolean;
 }
 
+/** Options for adding a 2D polygon on a constant Z plane. */
 export interface AddPolygonOptions extends AddFaceOptions {
+  /** Z coordinate used for every polygon vertex. Defaults to `0`. */
   z?: number;
 }
 
+/** Options for adding side faces between two Z planes. */
 export interface AddExtrudedSideOptions extends AddFaceOptions {
+  /** Close the side strip by connecting the final vertex back to the first. */
   close?: boolean;
+  /** Start and end Z coordinates for the side strip. */
   zRange: [number, number];
 }
 
+/**
+ * Incrementally builds Stormworks-space mesh geometry.
+ *
+ * Positions, normals, indices, and colors are stored in Stormworks' left-handed
+ * coordinate system. Convert the result with `@sw-file-lib/three` when creating
+ * Three.js geometry.
+ */
 export class GeometryBuilder {
   private readonly positions: number[] = [];
   private readonly normals: number[] = [];
@@ -169,7 +187,12 @@ export class GeometryBuilder {
     }
   }
 
-  // 凸多角形面
+  /**
+   * Add a coplanar face from ordered vertices.
+   *
+   * The face is triangulated as a fan from the first vertex. Normals are
+   * computed for Stormworks' left-handed coordinate system.
+   */
   addFace(
     vertices: DeepReadonly<Vec3[]>,
     options?: number | Readonly<Color> | DeepReadonly<AddFaceOptions>,
@@ -197,7 +220,11 @@ export class GeometryBuilder {
     this.addCoplanarTriangles(flatVertices, indices, normalizedOptions);
   }
 
-  // ポリゴンを追加 (polygon[0] は外周、それ以降は内側の穴)
+  /**
+   * Add a triangulated 2D polygon on a constant Z plane.
+   *
+   * `polygon[0]` is the outer ring. Additional rings are treated as holes.
+   */
   addPolygon(polygon: DeepReadonly<Vec2[][]>, options?: DeepReadonly<AddPolygonOptions>) {
     const z = options?.z ?? 0;
 
@@ -210,7 +237,11 @@ export class GeometryBuilder {
     this.addCoplanarTriangles(data.vertices, indices, options);
   }
 
-  // ポリゴンをZ軸方向に押し出した側面
+  /**
+   * Add quad side faces along a 2D polyline between two Z coordinates.
+   *
+   * Use `close: true` for a closed prism-like side surface.
+   */
   addExtrudedSides(vertices: DeepReadonly<Vec2[]>, options?: DeepReadonly<AddExtrudedSideOptions>) {
     const [z1, z2] = options?.zRange ?? [0, 1];
 
@@ -235,6 +266,12 @@ export class GeometryBuilder {
     }
   }
 
+  /**
+   * Apply an affine transform to all accumulated vertices and normals.
+   *
+   * If the matrix determinant is negative, triangle winding is reversed so the
+   * generated geometry remains consistently front-facing.
+   */
   transform(mat?: Readonly<Mat3>, translation?: Readonly<Vec3>) {
     const { positions, normals } = this;
     for (let i = 0; 3 * i + 2 < positions.length; i++) {
@@ -265,7 +302,7 @@ export class GeometryBuilder {
     }
   }
 
-  // 別の GeometryBuilder とマージ
+  /** Append another builder's geometry to this builder. */
   merge(other: GeometryBuilder) {
     const vertexOffset = this.positions.length / 3;
     const indexOffset = this.indices.length;
@@ -291,6 +328,11 @@ export class GeometryBuilder {
     );
   }
 
+  /**
+   * Return raw attribute arrays suitable for conversion to a rendering backend.
+   *
+   * The returned positions and normals are still in Stormworks coordinates.
+   */
   toBufferGeometryAttributes() {
     return {
       position: new Float32Array(this.positions),
@@ -301,6 +343,12 @@ export class GeometryBuilder {
     };
   }
 
+  /**
+   * Convert accumulated geometry to core `MeshData`.
+   *
+   * The result can be serialized with `@sw-file-lib/core` and remains in
+   * Stormworks' left-handed coordinate system.
+   */
   toMeshData(): MeshData {
     const { positions, colors, normals, indices } = this;
     const vertexCount = positions.length / 3;

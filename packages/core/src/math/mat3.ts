@@ -1,15 +1,24 @@
 import type { Vec3 } from ".";
 
+/**
+ * Row-major 3x3 matrix.
+ *
+ * Matrix-vector multiplication treats vectors as column vectors:
+ * `mulMat3Vec3(m, v)` computes `m * v`.
+ */
 export type Mat3 = [number, number, number, number, number, number, number, number, number];
 
+/** Return `true` when `value` is a nine-number array. */
 export function isMat3(value: unknown): value is Mat3 {
   return Array.isArray(value) && value.length === 9 && value.every((v) => typeof v === "number");
 }
 
+/** Return the transpose of a row-major 3x3 matrix. */
 export function transposeMat3(m: Mat3): Mat3 {
   return [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
 }
 
+/** Multiply two row-major 3x3 matrices. */
 export function mulMat3(a: Readonly<Mat3>, b: Readonly<Mat3>): Mat3 {
   const r: Mat3 = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (let i = 0; i < 3; i++) {
@@ -22,6 +31,7 @@ export function mulMat3(a: Readonly<Mat3>, b: Readonly<Mat3>): Mat3 {
   return r;
 }
 
+/** Transform a vector by a row-major 3x3 matrix. */
 export function mulMat3Vec3(m: Readonly<Mat3>, v: Readonly<Vec3>): Vec3 {
   return {
     x: v.x * m[0] + v.y * m[1] + v.z * m[2],
@@ -30,6 +40,7 @@ export function mulMat3Vec3(m: Readonly<Mat3>, v: Readonly<Vec3>): Vec3 {
   };
 }
 
+/** Return the determinant of a row-major 3x3 matrix. */
 export function detMat3(m: Readonly<Mat3>) {
   return (
     m[0] * (m[4] * m[8] - m[5] * m[7]) -
@@ -38,6 +49,12 @@ export function detMat3(m: Readonly<Mat3>) {
   );
 }
 
+/**
+ * Parse a comma-separated row-major 3x3 matrix.
+ *
+ * Returns `undefined` when the string does not contain exactly nine numeric
+ * entries.
+ */
 export function parseMat3(value: string): Mat3 | undefined {
   const parts = value.split(",").map((v) => parseFloat(v.trim()));
   if (parts.length !== 9 || parts.some((v) => isNaN(v))) return undefined;

@@ -13,7 +13,10 @@ import type {
  * Parse a `mesh` or `phys` binary payload into structured mesh data.
  *
  * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
- * Unexected file signatures throw an error.
+ * Coordinates and normals are returned in Stormworks' left-handed coordinate
+ * system without renderer-specific conversion.
+ *
+ * @throws Error when the file signature is neither `"mesh"` nor `"phys"`.
  */
 export function meshOrPhysDataFromBytes(input: BinaryReaderInput): MeshData | PhysData {
   return new MeshReader(input).parseMeshOrPhys();
@@ -23,23 +26,27 @@ export function meshOrPhysDataFromBytes(input: BinaryReaderInput): MeshData | Ph
  * Parse a `mesh` binary payload into structured mesh data.
  *
  * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
- * Unexected file signatures throw an error.
+ * Coordinates and normals are returned in Stormworks' left-handed coordinate
+ * system.
+ *
+ * @throws Error when the file signature is not `"mesh"`.
  */
 export function meshDataFromBytes(input: BinaryReaderInput): MeshData {
   return new MeshReader(input).parseMesh();
 }
 
 /**
- * Parse a `mesh` binary payload into structured mesh data.
+ * Parse a `phys` binary payload into structured physics mesh data.
  *
  * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
- * Unexected file signatures throw an error.
+ * Coordinates are returned in Stormworks' left-handed coordinate system.
+ *
+ * @throws Error when the file signature is not `"phys"`.
  */
 export function physDataFromBytes(input: BinaryReaderInput): PhysData {
   return new MeshReader(input).parsePhys();
 }
 
-/** Internal stateful parser used by the public `parseMeshData` function. */
 class MeshReader extends BinaryReader {
   parseMeshOrPhys(): MeshData | PhysData {
     const signature = this.readAscii(4);

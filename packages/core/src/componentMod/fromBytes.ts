@@ -1,6 +1,12 @@
 import { BinaryReader, type BinaryReaderInput } from "../binary";
 import type { ParsedComponentMod, ParsedComponentModAsset } from "./types";
 
+/**
+ * Parse a Stormworks component mod `.bin` payload.
+ *
+ * The returned object distinguishes legacy files that do not include a name
+ * (`version: 0`) from newer files that do (`version: 1`).
+ */
 export function componentModFromBytes(input: BinaryReaderInput): ParsedComponentMod {
   const reader = new BinaryReader(input);
 

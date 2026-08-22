@@ -1,10 +1,15 @@
-/** A three-dimensional vector for mesh file. */
+/**
+ * Three-dimensional vector used by Stormworks mesh and physics files.
+ *
+ * Coordinates are kept in Stormworks' left-handed coordinate system:
+ * `x` points right, `y` points up, and positive `z` points forward/away.
+ */
 export interface MeshVec3 {
-  /** X coordinate. */
+  /** X coordinate, positive to the right. */
   x: number;
-  /** Y coordinate. */
+  /** Y coordinate, positive upward. */
   y: number;
-  /** Z coordinate. */
+  /** Z coordinate, positive forward in Stormworks space. */
   z: number;
 }
 
@@ -20,19 +25,19 @@ export interface MeshColor4 {
   a: number;
 }
 
-/** A render mesh vertex with position, color, and normal data. */
+/** A render mesh vertex with Stormworks-space position, color, and normal data. */
 export interface MeshVertex {
   /** Vertex position in Stormworks mesh coordinates. */
   position: MeshVec3;
   /** Vertex color. */
   color: MeshColor4;
-  /** Vertex normal vector. */
+  /** Vertex normal vector in Stormworks' left-handed coordinate system. */
   normal: MeshVec3;
 }
 
-/** A material range inside a mesh index buffer. */
+/** A material range inside a render mesh index buffer. */
 export interface MeshGroup {
-  /** Start offset in the parent MeshData.indices array. */
+  /** Start offset in the parent {@link MeshData.indices} array. */
   indexBufferStart: number;
   /** Number of indices used by this group. */
   indexBufferLength: number;
@@ -46,27 +51,38 @@ export interface MeshGroup {
   name: string;
 }
 
-/** Parsed render mesh data. */
+/**
+ * Parsed Stormworks render mesh data.
+ *
+ * The data is a direct representation of `.mesh` contents. It is not converted
+ * to any rendering engine coordinate system; use `@sw-file-lib/three` when a
+ * Three.js `BufferGeometry` is needed.
+ */
 export interface MeshData {
   /** Discriminant used to distinguish render mesh data from physics mesh data. */
   kind: "mesh";
   /** Vertex records used by the render mesh. */
   vertices: MeshVertex[];
-  /** Triangle index buffer referencing `vertices`. */
+  /** Triangle index buffer referencing {@link vertices}. */
   indices: number[];
   /** Material ranges over the index buffer. */
   groups: MeshGroup[];
 }
 
-/** A collision/physics mesh section. */
+/** A collision/physics mesh section inside a Stormworks `.phys` file. */
 export interface PhysGroup {
   /** Physics mesh vertex positions. */
   vertices: MeshVec3[];
-  /** Triangle index buffer referencing `vertices`. */
+  /** Triangle index buffer referencing {@link vertices}. */
   indices: number[];
 }
 
-/** Parsed physics mesh data. */
+/**
+ * Parsed Stormworks physics mesh data.
+ *
+ * Physics meshes are split into groups matching the sections stored in the
+ * `.phys` file.
+ */
 export interface PhysData {
   /** Discriminant used to distinguish physics mesh data from render mesh data. */
   kind: "phys";

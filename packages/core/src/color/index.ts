@@ -1,15 +1,27 @@
+/** RGBA color with 8-bit channel values. */
 export interface Color {
-  /* 0-255 */
+  /** Red channel, from `0` to `255`. */
   r: number;
-  /* 0-255 */
+  /** Green channel, from `0` to `255`. */
   g: number;
-  /* 0-255 */
+  /** Blue channel, from `0` to `255`. */
   b: number;
-  /* 0-255 */
+  /** Optional alpha channel, from `0` to `255`. */
   a?: number;
 }
 
+/**
+ * Parse a Stormworks-style color string.
+ *
+ * Accepts `RRGGBB`, `RRGGBBAA`, and the same values prefixed with `#`.
+ * Stormworks' special values are also supported: `""` is black and `"x"` is
+ * white. Invalid values return `undefined`.
+ */
 export function parseColor(value: string): Color | undefined;
+/**
+ * Parse a Stormworks-style color string, returning `fallback` when the value is
+ * invalid.
+ */
 export function parseColor(value: string, fallback: Color): Color;
 
 export function parseColor(value: string, fallback?: Color): Color | undefined {

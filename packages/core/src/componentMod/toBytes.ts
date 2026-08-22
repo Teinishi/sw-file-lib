@@ -1,6 +1,13 @@
 import { BinaryWriter } from "../binary";
 import type { ComponentMod } from "./types";
 
+/**
+ * Serialize a component mod definition and bundled assets to Stormworks `.bin`
+ * bytes.
+ *
+ * Passing `name` writes the newer v1 layout. Omitting it writes the legacy v0
+ * layout.
+ */
 export function componentModToBytes(componentMod: ComponentMod) {
   const writer = new BinaryWriter();
 
