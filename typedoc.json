@@ -1,0 +1,18 @@
+{
+  "entryPoints": [
+    "packages/core/src/index.ts",
+    "packages/geometry/src/index.ts",
+    "packages/three/src/index.ts",
+    "packages/xml/src/index.ts"
+  ],
+  "entryPointStrategy": "resolve",
+
+  "readme": "README.md",
+
+  "plugin": ["@clean-jsdoc-theme/typedoc"],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
+
+  "cleanJsdocTheme": {
+    "siteName": "sw-file-lib"
+  }
+}

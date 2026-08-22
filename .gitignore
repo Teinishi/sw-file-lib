@@ -25,5 +25,5 @@ lerna-debug.log*
 *.tsbuildinfo
 
 .env.test.local
-
 *.tmp
+docs
