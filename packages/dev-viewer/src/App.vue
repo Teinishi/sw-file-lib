@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { meshOrPhysDataFromBytes } from "@sw-file-lib/core";
+import { meshDataToBytes, meshOrPhysDataFromBytes, type MeshData } from "@sw-file-lib/core";
+import { GeometryBuilder } from "@sw-file-lib/geometry";
 import { createSwMesh, createSwPhysMeshGroup, assembleVehicleGeometry } from "@sw-file-lib/three";
 import { VehicleSchema } from "@sw-file-lib/xml";
 import { BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "./basicBlocks/blocks.ts";
@@ -12,6 +13,7 @@ type LoadedObject = {
   name: string;
   kind: "mesh" | "phys" | "vehicle";
   object: THREE.Object3D;
+  meshData: MeshData | null;
   visible: boolean;
 };
 
@@ -38,6 +40,7 @@ function loadMesh(bytes: ArrayBuffer, name: string) {
     name,
     kind: data.kind,
     object: markRaw(object),
+    meshData: null,
     visible: true,
   });
 }
@@ -57,9 +60,11 @@ async function loadVehicle(text: string, name: string) {
     },
   });
 
+  const builder = new GeometryBuilder();
   const vehicleGroup = new THREE.Group();
   for (const group of groups) {
     vehicleGroup.add(group.object);
+    builder.merge(group.builder);
   }
   vehicleGroup.name = name;
 
@@ -68,6 +73,7 @@ async function loadVehicle(text: string, name: string) {
     name,
     kind: "vehicle",
     object: markRaw(vehicleGroup),
+    meshData: builder.toMeshData(),
     visible: true,
   });
 }
@@ -113,6 +119,17 @@ function onFileSelect(event: Event) {
   }
 
   input.value = "";
+}
+
+function saveObject(item: LoadedObject) {
+  if (!item.meshData) return;
+  const bytes = meshDataToBytes(item.meshData);
+  const blob = new Blob([bytes], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${item.name}.mesh`;
+  link.click();
 }
 
 function removeObject(item: LoadedObject) {
@@ -201,6 +218,15 @@ function onDrop(event: DragEvent) {
             <span class="object-kind">{{ item.kind }}</span>
           </label>
           <button
+            class="save-button"
+            type="button"
+            :aria-label="`Save ${item.name}`"
+            @click="saveObject(item)"
+            :disabled="item.meshData === null"
+          >
+            Save
+          </button>
+          <button
             class="delete-button"
             type="button"
             :aria-label="`Remove ${item.name}`"
@@ -281,7 +307,8 @@ function onDrop(event: DragEvent) {
 }
 
 .actions button,
-.delete-button {
+.delete-button,
+.save-button {
   min-height: 32px;
   padding: 0 10px;
   color: #f2f5f8;
@@ -340,7 +367,7 @@ function onDrop(event: DragEvent) {
 
 .object-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
   padding: 7px 8px;
@@ -381,7 +408,8 @@ function onDrop(event: DragEvent) {
   border-radius: 4px;
 }
 
-.delete-button {
+.delete-button,
+.save-button {
   min-height: 28px;
   padding: 0 8px;
   font-size: 12px;
