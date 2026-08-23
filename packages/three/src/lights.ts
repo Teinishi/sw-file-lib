@@ -6,9 +6,9 @@ const AMBIENT_COLOR_LOW = new THREE.Color(11.0 / 255.0, 16.0 / 255.0, 44.0 / 255
 /** Options used when creating the default Stormworks-style lights. */
 export interface CreateSwLightsOptions {
   /** Intensity of the hemisphere light. Defaults to `1.6`. */
-  hemisphereIntensity?: number;
+  readonly hemisphereIntensity?: number;
   /** Intensity of the directional light. Defaults to `1.0`. */
-  directionalIntensity?: number;
+  readonly directionalIntensity?: number;
 }
 
 /**

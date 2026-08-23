@@ -116,7 +116,7 @@ export interface SchemaParseOptions {
    *
    * @default "error"
    */
-  unknownField?: UnknownFieldMode | UnknownFieldCallback;
+  readonly unknownField?: UnknownFieldMode | UnknownFieldCallback;
 
   /**
    * Determines whether a value that cannot be interpreted as a number
@@ -141,7 +141,7 @@ export interface SchemaParseOptions {
    * // { value: NaN }
    * ```
    */
-  allowNaN?: boolean;
+  readonly allowNaN?: boolean;
 
   /**
    * Determines how duplicate child elements are handled when the schema
@@ -152,5 +152,5 @@ export interface SchemaParseOptions {
    *
    * @default "error"
    */
-  duplicateChildElement?: DuplicateChildElementMode | DuplicateChildElementCallback;
+  readonly duplicateChildElement?: DuplicateChildElementMode | DuplicateChildElementCallback;
 }

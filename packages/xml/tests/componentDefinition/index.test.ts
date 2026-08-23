@@ -7,7 +7,7 @@ import {
   safeParseComponentDefinitionXml,
   ComponentDefinitionSchema,
   x,
-  componentDefinitionUtils,
+  utils,
 } from "../../src";
 
 describe("componentDefinition", () => {
@@ -31,25 +31,21 @@ describe("componentDefinition", () => {
     data.mesh_data_name = "test_cube_1.mesh";
     data.unknown_attr = "anything";
 
-    data.surfaces = componentDefinitionUtils.createCuboidSurfaces(
+    data.surfaces = utils.createCuboidSurfaces(
       { x: 0, y: 0, z: 0 },
       { x: 0, y: 0, z: 0 },
       [0, 1, 2, 3, 4, 5],
       { shape: 0 },
     );
 
-    data.buoyancy_surfaces = componentDefinitionUtils.createCuboidSurfaces(
+    data.buoyancy_surfaces = utils.createCuboidSurfaces(
       { x: 0, y: 0, z: 0 },
       { x: 0, y: 0, z: 0 },
       [0, 1, 2, 3, 4, 5],
       { shape: 1 },
     );
 
-    data.voxels = componentDefinitionUtils.createVoxels(
-      { x: 0, y: 0, z: 0 },
-      { x: 0, y: 0, z: 0 },
-      { flags: 1 },
-    );
+    data.voxels = utils.createVoxels({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { flags: 1 });
 
     data.tooltip_properties = {
       description: "",
@@ -61,7 +57,7 @@ describe("componentDefinition", () => {
       number_rewarded: 2000,
     };
 
-    componentDefinitionUtils.calculateVoxelBounds(data, ["voxel", "voxel_physics"]);
+    utils.calculateVoxelBounds(data, ["voxel", "voxel_physics"]);
 
     const serialized = schema.serialize(data, "definition", { indent: "\t" }).toString();
     expect(serialized).toBe(xml);

@@ -278,6 +278,12 @@ export type Infer<T extends Schema<any> | OptionalSchema<any>> =
   T extends OptionalSchema<infer U> ? U : T extends Schema<infer U> ? U : never;
 
 /**
+ * Infers the TypeScript value accepted by a schema, and makes it readonly.
+ */
+export type InferReadonly<T extends Schema<any> | OptionalSchema<any>> =
+  T extends OptionalSchema<infer U> ? Readonly<U> : T extends Schema<infer U> ? Readonly<U> : never;
+
+/**
  * Keys whose fields are optional schemas.
  */
 export type OptionalKeys<T extends Shape> = {
@@ -296,6 +302,15 @@ export type InferShape<T extends Shape> = {
   [K in OptionalKeys<T>]?: Infer<T[K]>;
 } & {
   [K in RequiredKeys<T>]: Infer<T[K]>;
+};
+
+/**
+ * Infers the object value produced by a schema shape, and makes it readonly.
+ */
+export type InferShapeImmutable<T extends Shape> = {
+  readonly [K in OptionalKeys<T>]?: InferReadonly<T[K]>;
+} & {
+  readonly [K in RequiredKeys<T>]: InferReadonly<T[K]>;
 };
 
 /**

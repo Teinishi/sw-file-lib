@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import type { DeepReadonly } from "ts-essentials";
 import { parseColor } from "@sw-file-lib/core/color";
 import {
   addVec3,
@@ -22,11 +21,11 @@ import {
   type BuildSurfaceGeometryOptions,
   type SurfaceData,
 } from "@sw-file-lib/geometry";
-import type { ComponentDefinition, Vehicle } from "@sw-file-lib/xml";
+import type { ComponentDefinitionImmutable, VehicleImmutable } from "@sw-file-lib/xml";
 import { bufferGeometryFromBuilder, createOpaqueMaterial, createUniformStore } from "..";
 
 export interface ResolvedComponent {
-  definition: DeepReadonly<ComponentDefinition>;
+  definition: ComponentDefinitionImmutable;
 }
 
 export type ComponentResolver = (name: string) => Promise<ResolvedComponent | undefined>;
@@ -37,9 +36,9 @@ export interface AssembleVehicleOptions {
    * If a component cannot be resolved, it will be skipped.
    * The result of this function is cached for each unique component name, so it will only be called once per unique name.
    */
-  resolve: ComponentResolver;
+  readonly resolve: ComponentResolver;
 
-  surfaceOptions?: BuildSurfaceGeometryOptions;
+  readonly surfaceOptions?: BuildSurfaceGeometryOptions;
 }
 
 export interface VehicleRenderGroup {
@@ -49,7 +48,7 @@ export interface VehicleRenderGroup {
 }
 
 export async function assembleVehicleGeometry(
-  vehicle: DeepReadonly<Vehicle>,
+  vehicle: VehicleImmutable,
   options: AssembleVehicleOptions,
 ): Promise<VehicleRenderGroup[]> {
   const surfaceMaterial = createOpaqueMaterial(

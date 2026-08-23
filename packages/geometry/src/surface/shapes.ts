@@ -367,11 +367,11 @@ export function isValidSurfaceShape(shape: number): shape is BasicSurfaceShape {
 }
 
 // カリング用に shape がボクセル辺のどこをカバーしているか表現 (orientation=0, rotation=0 に X+方向から向かって左下スタート、反時計回り)
-export type ShapeEdgeCoverage = [
-  [boolean, boolean, boolean, boolean],
-  [boolean, boolean, boolean, boolean],
-  [boolean, boolean, boolean, boolean],
-  [boolean, boolean, boolean, boolean],
+export type ShapeEdgeCoverage = readonly [
+  readonly [boolean, boolean, boolean, boolean],
+  readonly [boolean, boolean, boolean, boolean],
+  readonly [boolean, boolean, boolean, boolean],
+  readonly [boolean, boolean, boolean, boolean],
 ];
 
 export const SURFACE_EDGE_COVERAGE = {

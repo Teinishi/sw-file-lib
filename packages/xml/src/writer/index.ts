@@ -1,11 +1,9 @@
-import type { DeepReadonly } from "ts-essentials";
-
 export type XmlAttributeValue = string | number | boolean | undefined;
 export type XmlAttributes = Iterable<readonly [string, XmlAttributeValue]>;
 
 export interface XmlWriterOptions {
-  indent?: string | number | undefined;
-  xmlDeclaration?: boolean;
+  readonly indent?: string | number | undefined;
+  readonly xmlDeclaration?: boolean;
 }
 
 function getIndent(indent: string | number | undefined): string | undefined {
@@ -29,7 +27,7 @@ export class XmlWriter {
     }
   }
 
-  begin(name: string, attributes?: DeepReadonly<XmlAttributes>): void {
+  begin(name: string, attributes?: XmlAttributes): void {
     this.writeLine(`<${name}${this.formatAttributes(attributes)}>`);
     this.elementStack.push(name);
   }
@@ -48,13 +46,13 @@ export class XmlWriter {
     this.writeLine(`</${name}>`);
   }
 
-  empty(name: string, attributes?: DeepReadonly<XmlAttributes>): void {
+  empty(name: string, attributes?: XmlAttributes): void {
     this.writeLine(`<${name}${this.formatAttributes(attributes)}/>`);
   }
 
   element(
     name: string,
-    attributes: DeepReadonly<XmlAttributes> | undefined,
+    attributes: XmlAttributes | undefined,
     children: (writer: XmlWriter) => void,
   ) {
     const childrenWriter = new XmlWriter({
@@ -93,7 +91,7 @@ export class XmlWriter {
     }
   }
 
-  private formatAttributes(attributes?: DeepReadonly<XmlAttributes>): string {
+  private formatAttributes(attributes?: XmlAttributes): string {
     if (!attributes) return "";
 
     let s = "";

@@ -1,7 +1,7 @@
 import * as earcut from "earcut";
 import type { DeepReadonly } from "ts-essentials";
 import type { MeshData, MeshVertex } from "@sw-file-lib/core";
-import type { Color } from "@sw-file-lib/core/color";
+import { isColor, type Color } from "@sw-file-lib/core/color";
 import {
   type Vec2,
   type Vec3,
@@ -78,32 +78,36 @@ interface GeometryGroup {
 /** Options for {@link GeometryBuilder}. */
 export interface GeometryBuilderOptions {
   /** Run Earcut refinement after polygon triangulation. */
-  refine?: boolean;
+  readonly refine?: boolean;
 }
 
 /** Options shared by face-building methods. */
 export interface AddFaceOptions {
   /** Material group index. Stormworks convention is `0` opaque, `1` glass, `2` additive. */
-  materialIndex?: number;
+  readonly materialIndex?: number;
   /** Per-vertex color written for the generated face. Channel values are `0` to `255`. */
-  color?: Color;
+  readonly color?: Readonly<Color>;
   /** Reverse the face normal and triangle winding. */
-  flip?: boolean;
+  readonly flip?: boolean;
 }
 
 /** Options for adding a 2D polygon on a constant Z plane. */
 export interface AddPolygonOptions extends AddFaceOptions {
   /** Z coordinate used for every polygon vertex. Defaults to `0`. */
-  z?: number;
+  readonly z?: number;
 }
 
 /** Options for adding side faces between two Z planes. */
 export interface AddExtrudedSideOptions extends AddFaceOptions {
   /** Close the side strip by connecting the final vertex back to the first. */
-  close?: boolean;
+  readonly close?: boolean;
   /** Start and end Z coordinates for the side strip. */
-  zRange: [number, number];
+  readonly zRange: readonly [number, number];
 }
+
+export type VertexList3D = readonly Readonly<Vec3>[];
+
+export type VertexList2D = readonly Readonly<Vec2>[];
 
 /**
  * Incrementally builds Stormworks-space mesh geometry.
@@ -118,16 +122,16 @@ export class GeometryBuilder {
   private readonly colors: number[] = [];
   private readonly indices: number[] = [];
   private readonly groups: GeometryGroup[] = [];
-  refine: boolean;
+  readonly refine: boolean;
 
-  constructor(options?: Readonly<GeometryBuilderOptions>) {
+  constructor(options?: GeometryBuilderOptions) {
     this.refine = options?.refine ?? false;
   }
 
   private addCoplanarTriangles(
     flatVertices: readonly number[],
     indices: readonly number[],
-    options?: DeepReadonly<AddFaceOptions>,
+    options?: AddFaceOptions,
   ) {
     if (indices.length < 3) {
       throw new Error("Indices must have at least 3 vertices.");
@@ -193,22 +197,17 @@ export class GeometryBuilder {
    * The face is triangulated as a fan from the first vertex. Normals are
    * computed for Stormworks' left-handed coordinate system.
    */
-  addFace(
-    vertices: DeepReadonly<Vec3[]>,
-    options?: number | Readonly<Color> | DeepReadonly<AddFaceOptions>,
-  ) {
+  addFace(vertices: VertexList3D, options?: number | Readonly<Color> | AddFaceOptions) {
     if (vertices.length < 3) {
       return;
     }
 
-    const normalizedOptions: AddFaceOptions = {};
-    if (typeof options === "number") {
-      normalizedOptions.materialIndex = options;
-    } else if (options !== undefined && "r" in options) {
-      normalizedOptions.color = options;
-    } else {
-      Object.assign(normalizedOptions, options);
-    }
+    const isOptionsColor = isColor(options);
+    const normalizedOptions: AddFaceOptions = {
+      ...(typeof options === "number" ? { materialIndex: options } : undefined),
+      ...(isOptionsColor ? { color: options } : undefined),
+      ...(typeof options === "object" && !isOptionsColor ? options : undefined),
+    };
 
     const indices = [];
     for (let i = 0; i < vertices.length - 2; i++) {
@@ -225,7 +224,7 @@ export class GeometryBuilder {
    *
    * `polygon[0]` is the outer ring. Additional rings are treated as holes.
    */
-  addPolygon(polygon: DeepReadonly<Vec2[][]>, options?: DeepReadonly<AddPolygonOptions>) {
+  addPolygon(polygon: readonly VertexList2D[], options?: AddPolygonOptions) {
     const z = options?.z ?? 0;
 
     const data = earcut.flatten(polygon.map((ring) => vec2RingToTuple(ring, z)));
@@ -242,7 +241,7 @@ export class GeometryBuilder {
    *
    * Use `close: true` for a closed prism-like side surface.
    */
-  addExtrudedSides(vertices: DeepReadonly<Vec2[]>, options?: DeepReadonly<AddExtrudedSideOptions>) {
+  addExtrudedSides(vertices: VertexList2D, options?: AddExtrudedSideOptions) {
     const [z1, z2] = options?.zRange ?? [0, 1];
 
     const quadCount = options?.close ? vertices.length : vertices.length - 1;

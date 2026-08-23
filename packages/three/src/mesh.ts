@@ -5,15 +5,15 @@ import { createSwMaterials, type SwMaterialSet } from "./material";
 /** Options used when creating a render mesh object from parsed `mesh` data. */
 export interface CreateSwMeshOptions {
   /** Optional display name assigned to the created mesh. */
-  name?: string;
+  readonly name?: string;
   /** Materials used for opaque, glass, and additive groups. */
-  materials?: SwMaterialSet;
+  readonly materials?: Readonly<SwMaterialSet>;
 }
 
 /** Options used when creating a physics mesh group from parsed `phys` data. */
 export interface CreateSwPhysMeshOptions {
   /** Optional display name assigned to the created group. */
-  name?: string;
+  readonly name?: string;
 }
 
 /**

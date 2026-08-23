@@ -7,6 +7,7 @@ export const TextValuePairSchema = x.partialObject({
   value: x.number(),
 });
 export type TextValuePair = x.InferShape<typeof TextValuePairSchema.shape>;
+export type TextValuePairImmutable = x.InferShapeImmutable<typeof TextValuePairSchema.shape>;
 
 export const MicrocontrollerNodeSchema = x.partialObject({
   id: x.number(),
@@ -23,6 +24,9 @@ export const MicrocontrollerNodeSchema = x.partialObject({
   }),
 });
 export type MicrocontrollerNode = x.InferShape<typeof MicrocontrollerNodeSchema.shape>;
+export type MicrocontrollerNodeImmutable = x.InferShapeImmutable<
+  typeof MicrocontrollerNodeSchema.shape
+>;
 
 export const MicrocontrollerObjectInSchema = x.partialObject({
   component_id: x.number(),
@@ -30,6 +34,9 @@ export const MicrocontrollerObjectInSchema = x.partialObject({
   node_index: x.number(),
 });
 export type MicrocontrollerObjectIn = x.InferShape<typeof MicrocontrollerObjectInSchema.shape>;
+export type MicrocontrollerObjectInImmutable = x.InferShapeImmutable<
+  typeof MicrocontrollerObjectInSchema.shape
+>;
 
 export const MicrocontrollerComponentSchema = x.partialObject({
   type: x.number(),
@@ -105,6 +112,9 @@ export const MicrocontrollerComponentSchema = x.partialObject({
   }),
 });
 export type MicrocontrollerComponent = x.InferShape<typeof MicrocontrollerComponentSchema.shape>;
+export type MicrocontrollerComponentImmutable = x.InferShapeImmutable<
+  typeof MicrocontrollerComponentSchema.shape
+>;
 
 export const MicrocontrollerBridgeComponentSchema = x.partialObject({
   type: x.number(),
@@ -116,6 +126,9 @@ export const MicrocontrollerBridgeComponentSchema = x.partialObject({
   }),
 });
 export type MicrocontrollerBridgeComponent = x.InferShape<
+  typeof MicrocontrollerBridgeComponentSchema.shape
+>;
+export type MicrocontrollerBridgeComponentImmutable = x.InferShapeImmutable<
   typeof MicrocontrollerBridgeComponentSchema.shape
 >;
 
@@ -156,11 +169,12 @@ export const MicrocontrollerSchema = x.partialObject({
   }),
 });
 export type Microcontroller = x.InferShape<typeof MicrocontrollerSchema.shape>;
+export type MicrocontrollerImmutable = x.InferShapeImmutable<typeof MicrocontrollerSchema.shape>;
 
 /**
  * Parses a Stormworks microcontroller XML document.
  *
- * @throws {@link import("../schemaLib").SchemaError} when the XML content
+ * @throws {@link x.SchemaError} when the XML content
  * does not match the microcontroller schema.
  */
 export function parseMicrocontrollerXml(
