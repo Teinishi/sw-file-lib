@@ -1,4 +1,3 @@
-import type { DeepReadonly } from "ts-essentials";
 import {
   addVec3,
   crossVec3,
@@ -29,7 +28,7 @@ function getInnerRing(shape: BasicSurfaceShape) {
   return innerRingCache[shape];
 }
 
-function offsetPolygon3D(vertices: DeepReadonly<Vec3[]>, offset: number): Vec3[] {
+function offsetPolygon3D(vertices: readonly Readonly<Vec3>[], offset: number): Vec3[] {
   if (vertices.length < 3) return [...vertices];
 
   const v0 = vertices[0]!;
@@ -70,7 +69,7 @@ function offsetPolygon3D(vertices: DeepReadonly<Vec3[]>, offset: number): Vec3[]
  */
 export function buildSurfaceGeometry(
   shape: BasicSurfaceShape,
-  options?: DeepReadonly<BuildSurfaceGeometryOptions>,
+  options?: BuildSurfaceGeometryOptions,
 ) {
   const hollow = options?.hollow ?? false;
   const edge = hollow || (options?.edge ?? false);
@@ -111,8 +110,8 @@ export function buildSurfaceGeometry(
  * system. Covered faces are culled by default.
  */
 export function buildSurfacesGeometry(
-  surfaces: DeepReadonly<SurfaceData[]>,
-  options?: DeepReadonly<BuildSurfaceGeometryOptions>,
+  surfaces: readonly SurfaceData[],
+  options?: BuildSurfaceGeometryOptions,
 ) {
   let culledSurfaces: Set<number> | undefined;
   if (options?.cull ?? true) {

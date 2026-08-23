@@ -1,5 +1,3 @@
-import type { DeepReadonly } from "ts-essentials";
-
 export class BinaryWriter {
   private buffer: ArrayBuffer;
   private view: DataView;
@@ -105,7 +103,7 @@ export class BinaryWriter {
     }
   }
 
-  writeBytes(data: DeepReadonly<Uint8Array>) {
+  writeBytes(data: Uint8Array) {
     this.ensure(data.length);
     new Uint8Array(this.buffer, this.offset, data.length).set(data);
     this.offset += data.length;

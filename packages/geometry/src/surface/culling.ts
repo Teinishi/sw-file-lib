@@ -1,4 +1,3 @@
-import type { DeepReadonly } from "ts-essentials";
 import {
   addVec3,
   eqVec3,
@@ -30,7 +29,7 @@ function cullingMapKey(pos: Readonly<Vec3>, normal: Readonly<Vec3>) {
  * This is useful before rendering or exporting generated component surfaces. It
  * only culls shapes with known edge coverage data.
  */
-export function cullSurfaces(surfaces: DeepReadonly<SurfaceData[]>) {
+export function cullSurfaces(surfaces: readonly SurfaceData[]): Set<number> {
   const cullingMap: Map<string, Set<number>> = new Map();
 
   const culledSurfaces: Set<number> = new Set();
@@ -95,8 +94,8 @@ export function cullSurfaces(surfaces: DeepReadonly<SurfaceData[]>) {
 }
 
 function compareCoverage(
-  a: DeepReadonly<ShapeEdgeCoverage>,
-  b: DeepReadonly<ShapeEdgeCoverage>,
+  a: ShapeEdgeCoverage,
+  b: ShapeEdgeCoverage,
   start: number = 0,
   flip: boolean = false,
 ) {

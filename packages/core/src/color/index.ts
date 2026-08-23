@@ -11,6 +11,24 @@ export interface Color {
 }
 
 /**
+ * Check whether a value is a `Color` object.
+ */
+export function isColor(value: unknown): value is Color {
+  if (typeof value !== "object" || value === null) return false;
+
+  const color = value as Color;
+  if (typeof color.r !== "number" || typeof color.g !== "number" || typeof color.b !== "number") {
+    return false;
+  }
+
+  if (color.a !== undefined && typeof color.a !== "number") {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Parse a Stormworks-style color string.
  *
  * Accepts `RRGGBB`, `RRGGBBAA`, and the same values prefixed with `#`.

@@ -42,7 +42,7 @@ export interface SwMaterialSet {
 /** Options used when creating the default Stormworks material set. */
 export interface CreateSwMaterialsOptions {
   /** Initial uniforms applied after each material family's defaults are created. */
-  uniforms?: SwUniforms;
+  readonly uniforms?: Readonly<SwUniforms>;
 }
 
 /**

@@ -1,1 +1,1 @@
-export * as componentDefinitionUtils from "./componentDefinition";
+export * from "./componentDefinition";
