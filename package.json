@@ -15,7 +15,7 @@
   "type": "module",
   "scripts": {
     "docs": "typedoc",
-    "docs:serve": "pnpm dlx http-server docs",
+    "docs:serve": "pnpm dlx http-server dist-docs",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
     "test": "pnpm -r test",

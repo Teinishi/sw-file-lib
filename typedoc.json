@@ -10,7 +10,7 @@
   "readme": "README.md",
 
   "plugin": ["@clean-jsdoc-theme/typedoc"],
-  "outputs": [{ "name": "clean-jsdoc-theme", "path": "docs" }],
+  "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist-docs" }],
 
   "cleanJsdocTheme": {
     "siteName": "sw-file-lib"
