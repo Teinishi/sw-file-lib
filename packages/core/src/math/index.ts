@@ -10,6 +10,6 @@ export interface Vec2 {
 }
 
 /** Positive modulo, useful for cyclic indices. */
-export function modulo(a: number, b: number) {
+export function modulo(a: number, b: number): number {
   return ((a % b) + b) % b;
 }
