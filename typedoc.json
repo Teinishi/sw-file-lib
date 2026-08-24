@@ -1,6 +1,8 @@
 {
   "entryPoints": [
     "packages/core/src/index.ts",
+    "packages/core/src/math/index.ts",
+    "packages/core/src/color/index.ts",
     "packages/geometry/src/index.ts",
     "packages/three/src/index.ts",
     "packages/xml/src/index.ts"
