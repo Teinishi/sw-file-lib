@@ -1,33 +1,47 @@
 import { Orientation } from "@sw-file-lib/core/math";
 
-/** Valid Stormworks `<surface orientation="...">` values for basic surfaces. */
+/**
+ * The six axis-aligned surface orientations used by Stormworks.
+ */
 export type BasicSurfaceOrientation = 0 | 1 | 2 | 3 | 4 | 5;
 
-/** Return `true` when a value is a valid basic surface orientation id. */
+/**
+ * Returns whether a value is a valid {@link BasicSurfaceOrientation}.
+ *
+ * @param orientation - Value to test.
+ */
 export function isValidSurfaceOrientation(
   orientation: unknown,
 ): orientation is BasicSurfaceOrientation {
   return typeof orientation === "number" && orientation >= 0 && orientation <= 5;
 }
 
-/** Valid Stormworks `<surface rotation="...">` values for basic surfaces. */
+/**
+ * Quarter-turn rotation around the surface normal.
+ */
 export type BasicSurfaceRotation = 0 | 1 | 2 | 3;
 
-/** Return `true` when a value is a valid basic surface rotation id. */
+/**
+ * Returns whether a value is a valid {@link BasicSurfaceRotation}.
+ *
+ * @param rotation - Value to test.
+ */
+
 export function isValidSurfaceRotation(rotation: unknown): rotation is BasicSurfaceRotation {
   return typeof rotation === "number" && rotation >= 0 && rotation <= 3;
 }
 
 /**
- * Convert Stormworks surface orientation and rotation ids into an
- * {@link Orientation}.
+ * Converts a Stormworks surface orientation into an {@link Orientation}.
  *
- * Use `toMat3()` on the returned value when building a `SurfaceData.matrix`.
+ * @param orientation - Base surface orientation.
+ * @param rotation - Quarter-turn rotation.
+ * @returns The corresponding orientation.
  */
 export function getSurfaceOrientation(
   orientation: BasicSurfaceOrientation,
   rotation: BasicSurfaceRotation,
-) {
+): Orientation {
   let o = Orientation.Identity;
   switch (rotation) {
     case 1:

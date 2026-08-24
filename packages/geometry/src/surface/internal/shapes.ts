@@ -1,3 +1,5 @@
+import type { Vec3 } from "@sw-file-lib/core/math";
+
 export const SURFACE_SHAPES = {
   1: [
     { x: 0.125, y: 0.125, z: 0.125 },
@@ -360,10 +362,8 @@ export const SURFACE_SHAPES = {
   ],
 } as const;
 
-export type BasicSurfaceShape = keyof typeof SURFACE_SHAPES;
-
-export function isValidSurfaceShape(shape: number): shape is BasicSurfaceShape {
-  return shape in SURFACE_SHAPES;
+export function getSurfaceShape(shape: number): readonly Readonly<Vec3>[] | undefined {
+  return SURFACE_SHAPES[shape as keyof typeof SURFACE_SHAPES];
 }
 
 // カリング用に shape がボクセル辺のどこをカバーしているか表現 (orientation=0, rotation=0 に X+方向から向かって左下スタート、反時計回り)

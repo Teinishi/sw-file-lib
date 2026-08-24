@@ -7,25 +7,26 @@ import {
   subVec3,
   type Vec3,
 } from "@sw-file-lib/core/math";
-import {
-  cullSurfaces,
-  SURFACE_SHAPES,
-  type BasicSurfaceShape,
-  type BuildSurfaceGeometryOptions,
-  type SurfaceData,
-} from ".";
+import { cullSurfaces, type BuildSurfaceGeometryOptions, type SurfaceData } from ".";
 import { GeometryBuilder } from "..";
+import { getSurfaceShape } from "./internal/shapes";
 
 const SURFACE_EDGE_WIDTH = 0.003;
 const SURFACE_EDGE_COLOR = { r: 25, g: 25, b: 25 };
 
-const innerRingCache: Record<BasicSurfaceShape, Vec3[]> = {} as Record<BasicSurfaceShape, Vec3[]>;
+const innerRingCache = {} as Record<number, Vec3[] | null>;
 
-function getInnerRing(shape: BasicSurfaceShape) {
-  if (!innerRingCache[shape]) {
-    innerRingCache[shape] = offsetPolygon3D(SURFACE_SHAPES[shape], SURFACE_EDGE_WIDTH);
+function getInnerRing(shape: number): Vec3[] | undefined {
+  if (!(shape in innerRingCache)) {
+    const s = getSurfaceShape(shape);
+    if (s !== undefined) {
+      innerRingCache[shape] = offsetPolygon3D(s, SURFACE_EDGE_WIDTH);
+    } else {
+      innerRingCache[shape] = null;
+      return;
+    }
   }
-  return innerRingCache[shape];
+  return innerRingCache[shape] ?? undefined;
 }
 
 function offsetPolygon3D(vertices: readonly Readonly<Vec3>[], offset: number): Vec3[] {
@@ -61,21 +62,23 @@ function offsetPolygon3D(vertices: readonly Readonly<Vec3>[], offset: number): V
 }
 
 /**
- * Build geometry for one Stormworks basic surface shape.
+ * Builds geometry for a single Stormworks surface shape.
  *
- * The returned builder is in Stormworks' left-handed coordinate system. Shape
- * vertices are expressed in block-local units, where a full block side spans
- * `0.25`.
+ * @param shape - Stormworks surface shape ID.
+ * @param options - Geometry generation options.
+ * @returns Generated geometry, or `undefined` if the shape is unsupported.
  */
 export function buildSurfaceGeometry(
-  shape: BasicSurfaceShape,
+  shape: number,
   options?: BuildSurfaceGeometryOptions,
-) {
+): GeometryBuilder | undefined {
   const hollow = options?.hollow ?? false;
   const edge = hollow || (options?.edge ?? false);
   const color = options?.color;
 
-  const outerRing = SURFACE_SHAPES[shape];
+  const outerRing = getSurfaceShape(shape);
+  if (!outerRing) return;
+
   const n = outerRing.length;
 
   const builder = new GeometryBuilder();
@@ -83,6 +86,7 @@ export function buildSurfaceGeometry(
 
   if (edge) {
     const innerRing = getInnerRing(shape);
+    if (!innerRing) return;
 
     for (let i = 0; i < n; i++) {
       const v0 = outerRing[i]!;
@@ -103,16 +107,19 @@ export function buildSurfaceGeometry(
 }
 
 /**
- * Build merged geometry for resolved Stormworks surfaces.
+ * Builds geometry from multiple Stormworks surfaces.
  *
- * Surface positions are interpreted in voxel units and scaled by `0.25`.
- * Orientation matrices are applied in Stormworks' left-handed coordinate
- * system. Covered faces are culled by default.
+ * If `options.cull` is enabled, hidden internal surfaces are removed
+ * automatically before geometry generation.
+ *
+ * @param surfaces - Surfaces to convert.
+ * @param options - Geometry generation options.
+ * @returns The combined geometry.
  */
 export function buildSurfacesGeometry(
   surfaces: readonly SurfaceData[],
   options?: BuildSurfaceGeometryOptions,
-) {
+): GeometryBuilder {
   let culledSurfaces: Set<number> | undefined;
   if (options?.cull ?? true) {
     culledSurfaces = cullSurfaces(surfaces);
@@ -126,6 +133,7 @@ export function buildSurfacesGeometry(
     const o = { ...options };
     if (surface.color) o.color = surface.color;
     const s = buildSurfaceGeometry(surface.shape, o);
+    if (s === undefined) continue;
     s.transform(surface.matrix, scaleStormworksPosition(surface.position));
     builder.merge(s);
   }

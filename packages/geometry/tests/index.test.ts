@@ -8,7 +8,6 @@ import {
   getSurfaceOrientation,
   isValidSurfaceOrientation,
   isValidSurfaceRotation,
-  isValidSurfaceShape,
   type SurfaceData,
 } from "../src";
 
@@ -21,8 +20,6 @@ test("surface validators reject out-of-range values", () => {
   expect(isValidSurfaceOrientation(6)).toBe(false);
   expect(isValidSurfaceRotation(3)).toBe(true);
   expect(isValidSurfaceRotation(4)).toBe(false);
-  expect(isValidSurfaceShape(1)).toBe(true);
-  expect(isValidSurfaceShape(5)).toBe(false);
 });
 
 test("getSurfaceOrientation keeps Stormworks surface ids stable after left-handed rotation change", () => {
@@ -113,7 +110,7 @@ test("GeometryBuilder builds polygons, extruded sides, and BufferGeometry attrib
 });
 
 test("buildSurfaceGeometry emits the canonical X+ Stormworks surface", () => {
-  const builder = buildSurfaceGeometry(1);
+  const builder = buildSurfaceGeometry(1)!;
   const mesh = builder.toMeshData();
 
   expect(mesh.vertices.map((v) => v.position.x)).toEqual([0.125, 0.125, 0.125, 0.125]);
@@ -122,8 +119,8 @@ test("buildSurfaceGeometry emits the canonical X+ Stormworks surface", () => {
 });
 
 test("buildSurfaceGeometry supports edge and hollow options", () => {
-  const edge = buildSurfaceGeometry(1, { edge: true }).toMeshData();
-  const hollow = buildSurfaceGeometry(1, { hollow: true }).toMeshData();
+  const edge = buildSurfaceGeometry(1, { edge: true })!.toMeshData();
+  const hollow = buildSurfaceGeometry(1, { hollow: true })!.toMeshData();
 
   expect(edge.indices.length).toBe(30);
   expect(edge.groups.length).toBe(1);
@@ -135,7 +132,6 @@ test("buildSurfacesGeometry scales Stormworks positions without flipping z", () 
     {
       position: { x: 0, y: 0, z: 4 },
       matrix: Orientation.Identity.toMat3(),
-      isFlipped: false,
       shape: 1,
     },
   ];
@@ -151,13 +147,11 @@ test("cullSurfaces removes fully covered adjacent faces", () => {
     {
       position: { x: 0, y: 0, z: 0 },
       matrix: Orientation.Identity.toMat3(),
-      isFlipped: false,
       shape: 1,
     },
     {
       position: { x: 1, y: 0, z: 0 },
       matrix: Orientation.RotateZ180.toMat3(),
-      isFlipped: false,
       shape: 1,
     },
   ];
