@@ -91,7 +91,7 @@ test("createSwMeshGeometry flips z at the Three.js boundary and keeps Stormworks
     groups: [
       {
         name: "glass",
-        materialId: 1,
+        materialIndex: 1,
         indexBufferStart: 0,
         indexBufferLength: 3,
         boundsMin: { x: 1, y: 0, z: 2 },

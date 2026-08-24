@@ -414,7 +414,7 @@ export class GeometryBuilder {
         return {
           indexBufferStart: start,
           indexBufferLength: length,
-          materialId: materialIndex,
+          materialIndex,
           boundsMin,
           boundsMax,
           name: `material-${i}`,

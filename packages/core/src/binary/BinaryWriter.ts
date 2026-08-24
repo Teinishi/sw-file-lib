@@ -203,7 +203,7 @@ export class BinaryWriter {
    *
    * @returns The serialized binary data.
    */
-  toUint8Array() {
+  toUint8Array(): Uint8Array<ArrayBuffer> {
     return new Uint8Array(this.buffer, 0, this.offset);
   }
 }

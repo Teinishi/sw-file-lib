@@ -1,53 +1,7 @@
-import { BinaryReader, type BinaryReaderInput } from "../binary";
-import type {
-  MeshColor4,
-  MeshData,
-  MeshVec3,
-  MeshVertex,
-  MeshGroup,
-  PhysData,
-  PhysGroup,
-} from "./types";
+import type { MeshColor4, MeshData, MeshGroup, MeshVec3, MeshVertex, PhysData, PhysGroup } from ".";
+import { BinaryReader } from "../binary";
 
-/**
- * Parse a `mesh` or `phys` binary payload into structured mesh data.
- *
- * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
- * Coordinates and normals are returned in Stormworks' left-handed coordinate
- * system without renderer-specific conversion.
- *
- * @throws Error when the file signature is neither `"mesh"` nor `"phys"`.
- */
-export function meshOrPhysDataFromBytes(input: BinaryReaderInput): MeshData | PhysData {
-  return new MeshReader(input).parseMeshOrPhys();
-}
-
-/**
- * Parse a `mesh` binary payload into structured mesh data.
- *
- * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
- * Coordinates and normals are returned in Stormworks' left-handed coordinate
- * system.
- *
- * @throws Error when the file signature is not `"mesh"`.
- */
-export function meshDataFromBytes(input: BinaryReaderInput): MeshData {
-  return new MeshReader(input).parseMesh();
-}
-
-/**
- * Parse a `phys` binary payload into structured physics mesh data.
- *
- * The input may be an `ArrayBuffer`, a typed array, or any `ArrayBufferView`.
- * Coordinates are returned in Stormworks' left-handed coordinate system.
- *
- * @throws Error when the file signature is not `"phys"`.
- */
-export function physDataFromBytes(input: BinaryReaderInput): PhysData {
-  return new MeshReader(input).parsePhys();
-}
-
-class MeshReader extends BinaryReader {
+export class MeshReader extends BinaryReader {
   parseMeshOrPhys(): MeshData | PhysData {
     const signature = this.readAscii(4);
 
@@ -109,7 +63,7 @@ class MeshReader extends BinaryReader {
       const indexBufferStart = this.readU32();
       const indexBufferLength = this.readU32();
       const h2 = this.readU16();
-      const shaderId = this.readU16();
+      const materialIndex = this.readU16();
       const boundsMin = this.readVec3();
       const boundsMax = this.readVec3();
       const h6 = this.readU16();
@@ -128,7 +82,7 @@ class MeshReader extends BinaryReader {
       groups.push({
         indexBufferStart,
         indexBufferLength,
-        materialId: shaderId,
+        materialIndex,
         boundsMin,
         boundsMax,
         name,

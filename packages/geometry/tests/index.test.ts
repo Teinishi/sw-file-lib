@@ -89,7 +89,9 @@ test("GeometryBuilder stores left-handed positions, normals, indices, colors, an
     { r: 10, g: 20, b: 30, a: 255 },
   ]);
   expect(mesh.indices).toEqual([0, 1, 2]);
-  expect(mesh.groups).toMatchObject([{ indexBufferStart: 0, indexBufferLength: 3, materialId: 2 }]);
+  expect(mesh.groups).toMatchObject([
+    { indexBufferStart: 0, indexBufferLength: 3, materialIndex: 2 },
+  ]);
 });
 
 test("GeometryBuilder flip and mirrored transforms update left-handed winding", () => {
