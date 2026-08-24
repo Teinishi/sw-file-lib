@@ -1,4 +1,4 @@
-import type { Vec3, Mat3 } from "@sw-file-lib/core/math";
+import type { Vec3, Mat3 } from ".";
 
 /** Axis name used by an axis-aligned orientation. */
 export type Axis = "x" | "y" | "z";
@@ -15,8 +15,7 @@ export interface AxisMapping {
  * Axis-aligned orientation for Stormworks' left-handed coordinate system.
  *
  * Rotations use Stormworks-positive directions (`x` right, `y` up, `z`
- * forward). `toMat3()` returns a row-major matrix compatible with
- * `@sw-file-lib/core/math`.
+ * forward). `toMat3()` returns a row-major matrix.
  */
 export class Orientation {
   /** Create an orientation from signed mappings for the output `x`, `y`, and `z` axes. */
@@ -141,21 +140,6 @@ export class Orientation {
     };
   }
 
-  /** Create an orientation from a row-major axis-aligned 3x3 matrix. */
-  static fromMat3(m: Readonly<Mat3>) {
-    const decode = (r0: number, r1: number, r2: number): AxisMapping => {
-      if (r0) return { axis: "x", sign: r0 as 1 | -1 };
-      if (r1) return { axis: "y", sign: r1 as 1 | -1 };
-      return { axis: "z", sign: r2 as 1 | -1 };
-    };
-
-    return new Orientation(
-      decode(m[0], m[3], m[6]),
-      decode(m[1], m[4], m[7]),
-      decode(m[2], m[5], m[8]),
-    );
-  }
-
   /** Convert this orientation to a row-major 3x3 matrix. */
   toMat3(): Mat3 {
     const row = (m: AxisMapping): [number, number, number] => {
@@ -170,11 +154,6 @@ export class Orientation {
     };
 
     return [...row(this.x), ...row(this.y), ...row(this.z)];
-  }
-
-  /** Compose this orientation with a row-major axis-aligned 3x3 matrix. */
-  multiplyMat3(m: Readonly<Mat3>): Orientation {
-    return this.multiply(Orientation.fromMat3(m));
   }
 
   /** Return `true` when both orientations describe the same axis mapping. */

@@ -1,4 +1,4 @@
-import { Orientation } from "..";
+import { Orientation } from "@sw-file-lib/core/math";
 
 /** Valid Stormworks `<surface orientation="...">` values for basic surfaces. */
 export type BasicSurfaceOrientation = 0 | 1 | 2 | 3 | 4 | 5;

@@ -1,5 +1,6 @@
 export * from "./mat3";
 export * from "./vec3";
+export * from "./orientation";
 
 /** A simple two-dimensional numeric vector. */
 export interface Vec2 {

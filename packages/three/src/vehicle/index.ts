@@ -9,6 +9,7 @@ import {
   vec3,
   transposeMat3,
   type Mat3,
+  Orientation,
 } from "@sw-file-lib/core/math";
 import {
   buildSurfacesGeometry,
@@ -17,7 +18,6 @@ import {
   isValidSurfaceOrientation,
   isValidSurfaceRotation,
   isValidSurfaceShape,
-  Orientation,
   type BuildSurfaceGeometryOptions,
   type SurfaceData,
 } from "@sw-file-lib/geometry";
