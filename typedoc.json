@@ -1,4 +1,6 @@
 {
+  "$schema": "https://typedoc.org/schema.json",
+
   "entryPoints": ["packages/core", "packages/geometry", "packages/three", "packages/xml"],
   "entryPointStrategy": "packages",
   "packageOptions": {
@@ -10,10 +12,8 @@
   "highlightLanguages": ["json", "typescript", "xml"],
   "readme": "README.md",
 
-  "plugin": ["@clean-jsdoc-theme/typedoc"],
-  "outputs": [{ "name": "clean-jsdoc-theme", "path": "dist-docs" }],
-
-  "cleanJsdocTheme": {
-    "siteName": "sw-file-lib"
-  }
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "out": "./docs/api",
+  "docsRoot": "./docs",
+  "indexFormat": "table"
 }
