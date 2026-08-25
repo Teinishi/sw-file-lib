@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation
+ * @module
+ */
+
 export * from "./mat3";
 export * from "./vec3";
 export * from "./orientation";

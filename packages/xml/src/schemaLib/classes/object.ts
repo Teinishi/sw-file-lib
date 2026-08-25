@@ -36,8 +36,11 @@ import {
  */
 export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T>> {
   readonly name = "object";
+  readonly shape: T;
 
-  constructor(public readonly shape: T) {}
+  constructor(shape: T) {
+    this.shape = shape;
+  }
 
   /**
    * Parses an XML element as a record without throwing an error.

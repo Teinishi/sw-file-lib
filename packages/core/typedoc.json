@@ -1,0 +1,5 @@
+{
+  "includeVersion": true,
+  "entryPoints": ["src/index.ts", "src/math/index.ts", "src/color/index.ts"],
+  "entryPointStrategy": "resolve"
+}

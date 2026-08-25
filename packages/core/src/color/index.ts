@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation
+ * @module
+ */
+
 /** RGBA color with 8-bit channel values. */
 export interface Color {
   /** Red channel, from `0` to `255`. */

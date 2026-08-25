@@ -1,14 +1,13 @@
 {
-  "entryPoints": [
-    "packages/core/src/index.ts",
-    "packages/core/src/math/index.ts",
-    "packages/core/src/color/index.ts",
-    "packages/geometry/src/index.ts",
-    "packages/three/src/index.ts",
-    "packages/xml/src/index.ts"
-  ],
-  "entryPointStrategy": "resolve",
+  "entryPoints": ["packages/core", "packages/geometry", "packages/three", "packages/xml"],
+  "entryPointStrategy": "packages",
+  "packageOptions": {
+    "includeVersion": true,
+    "entryPoints": ["src/index.ts"],
+    "entryPointStrategy": "resolve"
+  },
 
+  "highlightLanguages": ["json", "typescript", "xml"],
   "readme": "README.md",
 
   "plugin": ["@clean-jsdoc-theme/typedoc"],
