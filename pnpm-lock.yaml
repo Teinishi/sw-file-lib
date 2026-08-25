@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@sw-file-lib/typedoc-plugin-xml-schema':
+        specifier: workspace:*
+        version: link:packages/typedoc-plugin-xml-schema
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
@@ -124,6 +127,12 @@ importers:
       '@types/three':
         specifier: ^0.185.4
         version: 0.185.4
+
+  packages/typedoc-plugin-xml-schema:
+    devDependencies:
+      '@sw-file-lib/xml':
+        specifier: workspace:*
+        version: link:../xml
 
   packages/xml:
     dependencies:

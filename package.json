@@ -33,6 +33,7 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
+    "@sw-file-lib/typedoc-plugin-xml-schema": "workspace:*",
     "@types/node": "^26.1.2",
     "bumpp": "^11.1.0",
     "oxfmt": "^0.61.0",
