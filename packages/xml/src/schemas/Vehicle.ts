@@ -1,6 +1,6 @@
 import { parseSwXml } from "../parser";
-import * as x from "../schemaLib";
 import type { ParseOptions } from "../types";
+import * as x from "../xml-schema";
 import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
 
 export const VehicleAuthorSchema = x.partialObject({
@@ -214,7 +214,7 @@ export type VehicleImmutable = x.InferShapeImmutable<typeof VehicleSchema.shape>
 /**
  * Parses a Stormworks vehicle XML document.
  *
- * @throws {@link x.SchemaError} when the XML content
+ * @throws {@link SchemaError} when the XML content
  * does not match the vehicle schema.
  */
 export function parseVehicleXml(

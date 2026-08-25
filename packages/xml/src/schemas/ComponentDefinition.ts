@@ -1,6 +1,6 @@
 import { parseSwXml } from "../parser";
-import * as x from "../schemaLib";
 import type { ParseOptions } from "../types";
+import * as x from "../xml-schema";
 
 export const ComponentDefinitionSfxLayerSchema = x.partialObject({
   sfx_filename_start: x.string(),
@@ -292,7 +292,7 @@ export type ComponentDefinitionImmutable = x.InferShapeImmutable<
 /**
  * Parses a Stormworks component definition XML document.
  *
- * @throws {@link x.SchemaError} when the XML content
+ * @throws {@link SchemaError} when the XML content
  * does not match the component definition schema.
  */
 export function parseComponentDefinitionXml(

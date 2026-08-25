@@ -1,0 +1,5 @@
+{
+  "includeVersion": true,
+  "entryPoints": ["src/index.ts", "src/utils/index.ts", "src/xml-schema/index.ts"],
+  "entryPointStrategy": "resolve"
+}

@@ -1,8 +1,9 @@
-import * as x from "../schemaLib";
+import * as x from "../xml-schema";
 
 export * from "./ComponentDefinition";
 export * from "./Microcontroller";
 export * from "./Vehicle";
+export { SchemaError } from "../xml-schema";
 
 export const SwVec2Schema = x.vec2();
 export type SwVec2 = x.InferShape<typeof SwVec2Schema.shape>;

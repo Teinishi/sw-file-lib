@@ -1,6 +1,6 @@
 import { parseSwXml } from "../parser";
-import * as x from "../schemaLib";
 import type { ParseOptions } from "../types";
+import * as x from "../xml-schema";
 
 export const TextValuePairSchema = x.partialObject({
   text: x.string(),
@@ -174,7 +174,7 @@ export type MicrocontrollerImmutable = x.InferShapeImmutable<typeof Microcontrol
 /**
  * Parses a Stormworks microcontroller XML document.
  *
- * @throws {@link x.SchemaError} when the XML content
+ * @throws {@link SchemaError} when the XML content
  * does not match the microcontroller schema.
  */
 export function parseMicrocontrollerXml(
