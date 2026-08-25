@@ -9,15 +9,20 @@
     "entryPointStrategy": "resolve"
   },
 
-  "highlightLanguages": ["json", "typescript", "xml"],
   "readme": "README.md",
+  "out": "./docs/api",
 
   "plugin": [
     "@sw-file-lib/typedoc-plugin-xml-schema",
     "typedoc-plugin-markdown",
     "typedoc-vitepress-theme"
   ],
-  "out": "./docs/api",
   "docsRoot": "./docs",
-  "indexFormat": "table"
+  "indexFormat": "table",
+  "parametersFormat": "table",
+  "typeAliasPropertiesFormat": "table",
+  "propertyMembersFormat": "table",
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "expandParameters": true
 }
