@@ -305,15 +305,6 @@ export type InferShape<T extends Shape> = {
 };
 
 /**
- * Infers the object value produced by a schema shape, and makes it readonly.
- */
-export type InferShapeImmutable<T extends Shape> = {
-  readonly [K in OptionalKeys<T>]?: InferReadonly<T[K]>;
-} & {
-  readonly [K in RequiredKeys<T>]: InferReadonly<T[K]>;
-};
-
-/**
  * Converts every field in a shape into an optional schema.
  */
 export type PartialShape<T extends Shape> = {
