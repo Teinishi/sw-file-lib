@@ -1,5 +1,6 @@
 import {
   SchemaError,
+  type Infer,
   type Result,
   type Schema,
   type SchemaInput,
@@ -16,16 +17,16 @@ import { unwrapResult } from "../internal";
  * Missing fields are omitted from parsed objects, and undefined values are
  * omitted during serialization.
  */
-export class OptionalSchema<T> {
+export class OptionalSchema<T extends Schema<any>> {
   readonly name = "optional";
 
-  constructor(readonly inner: Schema<T>) {}
+  constructor(readonly inner: T) {}
 
   safeParseValue(
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): Result<T | undefined, SchemaError> {
+  ): Result<Infer<T> | undefined, SchemaError> {
     if (input === undefined) {
       return { success: true, data: undefined };
     } else {
@@ -37,7 +38,7 @@ export class OptionalSchema<T> {
     value: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): T | undefined {
+  ): Infer<T> | undefined {
     return unwrapResult(this.safeParseValue(value, ctx, options));
   }
 
@@ -47,7 +48,7 @@ export class OptionalSchema<T> {
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
   ): Result<
-    { omitted: true } | { omitted: false; value: T; source: "attribute" | "child" },
+    { omitted: true } | { omitted: false; value: Infer<T>; source: "attribute" | "child" },
     SchemaError
   > {
     if (!hasField(parent, key)) {

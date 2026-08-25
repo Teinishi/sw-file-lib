@@ -127,7 +127,7 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
     };
   }
 
-  optional(): OptionalSchema<InferUnion<T>> {
+  optional(): OptionalSchema<UnionSchema<T>> {
     return new OptionalSchema(this);
   }
 }

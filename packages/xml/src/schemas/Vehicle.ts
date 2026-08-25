@@ -8,14 +8,14 @@ export const VehicleAuthorSchema = x.partialObject({
   username: x.string(),
 });
 export type VehicleAuthor = x.Infer<typeof VehicleAuthorSchema>;
-export type VehicleAuthorImmutable = x.InferReadonly<typeof VehicleAuthorSchema>;
+export type VehicleAuthorImmutable = x.InferImmutable<typeof VehicleAuthorSchema>;
 
 export const VehicleComponentLogicSlotSchema = x.partialObject({
   editor_connected: x.number(),
   value: x.union([x.boolean(), x.number(), x.object({})]),
 });
 export type VehicleComponentLogicSlot = x.Infer<typeof VehicleComponentLogicSlotSchema>;
-export type VehicleComponentLogicSlotImmutable = x.InferReadonly<
+export type VehicleComponentLogicSlotImmutable = x.InferImmutable<
   typeof VehicleComponentLogicSlotSchema
 >;
 
@@ -40,7 +40,7 @@ export const VehicleComponentDisplaySchema = x.partialObject({
   ),
 });
 export type VehicleComponentDisplay = x.Infer<typeof VehicleComponentDisplaySchema>;
-export type VehicleComponentDisplayImmutable = x.InferReadonly<
+export type VehicleComponentDisplayImmutable = x.InferImmutable<
   typeof VehicleComponentDisplaySchema
 >;
 
@@ -179,14 +179,14 @@ export const VehicleComponentSchema = x.partialObject({
   }),
 });
 export type VehicleComponent = x.Infer<typeof VehicleComponentSchema>;
-export type VehicleComponentImmutable = x.InferReadonly<typeof VehicleComponentSchema>;
+export type VehicleComponentImmutable = x.InferImmutable<typeof VehicleComponentSchema>;
 
 export const VehicleBodySchema = x.partialObject({
   unique_id: x.number(),
   components: x.list("c", VehicleComponentSchema),
 });
 export type VehicleBody = x.Infer<typeof VehicleBodySchema>;
-export type VehicleBodyImmutable = x.InferReadonly<typeof VehicleBodySchema>;
+export type VehicleBodyImmutable = x.InferImmutable<typeof VehicleBodySchema>;
 
 export const VehicelLogicNodeLinkSchema = x.partialObject({
   type: x.number(),
@@ -194,7 +194,7 @@ export const VehicelLogicNodeLinkSchema = x.partialObject({
   voxel_pos_1: x.vec3(),
 });
 export type VehicelLogicNodeLink = x.Infer<typeof VehicelLogicNodeLinkSchema>;
-export type VehicelLogicNodeLinkImmutable = x.InferReadonly<typeof VehicelLogicNodeLinkSchema>;
+export type VehicelLogicNodeLinkImmutable = x.InferImmutable<typeof VehicelLogicNodeLinkSchema>;
 
 export const VehicleSchema = x.partialObject({
   data_version: x.number(),
@@ -207,7 +207,7 @@ export const VehicleSchema = x.partialObject({
   logic_node_links: x.list("logic_node_link", VehicelLogicNodeLinkSchema),
 });
 export type Vehicle = x.Infer<typeof VehicleSchema>;
-export type VehicleImmutable = x.InferReadonly<typeof VehicleSchema>;
+export type VehicleImmutable = x.InferImmutable<typeof VehicleSchema>;
 
 /**
  * Parses a Stormworks vehicle XML document.

@@ -182,7 +182,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<InferShape<T>> {
+  optional(): OptionalSchema<ObjectSchema<T>> {
     return new OptionalSchema(this);
   }
 

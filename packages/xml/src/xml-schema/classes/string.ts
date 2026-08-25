@@ -62,7 +62,7 @@ export class StringSchema implements Schema<string> {
     }
   }
 
-  optional(): OptionalSchema<string> {
+  optional(): OptionalSchema<StringSchema> {
     return new OptionalSchema(this);
   }
 }

@@ -82,7 +82,7 @@ export class NumberSchema implements Schema<number> {
     }
   }
 
-  optional(): OptionalSchema<number> {
+  optional(): OptionalSchema<NumberSchema> {
     return new OptionalSchema(this);
   }
 }

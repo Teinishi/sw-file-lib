@@ -197,7 +197,7 @@ export interface Schema<T> {
   /**
    * Returns a schema that accepts undefined values.
    */
-  optional: () => OptionalSchema<T>;
+  optional: () => OptionalSchema<Schema<T>>;
 }
 
 /**
@@ -266,22 +266,30 @@ export interface UnknownObject {
   [key: string]: UnknownValue;
 }
 
+export type AnySchema = Schema<any> | OptionalSchema<any>;
+
 /**
  * The field schema map used by object-like schemas.
  */
-export type Shape = Record<string, Schema<any> | OptionalSchema<any>>;
+export type Shape = Record<string, AnySchema>;
 
 /**
  * Infers the TypeScript value accepted by a schema.
  */
-export type Infer<T extends Schema<any> | OptionalSchema<any>> =
-  T extends OptionalSchema<infer U> ? U : T extends Schema<infer U> ? U : never;
+export type Infer<T extends AnySchema> =
+  T extends OptionalSchema<infer U> ? Infer<U> : T extends Schema<infer U> ? U : never;
+
+export type Immutable<T> =
+  T extends ReadonlyArray<infer U>
+    ? readonly Immutable<U>[]
+    : T extends object
+      ? { readonly [K in keyof T]: Immutable<T[K]> }
+      : T;
 
 /**
- * Infers the TypeScript value accepted by a schema, and makes it readonly.
+ * Infers the TypeScript value accepted by a schema, and makes it deeply readonly.
  */
-export type InferReadonly<T extends Schema<any> | OptionalSchema<any>> =
-  T extends OptionalSchema<infer U> ? Readonly<U> : T extends Schema<infer U> ? Readonly<U> : never;
+export type InferImmutable<T extends AnySchema> = Immutable<Infer<T>>;
 
 /**
  * Keys whose fields are optional schemas.
@@ -310,8 +318,8 @@ export type InferShape<T extends Shape> = {
 export type PartialShape<T extends Shape> = {
   [K in keyof T]: T[K] extends OptionalSchema<any>
     ? T[K]
-    : T[K] extends Schema<infer U>
-      ? OptionalSchema<U>
+    : T[K] extends Schema<any>
+      ? OptionalSchema<T[K]>
       : never;
 };
 

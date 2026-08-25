@@ -157,7 +157,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<Infer<T>[]> {
+  optional(): OptionalSchema<ListSchema<T>> {
     return new OptionalSchema(this);
   }
 
@@ -197,6 +197,10 @@ export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T
    */
   omitItem<U extends keyof T>(keys: U[]): ObjectListSchema<Omit<T, U>> {
     return new ObjectListSchema(this.itemTag, this.itemSchema.omit(keys));
+  }
+
+  optional(): OptionalSchema<ObjectListSchema<T>> {
+    return new OptionalSchema(this);
   }
 }
 

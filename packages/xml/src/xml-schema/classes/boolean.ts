@@ -82,7 +82,7 @@ export class BooleanSchema implements Schema<boolean> {
     }
   }
 
-  optional(): OptionalSchema<boolean> {
+  optional(): OptionalSchema<BooleanSchema> {
     return new OptionalSchema(this);
   }
 }

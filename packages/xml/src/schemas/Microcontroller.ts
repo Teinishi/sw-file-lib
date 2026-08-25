@@ -7,7 +7,7 @@ export const TextValuePairSchema = x.partialObject({
   value: x.number(),
 });
 export type TextValuePair = x.Infer<typeof TextValuePairSchema>;
-export type TextValuePairImmutable = x.InferReadonly<typeof TextValuePairSchema>;
+export type TextValuePairImmutable = x.InferImmutable<typeof TextValuePairSchema>;
 
 export const MicrocontrollerNodeSchema = x.partialObject({
   id: x.number(),
@@ -24,7 +24,7 @@ export const MicrocontrollerNodeSchema = x.partialObject({
   }),
 });
 export type MicrocontrollerNode = x.Infer<typeof MicrocontrollerNodeSchema>;
-export type MicrocontrollerNodeImmutable = x.InferReadonly<typeof MicrocontrollerNodeSchema>;
+export type MicrocontrollerNodeImmutable = x.InferImmutable<typeof MicrocontrollerNodeSchema>;
 
 export const MicrocontrollerObjectInSchema = x.partialObject({
   component_id: x.number(),
@@ -32,7 +32,7 @@ export const MicrocontrollerObjectInSchema = x.partialObject({
   node_index: x.number(),
 });
 export type MicrocontrollerObjectIn = x.Infer<typeof MicrocontrollerObjectInSchema>;
-export type MicrocontrollerObjectInImmutable = x.InferReadonly<
+export type MicrocontrollerObjectInImmutable = x.InferImmutable<
   typeof MicrocontrollerObjectInSchema
 >;
 
@@ -110,7 +110,7 @@ export const MicrocontrollerComponentSchema = x.partialObject({
   }),
 });
 export type MicrocontrollerComponent = x.Infer<typeof MicrocontrollerComponentSchema>;
-export type MicrocontrollerComponentImmutable = x.InferReadonly<
+export type MicrocontrollerComponentImmutable = x.InferImmutable<
   typeof MicrocontrollerComponentSchema
 >;
 
@@ -124,7 +124,7 @@ export const MicrocontrollerBridgeComponentSchema = x.partialObject({
   }),
 });
 export type MicrocontrollerBridgeComponent = x.Infer<typeof MicrocontrollerBridgeComponentSchema>;
-export type MicrocontrollerBridgeComponentImmutable = x.InferReadonly<
+export type MicrocontrollerBridgeComponentImmutable = x.InferImmutable<
   typeof MicrocontrollerBridgeComponentSchema
 >;
 
@@ -165,7 +165,7 @@ export const MicrocontrollerSchema = x.partialObject({
   }),
 });
 export type Microcontroller = x.Infer<typeof MicrocontrollerSchema>;
-export type MicrocontrollerImmutable = x.InferReadonly<typeof MicrocontrollerSchema>;
+export type MicrocontrollerImmutable = x.InferImmutable<typeof MicrocontrollerSchema>;
 
 /**
  * Parses a Stormworks microcontroller XML document.

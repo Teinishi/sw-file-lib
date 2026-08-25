@@ -13,7 +13,7 @@ export const ComponentDefinitionSfxLayerSchema = x.partialObject({
   sfx_pitch_fade_speed: x.number(),
 });
 export type ComponentDefinitionSfxLayer = x.Infer<typeof ComponentDefinitionSfxLayerSchema>;
-export type ComponentDefinitionSfxLayerImmutable = x.InferReadonly<
+export type ComponentDefinitionSfxLayerImmutable = x.InferImmutable<
   typeof ComponentDefinitionSfxLayerSchema
 >;
 
@@ -26,7 +26,7 @@ export const ComponentDefinitionSfxDataSchema = x.partialObject({
   sfx_layers: x.list("sfx_layer", ComponentDefinitionSfxLayerSchema),
 });
 export type ComponentDefinitionSfxData = x.Infer<typeof ComponentDefinitionSfxDataSchema>;
-export type ComponentDefinitionSfxDataImmutable = x.InferReadonly<
+export type ComponentDefinitionSfxDataImmutable = x.InferImmutable<
   typeof ComponentDefinitionSfxDataSchema
 >;
 
@@ -41,7 +41,7 @@ export const ComponentDefinitionSurfaceSchema = x.partialObject({
   position: x.vec3(),
 });
 export type ComponentDefinitionSurface = x.Infer<typeof ComponentDefinitionSurfaceSchema>;
-export type ComponentDefinitionSurfaceImmutable = x.InferReadonly<
+export type ComponentDefinitionSurfaceImmutable = x.InferImmutable<
   typeof ComponentDefinitionSurfaceSchema
 >;
 
@@ -55,7 +55,7 @@ export const ComponentDefinitionLogicNodeSchema = x.partialObject({
   position: x.vec3(),
 });
 export type ComponentDefinitionLogicNode = x.Infer<typeof ComponentDefinitionLogicNodeSchema>;
-export type ComponentDefinitionLogicNodeImmutable = x.InferReadonly<
+export type ComponentDefinitionLogicNodeImmutable = x.InferImmutable<
   typeof ComponentDefinitionLogicNodeSchema
 >;
 
@@ -70,7 +70,7 @@ export const ComponentDefinitionCouplingSchema = x.partialObject({
   position: x.vec3(),
 });
 export type ComponentDefinitionCoupling = x.Infer<typeof ComponentDefinitionCouplingSchema>;
-export type ComponentDefinitionCouplingImmutable = x.InferReadonly<
+export type ComponentDefinitionCouplingImmutable = x.InferImmutable<
   typeof ComponentDefinitionCouplingSchema
 >;
 
@@ -82,7 +82,7 @@ export const ComponentDefinitionVoxelSchema = x.partialObject({
   physics_shape_rotation: x.mat3(),
 });
 export type ComponentDefinitionVoxel = x.Infer<typeof ComponentDefinitionVoxelSchema>;
-export type ComponentDefinitionVoxelImmutable = x.InferReadonly<
+export type ComponentDefinitionVoxelImmutable = x.InferImmutable<
   typeof ComponentDefinitionVoxelSchema
 >;
 
@@ -93,7 +93,7 @@ export const ComponentDefinitionJetEngineConnectionSchema = x.partialObject({
 export type ComponentDefinitionJetEngineConnection = x.Infer<
   typeof ComponentDefinitionJetEngineConnectionSchema
 >;
-export type ComponentDefinitionJetEngineConnectionImmutable = x.InferReadonly<
+export type ComponentDefinitionJetEngineConnectionImmutable = x.InferImmutable<
   typeof ComponentDefinitionJetEngineConnectionSchema
 >;
 
@@ -275,7 +275,7 @@ export const ComponentDefinitionSchema = x.partialObject({
   rope_hook_offset: x.vec3(),
 });
 export type ComponentDefinition = x.Infer<typeof ComponentDefinitionSchema>;
-export type ComponentDefinitionImmutable = x.InferReadonly<typeof ComponentDefinitionSchema>;
+export type ComponentDefinitionImmutable = x.InferImmutable<typeof ComponentDefinitionSchema>;
 
 /**
  * Parses a Stormworks component definition XML document.

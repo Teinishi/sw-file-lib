@@ -215,7 +215,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<InferMetaList<M, I>> {
+  optional(): OptionalSchema<MetaListSchema<M, I>> {
     return new OptionalSchema(this);
   }
 
