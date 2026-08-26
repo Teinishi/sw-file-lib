@@ -285,12 +285,17 @@ function convertShape(ctx: ConversionContext, shape: ts.Type): ReflectionType {
   const decl = new DeclarationReflection("__type", ReflectionKind.TypeLiteral, ctx.typeAlias);
 
   decl.children = shape.getProperties().map((prop) => {
-    const member = new DeclarationReflection(prop.name, ReflectionKind.Property, decl);
+    const root = ctx.checker.getRootSymbols(prop)[0] ?? prop;
+    const valueDecl = root.valueDeclaration ?? root.declarations?.[0];
 
-    const valueDecl = prop.valueDeclaration;
-    const initializer =
-      valueDecl && ts.isPropertyAssignment(valueDecl) ? valueDecl.initializer : undefined;
     const propType = ctx.checker.getTypeOfSymbol(prop);
+
+    let initializer: ts.Expression | undefined;
+    if (valueDecl && ts.isPropertyAssignment(valueDecl)) {
+      initializer = valueDecl.initializer;
+    }
+
+    const member = new DeclarationReflection(prop.name, ReflectionKind.Property, decl);
 
     if (isTypeReference(propType, "OptionalSchema")) {
       member.flags.setFlag(ReflectionFlag.Optional, true);
