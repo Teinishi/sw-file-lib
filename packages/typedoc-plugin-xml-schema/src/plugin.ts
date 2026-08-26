@@ -16,18 +16,20 @@ import {
 
 const XML_PACKAGE = "@sw-file-lib/xml";
 
-function getSymbolKey(symbol: ts.Symbol): string | undefined {
+type SchemaKey = ts.Declaration;
+
+/*function getSymbolKey(symbol: ts.Symbol): string | undefined {
   const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0];
   if (!declaration) return;
 
   const sourceFile = declaration.getSourceFile();
 
   return `${sourceFile.fileName}:${declaration.getStart()}`;
-}
+}*/
 
 export function load(app: Application) {
   let checker: ts.TypeChecker | undefined;
-  const schemaToAlias = new Map<string, DeclarationReflection>();
+  const schemaToAlias = new Map<SchemaKey, DeclarationReflection>();
   const pending: { typeAlias: DeclarationReflection; schemaType: ts.Type }[] = [];
 
   app.converter.on(
@@ -73,7 +75,7 @@ export function load(app: Application) {
       const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
       if (!decl) return;
 
-      schemaToAlias.set(getSymbolKey(symbol)!, refl);
+      schemaToAlias.set(decl, refl);
 
       const schemaType = context.checker.getTypeAtLocation(decl);
       pending.push({ typeAlias: refl, schemaType });
@@ -114,7 +116,7 @@ type SchemaExpression =
 interface ConversionContext {
   checker: ts.TypeChecker;
   typeAlias: DeclarationReflection;
-  aliases: Map<string, DeclarationReflection>;
+  aliases: Map<SchemaKey, DeclarationReflection>;
 }
 
 function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undefined {
@@ -167,9 +169,9 @@ function identifierToAliasType(
 ): ReferenceType | undefined {
   const symbol = ctx.checker.getSymbolAtLocation(ident);
   if (!symbol) return;
-  const symbolKey = getSymbolKey(symbol);
-  if (!symbolKey) return;
-  const alias = ctx.aliases.get(symbolKey);
+  const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
+  if (!decl) return;
+  const alias = ctx.aliases.get(decl);
   if (!alias) return;
   return ReferenceType.createResolvedReference(alias.name, alias, ctx.typeAlias.project);
 }
