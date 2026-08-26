@@ -12,6 +12,7 @@ import {
   ReflectionType,
   type SomeType,
   TypeScript as ts,
+  TypeOperatorType,
   UnionType,
 } from "typedoc";
 
@@ -21,7 +22,11 @@ export function load(app: Application) {
   let checker: ts.TypeChecker | undefined;
   const identifierIds = new WeakMap<ts.Identifier, ReflectionSymbolId>();
   const schemaToAlias = new Map<ReflectionSymbolId, DeclarationReflection>();
-  const pending: { typeAlias: DeclarationReflection; schemaType: ts.Type }[] = [];
+  const pending: {
+    typeAlias: DeclarationReflection;
+    schemaType: ts.Type;
+    isImmutable: boolean;
+  }[] = [];
 
   app.converter.on(
     Converter.EVENT_CREATE_DECLARATION,
@@ -35,8 +40,8 @@ export function load(app: Application) {
   );
 
   app.converter.on(Converter.EVENT_RESOLVE_BEGIN, (context: Context) => {
-    for (const { typeAlias, schemaType } of pending) {
-      expandInfer(context, typeAlias, schemaType);
+    for (const { typeAlias, schemaType, isImmutable } of pending) {
+      expandInfer(context, typeAlias, schemaType, isImmutable);
     }
 
     pending.length = 0;
@@ -46,34 +51,38 @@ export function load(app: Application) {
   function collect(context: Context, refl: DeclarationReflection) {
     checker ??= context.checker;
 
-    // todo: InferImmutable 対応
     if (
-      refl.kindOf(ReflectionKind.TypeAlias) &&
-      refl.type?.type === "reference" &&
-      refl.type.package === XML_PACKAGE &&
-      refl.type.qualifiedName === "Infer"
-    ) {
-      const schemaRef = refl.type.typeArguments?.[0]?.visit({
-        query: (t) => t.queryType,
-      });
+      !refl.kindOf(ReflectionKind.TypeAlias) ||
+      refl.type?.type !== "reference" ||
+      refl.type.package !== XML_PACKAGE
+    )
+      return;
 
-      if (!(schemaRef?.reflection instanceof DeclarationReflection)) return;
-      const schemaRefl = schemaRef.reflection;
+    const isInfer = refl.type.qualifiedName === "Infer";
+    const isInferImmutable = refl.type.qualifiedName === "InferImmutable";
 
-      const symbol = getSymbol(context, schemaRefl);
-      if (!symbol) return;
+    if (!isInfer && !isInferImmutable) return;
 
-      const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
-      if (!decl) return;
-      collectIdentifiers(context, decl);
+    const schemaRef = refl.type.typeArguments?.[0]?.visit({
+      query: (t) => t.queryType,
+    });
 
-      const symbolId = context.createSymbolId(symbol);
+    if (!(schemaRef?.reflection instanceof DeclarationReflection)) return;
+    const schemaRefl = schemaRef.reflection;
 
-      schemaToAlias.set(symbolId, refl);
+    const symbol = getSymbol(context, schemaRefl);
+    if (!symbol) return;
 
-      const schemaType = context.checker.getTypeAtLocation(decl);
-      pending.push({ typeAlias: refl, schemaType });
-    }
+    const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
+    if (!decl) return;
+    collectIdentifiers(context, decl);
+
+    const symbolId = context.createSymbolId(symbol);
+
+    schemaToAlias.set(symbolId, refl);
+
+    const schemaType = context.checker.getTypeAtLocation(decl);
+    pending.push({ typeAlias: refl, schemaType, isImmutable: isInferImmutable });
   }
 
   function collectIdentifiers(context: Context, node: ts.Node) {
@@ -87,11 +96,16 @@ export function load(app: Application) {
     node.forEachChild((child) => collectIdentifiers(context, child));
   }
 
-  function expandInfer(_context: Context, typeAlias: DeclarationReflection, schemaType: ts.Type) {
+  function expandInfer(
+    _context: Context,
+    typeAlias: DeclarationReflection,
+    schemaType: ts.Type,
+    isImmutable: boolean,
+  ) {
     if (!checker) return;
 
     typeAlias.type = convertSchema(
-      { checker, typeAlias, identifierIds, schemaToAlias },
+      { checker, typeAlias, identifierIds, schemaToAlias, isImmutable },
       schemaType,
     );
   }
@@ -126,6 +140,7 @@ interface ConversionContext {
   typeAlias: DeclarationReflection;
   identifierIds: WeakMap<ts.Identifier, ReflectionSymbolId>;
   schemaToAlias: Map<ReflectionSymbolId, DeclarationReflection>;
+  isImmutable: boolean;
 }
 
 function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undefined {
@@ -173,7 +188,7 @@ function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undef
 }
 
 function identifierToAliasType(
-  ctx: ConversionContext,
+  ctx: Readonly<ConversionContext>,
   ident: ts.Identifier,
 ): ReferenceType | undefined {
   const id = ctx.identifierIds.get(ident);
@@ -186,7 +201,7 @@ function identifierToAliasType(
 }
 
 function schemaExpressionToType(
-  ctx: ConversionContext,
+  ctx: Readonly<ConversionContext>,
   expr: SchemaExpression,
 ): SomeType | undefined {
   switch (expr.kind) {
@@ -210,7 +225,7 @@ function schemaExpressionToType(
 }
 
 function convertSchema(
-  ctx: ConversionContext,
+  ctx: Readonly<ConversionContext>,
   type: ts.Type,
   initializer?: ts.Expression,
 ): SomeType {
@@ -237,35 +252,59 @@ function convertSchema(
   // ObjectListSchema<T extends Shape>
   if (isTypeReference(type, "ObjectListSchema")) {
     const inner = (type as ts.TypeReference).typeArguments?.[0];
-    return new ArrayType(inner ? convertShape(ctx, inner) : new IntrinsicType("unknown"));
+    const arrayType = new ArrayType(
+      inner ? convertShape(ctx, inner) : new IntrinsicType("unknown"),
+    );
+    if (ctx.isImmutable) {
+      return new TypeOperatorType(arrayType, "readonly");
+    } else {
+      return arrayType;
+    }
   }
 
   // ListSchema<T extends ElementSchema>
   if (isTypeReference(type, "ListSchema")) {
     const inner = (type as ts.TypeReference).typeArguments?.[0];
-    return new ArrayType(inner ? convertSchema(ctx, inner) : new IntrinsicType("unknown"));
+    const arrayType = new ArrayType(
+      inner ? convertSchema(ctx, inner) : new IntrinsicType("unknown"),
+    );
+    if (ctx.isImmutable) {
+      return new TypeOperatorType(arrayType, "readonly");
+    } else {
+      return arrayType;
+    }
   }
 
   // ObjectMetaListSchema<T extends Shape>
   if (isTypeReference(type, "ObjectMetaListSchema")) {
     const inner0 = (type as ts.TypeReference).typeArguments?.[0];
     const inner1 = (type as ts.TypeReference).typeArguments?.[1];
-    return metaListType(
+    const metaList = metaListType(
       ctx.typeAlias,
       inner0 ? convertShape(ctx, inner0) : new IntrinsicType("unknown"),
       inner1 ? convertShape(ctx, inner1) : new IntrinsicType("unknown"),
     );
+    if (ctx.isImmutable) {
+      return new TypeOperatorType(metaList, "readonly");
+    } else {
+      return metaList;
+    }
   }
 
   // MetaListSchema<T extends ElementSchema>
   if (isTypeReference(type, "MetaListSchema")) {
     const inner0 = (type as ts.TypeReference).typeArguments?.[0];
     const inner1 = (type as ts.TypeReference).typeArguments?.[1];
-    return metaListType(
+    const metaList = metaListType(
       ctx.typeAlias,
       inner0 ? convertShape(ctx, inner0) : new IntrinsicType("unknown"),
       inner1 ? convertSchema(ctx, inner1) : new IntrinsicType("unknown"),
     );
+    if (ctx.isImmutable) {
+      return new TypeOperatorType(metaList, "readonly");
+    } else {
+      return metaList;
+    }
   }
 
   // OptionalSchema<T>
@@ -292,7 +331,7 @@ function convertSchema(
   return new IntrinsicType("unknown");
 }
 
-function convertShape(ctx: ConversionContext, shape: ts.Type): ReflectionType {
+function convertShape(ctx: Readonly<ConversionContext>, shape: ts.Type): ReflectionType {
   const decl = new DeclarationReflection("__type", ReflectionKind.TypeLiteral, ctx.typeAlias);
 
   decl.children = shape.getProperties().map((prop) => {
@@ -318,6 +357,8 @@ function convertShape(ctx: ConversionContext, shape: ts.Type): ReflectionType {
     } else {
       member.type = convertSchema(ctx, propType, initializer);
     }
+
+    member.flags.setFlag(ReflectionFlag.Readonly, ctx.isImmutable);
 
     return member;
   });
