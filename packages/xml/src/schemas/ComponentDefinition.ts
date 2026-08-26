@@ -1,3 +1,4 @@
+import { SwMat3Schema, SwVec3Schema } from ".";
 import { parseSwXml } from "../parser";
 import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
@@ -38,7 +39,7 @@ export const ComponentDefinitionSurfaceSchema = x.partialObject({
   flags: x.number(),
   is_reverse_normals: x.boolean(),
   is_two_sided: x.boolean(),
-  position: x.vec3(),
+  position: SwVec3Schema,
 });
 export type ComponentDefinitionSurface = x.Infer<typeof ComponentDefinitionSurfaceSchema>;
 export type ComponentDefinitionSurfaceImmutable = x.InferImmutable<
@@ -52,7 +53,7 @@ export const ComponentDefinitionLogicNodeSchema = x.partialObject({
   type: x.number(),
   description: x.string(),
   flags: x.number(),
-  position: x.vec3(),
+  position: SwVec3Schema,
 });
 export type ComponentDefinitionLogicNode = x.Infer<typeof ComponentDefinitionLogicNodeSchema>;
 export type ComponentDefinitionLogicNodeImmutable = x.InferImmutable<
@@ -67,7 +68,7 @@ export const ComponentDefinitionCouplingSchema = x.partialObject({
   coupling_gender: x.number(),
   alignment_required: x.boolean(),
   allow_bipolar_alignment: x.boolean(),
-  position: x.vec3(),
+  position: SwVec3Schema,
 });
 export type ComponentDefinitionCoupling = x.Infer<typeof ComponentDefinitionCouplingSchema>;
 export type ComponentDefinitionCouplingImmutable = x.InferImmutable<
@@ -78,8 +79,8 @@ export const ComponentDefinitionVoxelSchema = x.partialObject({
   flags: x.number(),
   physics_shape: x.number(),
   buoy_pipes: x.number(),
-  position: x.vec3(),
-  physics_shape_rotation: x.mat3(),
+  position: SwVec3Schema,
+  physics_shape_rotation: SwMat3Schema,
 });
 export type ComponentDefinitionVoxel = x.Infer<typeof ComponentDefinitionVoxelSchema>;
 export type ComponentDefinitionVoxelImmutable = x.InferImmutable<
@@ -87,8 +88,8 @@ export type ComponentDefinitionVoxelImmutable = x.InferImmutable<
 >;
 
 export const ComponentDefinitionJetEngineConnectionSchema = x.partialObject({
-  pos: x.vec3(),
-  normal: x.vec3(),
+  pos: SwVec3Schema,
+  normal: SwVec3Schema,
 });
 export type ComponentDefinitionJetEngineConnection = x.Infer<
   typeof ComponentDefinitionJetEngineConnectionSchema
@@ -224,36 +225,36 @@ export const ComponentDefinitionSchema = x.partialObject({
   logic_nodes: x.list("logic_node", ComponentDefinitionLogicNodeSchema),
   couplings: x.list("coupling", ComponentDefinitionCouplingSchema),
   voxels: x.list("voxel", ComponentDefinitionVoxelSchema),
-  voxel_min: x.vec3(),
-  voxel_max: x.vec3(),
-  voxel_physics_min: x.vec3(),
-  voxel_physics_max: x.vec3(),
-  bb_physics_min: x.vec3(),
-  bb_physics_max: x.vec3(),
-  compartment_sample_pos: x.vec3(),
-  constraint_pos_parent: x.vec3(),
-  constraint_pos_child: x.vec3(),
-  voxel_location_child: x.vec3(),
-  seat_offset: x.vec3(),
-  seat_front: x.vec3(),
-  seat_up: x.vec3(),
-  seat_camera: x.vec3(),
-  seat_render: x.vec3(),
-  force_dir: x.vec3(),
-  light_position: x.vec3(),
-  light_color: x.vec3(),
-  light_forward: x.vec3(),
-  door_size: x.vec3(),
-  door_normal: x.vec3(),
-  door_side: x.vec3(),
-  door_up: x.vec3(),
-  door_base_pos: x.vec3(),
-  dynamic_body_position: x.vec3(),
-  dynamic_rotation_axes: x.vec3(),
-  dynamic_side_axis: x.vec3(),
-  magnet_offset: x.vec3(),
-  connector_axis: x.vec3(),
-  connector_up: x.vec3(),
+  voxel_min: SwVec3Schema,
+  voxel_max: SwVec3Schema,
+  voxel_physics_min: SwVec3Schema,
+  voxel_physics_max: SwVec3Schema,
+  bb_physics_min: SwVec3Schema,
+  bb_physics_max: SwVec3Schema,
+  compartment_sample_pos: SwVec3Schema,
+  constraint_pos_parent: SwVec3Schema,
+  constraint_pos_child: SwVec3Schema,
+  voxel_location_child: SwVec3Schema,
+  seat_offset: SwVec3Schema,
+  seat_front: SwVec3Schema,
+  seat_up: SwVec3Schema,
+  seat_camera: SwVec3Schema,
+  seat_render: SwVec3Schema,
+  force_dir: SwVec3Schema,
+  light_position: SwVec3Schema,
+  light_color: SwVec3Schema,
+  light_forward: SwVec3Schema,
+  door_size: SwVec3Schema,
+  door_normal: SwVec3Schema,
+  door_side: SwVec3Schema,
+  door_up: SwVec3Schema,
+  door_base_pos: SwVec3Schema,
+  dynamic_body_position: SwVec3Schema,
+  dynamic_rotation_axes: SwVec3Schema,
+  dynamic_side_axis: SwVec3Schema,
+  magnet_offset: SwVec3Schema,
+  connector_axis: SwVec3Schema,
+  connector_up: SwVec3Schema,
   tooltip_properties: x.partialObject({
     description: x.string(),
     short_description: x.string(),
@@ -264,15 +265,15 @@ export const ComponentDefinitionSchema = x.partialObject({
   }),
   jet_engine_connections_prev: x.list("j", ComponentDefinitionJetEngineConnectionSchema),
   jet_engine_connections_next: x.list("j", ComponentDefinitionJetEngineConnectionSchema),
-  seat_exit_position: x.vec3(),
-  particle_direction: x.vec3(),
-  particle_offset: x.vec3(),
-  particle_bounds: x.vec3(),
-  weapon_breech_position: x.vec3(),
-  weapon_breech_normal: x.vec3(),
-  weapon_cart_position: x.vec3(),
-  weapon_cart_velocity: x.vec3(),
-  rope_hook_offset: x.vec3(),
+  seat_exit_position: SwVec3Schema,
+  particle_direction: SwVec3Schema,
+  particle_offset: SwVec3Schema,
+  particle_bounds: SwVec3Schema,
+  weapon_breech_position: SwVec3Schema,
+  weapon_breech_normal: SwVec3Schema,
+  weapon_cart_position: SwVec3Schema,
+  weapon_cart_velocity: SwVec3Schema,
+  rope_hook_offset: SwVec3Schema,
 });
 export type ComponentDefinition = x.Infer<typeof ComponentDefinitionSchema>;
 export type ComponentDefinitionImmutable = x.InferImmutable<typeof ComponentDefinitionSchema>;

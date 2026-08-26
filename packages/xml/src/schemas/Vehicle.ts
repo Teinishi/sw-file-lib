@@ -1,3 +1,4 @@
+import { SwRgbSchema, SwVec3Schema } from ".";
 import { parseSwXml } from "../parser";
 import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
@@ -26,7 +27,7 @@ export const VehicleComponentDisplaySchema = x.partialObject({
   mode: x.number(),
   mode2: x.number(),
   rot: x.number(),
-  col: x.rgb(),
+  col: SwRgbSchema,
   min: TextValuePairSchema,
   max: TextValuePairSchema,
   col_extra: x.metalist(
@@ -35,7 +36,7 @@ export const VehicleComponentDisplaySchema = x.partialObject({
       size: x.number(),
     }),
     x.partialObject({
-      value: x.rgb(),
+      value: SwRgbSchema,
     }),
   ),
 });
@@ -143,9 +144,9 @@ export const VehicleComponentSchema = x.partialObject({
     double_wheel: x.boolean(),
     tyre_pressure: x.number(),
     microprocessor_definition: MicrocontrollerSchema,
-    vp: x.vec3(),
+    vp: SwVec3Schema,
     logic_slots: x.list("slot", VehicleComponentLogicSlotSchema),
-    delta_damping: x.vec3(),
+    delta_damping: SwVec3Schema,
     display_1: VehicleComponentDisplaySchema,
     display_2: VehicleComponentDisplaySchema,
     display_3: VehicleComponentDisplaySchema,
@@ -190,8 +191,8 @@ export type VehicleBodyImmutable = x.InferImmutable<typeof VehicleBodySchema>;
 
 export const VehicelLogicNodeLinkSchema = x.partialObject({
   type: x.number(),
-  voxel_pos_0: x.vec3(),
-  voxel_pos_1: x.vec3(),
+  voxel_pos_0: SwVec3Schema,
+  voxel_pos_1: SwVec3Schema,
 });
 export type VehicelLogicNodeLink = x.Infer<typeof VehicelLogicNodeLinkSchema>;
 export type VehicelLogicNodeLinkImmutable = x.InferImmutable<typeof VehicelLogicNodeLinkSchema>;
@@ -201,7 +202,7 @@ export const VehicleSchema = x.partialObject({
   is_modded: x.boolean(),
   is_static: x.boolean(),
   bodies_id: x.number(),
-  editor_placement_offset: x.vec3(),
+  editor_placement_offset: SwVec3Schema,
   authors: x.list("author", VehicleAuthorSchema),
   bodies: x.list("body", VehicleBodySchema),
   logic_node_links: x.list("logic_node_link", VehicelLogicNodeLinkSchema),

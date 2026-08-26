@@ -1,3 +1,4 @@
+import { SwVec2Schema } from ".";
 import { parseSwXml } from "../parser";
 import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
@@ -56,7 +57,7 @@ export const MicrocontrollerComponentSchema = x.partialObject({
     u: x.number(),
     v: x.union([x.string(), TextValuePairSchema]),
     i: x.union([x.number(), TextValuePairSchema]),
-    pos: x.vec2(),
+    pos: SwVec2Schema,
     inc: MicrocontrollerObjectInSchema,
     in1: MicrocontrollerObjectInSchema,
     in2: MicrocontrollerObjectInSchema,
@@ -118,7 +119,7 @@ export const MicrocontrollerBridgeComponentSchema = x.partialObject({
   type: x.number(),
   object: x.partialObject({
     id: x.number(),
-    pos: x.vec2(),
+    pos: SwVec2Schema,
     in1: MicrocontrollerObjectInSchema,
     out1: x.object({}),
   }),
