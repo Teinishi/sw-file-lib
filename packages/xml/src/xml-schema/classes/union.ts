@@ -31,7 +31,7 @@ export type InferUnion<T extends SchemaTuple> = Infer<T[number]>;
  * errors returned by each branch, and serialization errors report the direct
  * branch schema names as the expected value.
  */
-export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>> {
+export class UnionSchema<const T extends SchemaTuple> implements Schema<InferUnion<T>> {
   readonly name = "union";
 
   constructor(public readonly schemas: T) {}
@@ -135,6 +135,6 @@ export class UnionSchema<T extends SchemaTuple> implements Schema<InferUnion<T>>
 /**
  * Creates a schema that accepts any value accepted by one of the given schemas.
  */
-export function union<T extends SchemaTuple>(schemas: T): UnionSchema<T> {
+export function union<const T extends SchemaTuple>(schemas: T): UnionSchema<T> {
   return new UnionSchema(schemas);
 }

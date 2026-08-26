@@ -16,9 +16,18 @@ import {
 
 const XML_PACKAGE = "@sw-file-lib/xml";
 
+function getSymbolKey(symbol: ts.Symbol): string | undefined {
+  const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0];
+  if (!declaration) return;
+
+  const sourceFile = declaration.getSourceFile();
+
+  return `${sourceFile.fileName}:${declaration.getStart()}`;
+}
+
 export function load(app: Application) {
   let checker: ts.TypeChecker | undefined;
-  const schemaToAlias = new Map<ts.Symbol, DeclarationReflection>();
+  const schemaToAlias = new Map<string, DeclarationReflection>();
   const pending: { typeAlias: DeclarationReflection; schemaType: ts.Type }[] = [];
 
   app.converter.on(
@@ -61,10 +70,11 @@ export function load(app: Application) {
       const symbol = getSymbol(context, schemaRefl);
       if (!symbol) return;
 
-      schemaToAlias.set(symbol, refl);
-
       const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
       if (!decl) return;
+
+      schemaToAlias.set(getSymbolKey(symbol)!, refl);
+
       const schemaType = context.checker.getTypeAtLocation(decl);
       pending.push({ typeAlias: refl, schemaType });
     }
@@ -73,95 +83,8 @@ export function load(app: Application) {
   function expandInfer(_context: Context, typeAlias: DeclarationReflection, schemaType: ts.Type) {
     if (!checker) return;
 
-    typeAlias.type = convertSchema(checker, typeAlias, schemaType, schemaToAlias);
+    typeAlias.type = convertSchema({ checker, typeAlias, aliases: schemaToAlias }, schemaType);
   }
-}
-
-function convertSchema(
-  checker: ts.TypeChecker,
-  typeAlias: DeclarationReflection,
-  type: ts.Type,
-  aliases: Map<ts.Symbol, DeclarationReflection>,
-): SomeType {
-  const typeStr = checker.typeToString(type);
-
-  // primitive schemas
-  switch (typeStr) {
-    case "NumberSchema":
-      return new IntrinsicType("number");
-    case "StringSchema":
-      return new IntrinsicType("string");
-    case "BooleanSchema":
-      return new IntrinsicType("boolean");
-  }
-
-  // ObjectListSchema<T extends Shape>
-  if (isTypeReference(type, "ObjectListSchema")) {
-    const inner = (type as ts.TypeReference).typeArguments?.[0];
-    return new ArrayType(
-      inner ? convertShape(checker, typeAlias, inner, aliases) : new IntrinsicType("unknown"),
-    );
-  }
-
-  // ListSchema<T extends ElementSchema>
-  if (isTypeReference(type, "ListSchema")) {
-    const inner = (type as ts.TypeReference).typeArguments?.[0];
-    return new ArrayType(
-      inner ? convertSchema(checker, typeAlias, inner, aliases) : new IntrinsicType("unknown"),
-    );
-  }
-
-  // ObjectMetaListSchema<T extends Shape>
-  if (isTypeReference(type, "ObjectMetaListSchema")) {
-    const inner0 = (type as ts.TypeReference).typeArguments?.[0];
-    const inner1 = (type as ts.TypeReference).typeArguments?.[1];
-    return metaListType(
-      typeAlias,
-      inner0 ? convertShape(checker, typeAlias, inner0, aliases) : new IntrinsicType("unknown"),
-      inner1 ? convertShape(checker, typeAlias, inner1, aliases) : new IntrinsicType("unknown"),
-    );
-  }
-
-  // MetaListSchema<T extends ElementSchema>
-  if (isTypeReference(type, "MetaListSchema")) {
-    const inner0 = (type as ts.TypeReference).typeArguments?.[0];
-    const inner1 = (type as ts.TypeReference).typeArguments?.[1];
-    return metaListType(
-      typeAlias,
-      inner0 ? convertShape(checker, typeAlias, inner0, aliases) : new IntrinsicType("unknown"),
-      inner1 ? convertSchema(checker, typeAlias, inner1, aliases) : new IntrinsicType("unknown"),
-    );
-  }
-
-  // OptionalSchema<T>
-  if (isTypeReference(type, "OptionalSchema")) {
-    const inner = (type as ts.TypeReference).typeArguments?.[0];
-    return inner ? convertSchema(checker, typeAlias, inner, aliases) : new IntrinsicType("unknown");
-  }
-
-  // UnionSchema<[...]>
-  if (isTypeReference(type, "UnionSchema")) {
-    const tuple = (type as ts.TypeReference).typeArguments?.[0];
-    if (tuple && checker.isTupleType(tuple)) {
-      const parts = (tuple as ts.TypeReference).typeArguments ?? [];
-      return new UnionType(parts.map((t) => convertSchema(checker, typeAlias, t, aliases)));
-    }
-  }
-
-  // ObjectSchema<T>
-  if (isTypeReference(type, "ObjectSchema")) {
-    const shape = (type as ts.TypeReference).typeArguments?.[0];
-    if (shape) return convertShape(checker, typeAlias, shape, aliases);
-  }
-
-  // exported schema reference -> alias
-  const symbol = type.getSymbol();
-  const alias = symbol && aliases.get(symbol);
-  if (alias) {
-    return ReferenceType.createResolvedReference(alias.name, alias, typeAlias.project);
-  }
-
-  return new IntrinsicType("unknown");
 }
 
 function metaListType(
@@ -182,34 +105,206 @@ function metaListType(
   return new ReflectionType(decl);
 }
 
-function convertShape(
-  checker: ts.TypeChecker,
-  typeAlias: DeclarationReflection,
-  shape: ts.Type,
-  aliases: Map<ts.Symbol, DeclarationReflection>,
-): ReflectionType {
-  const decl = new DeclarationReflection("__type", ReflectionKind.TypeLiteral, typeAlias);
+type SchemaExpression =
+  | { kind: "identifier"; identifier: ts.Identifier }
+  | { kind: "list"; item: SchemaExpression }
+  | { kind: "union"; items: SchemaExpression[] }
+  | { kind: "intrinsic"; name: "number" | "string" | "boolean" };
 
-  decl.children = [];
+interface ConversionContext {
+  checker: ts.TypeChecker;
+  typeAlias: DeclarationReflection;
+  aliases: Map<string, DeclarationReflection>;
+}
 
-  for (const prop of shape.getProperties()) {
+function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undefined {
+  let current = expr;
+
+  // Strip trailing .optional() calls only
+  while (ts.isCallExpression(current)) {
+    const target = current.expression;
+    if (ts.isPropertyAccessExpression(target) && target.name.text === "optional") {
+      current = target.expression;
+      continue;
+    }
+    break;
+  }
+
+  if (ts.isIdentifier(current)) {
+    return { kind: "identifier", identifier: current };
+  }
+
+  // x.list(...) / x.union(...)
+  if (ts.isCallExpression(current)) {
+    const target = current.expression;
+    if (!ts.isPropertyAccessExpression(target) || !ts.isIdentifier(target.expression)) return;
+
+    switch (target.name.text) {
+      case "number":
+      case "string":
+      case "boolean":
+        return { kind: "intrinsic", name: target.name.text };
+      case "list":
+        const item = current.arguments[1];
+        if (!item) return;
+        const c = classifySchemaExpression(item);
+        if (!c) return;
+        return { kind: "list", item: c };
+      case "union":
+        const items = current.arguments[0];
+        if (!items) return;
+        if (!ts.isArrayLiteralExpression(items)) return;
+        const c2 = items.elements.map((e) => classifySchemaExpression(e));
+        if (c2.some((e) => e === undefined)) return;
+        return { kind: "union", items: c2 as SchemaExpression[] };
+    }
+  }
+}
+
+function identifierToAliasType(
+  ctx: ConversionContext,
+  ident: ts.Identifier,
+): ReferenceType | undefined {
+  const symbol = ctx.checker.getSymbolAtLocation(ident);
+  if (!symbol) return;
+  const symbolKey = getSymbolKey(symbol);
+  if (!symbolKey) return;
+  const alias = ctx.aliases.get(symbolKey);
+  if (!alias) return;
+  return ReferenceType.createResolvedReference(alias.name, alias, ctx.typeAlias.project);
+}
+
+function schemaExpressionToType(
+  ctx: ConversionContext,
+  expr: SchemaExpression,
+): SomeType | undefined {
+  switch (expr.kind) {
+    case "identifier": {
+      return identifierToAliasType(ctx, expr.identifier);
+    }
+    case "list": {
+      const itemType = schemaExpressionToType(ctx, expr.item);
+      if (!itemType) return;
+      return new ArrayType(itemType);
+    }
+    case "union": {
+      const itemTypes = expr.items.map((item) => schemaExpressionToType(ctx, item));
+      if (itemTypes.some((t) => t === undefined)) return;
+      return new UnionType(itemTypes as SomeType[]);
+    }
+    case "intrinsic": {
+      return new IntrinsicType(expr.name);
+    }
+  }
+}
+
+function convertSchema(
+  ctx: ConversionContext,
+  type: ts.Type,
+  initializer?: ts.Expression,
+): SomeType {
+  const typeStr = ctx.checker.typeToString(type);
+
+  // primitive schemas
+  switch (typeStr) {
+    case "NumberSchema":
+      return new IntrinsicType("number");
+    case "StringSchema":
+      return new IntrinsicType("string");
+    case "BooleanSchema":
+      return new IntrinsicType("boolean");
+  }
+
+  if (initializer) {
+    const c = classifySchemaExpression(initializer);
+    if (c) {
+      const t = schemaExpressionToType(ctx, c);
+      if (t) return t;
+    }
+  }
+
+  // ObjectListSchema<T extends Shape>
+  if (isTypeReference(type, "ObjectListSchema")) {
+    const inner = (type as ts.TypeReference).typeArguments?.[0];
+    return new ArrayType(inner ? convertShape(ctx, inner) : new IntrinsicType("unknown"));
+  }
+
+  // ListSchema<T extends ElementSchema>
+  if (isTypeReference(type, "ListSchema")) {
+    const inner = (type as ts.TypeReference).typeArguments?.[0];
+    return new ArrayType(inner ? convertSchema(ctx, inner) : new IntrinsicType("unknown"));
+  }
+
+  // ObjectMetaListSchema<T extends Shape>
+  if (isTypeReference(type, "ObjectMetaListSchema")) {
+    const inner0 = (type as ts.TypeReference).typeArguments?.[0];
+    const inner1 = (type as ts.TypeReference).typeArguments?.[1];
+    return metaListType(
+      ctx.typeAlias,
+      inner0 ? convertShape(ctx, inner0) : new IntrinsicType("unknown"),
+      inner1 ? convertShape(ctx, inner1) : new IntrinsicType("unknown"),
+    );
+  }
+
+  // MetaListSchema<T extends ElementSchema>
+  if (isTypeReference(type, "MetaListSchema")) {
+    const inner0 = (type as ts.TypeReference).typeArguments?.[0];
+    const inner1 = (type as ts.TypeReference).typeArguments?.[1];
+    return metaListType(
+      ctx.typeAlias,
+      inner0 ? convertShape(ctx, inner0) : new IntrinsicType("unknown"),
+      inner1 ? convertSchema(ctx, inner1) : new IntrinsicType("unknown"),
+    );
+  }
+
+  // OptionalSchema<T>
+  if (isTypeReference(type, "OptionalSchema")) {
+    const inner = (type as ts.TypeReference).typeArguments?.[0];
+    return inner ? convertSchema(ctx, inner) : new IntrinsicType("unknown");
+  }
+
+  // UnionSchema<[...]>
+  if (isTypeReference(type, "UnionSchema")) {
+    const tuple = (type as ts.TypeReference).typeArguments?.[0];
+    if (tuple && ctx.checker.isTupleType(tuple)) {
+      const parts = (tuple as ts.TypeReference).typeArguments ?? [];
+      return new UnionType(parts.map((t) => convertSchema(ctx, t)));
+    }
+  }
+
+  // ObjectSchema<T>
+  if (isTypeReference(type, "ObjectSchema")) {
+    const shape = (type as ts.TypeReference).typeArguments?.[0];
+    if (shape) return convertShape(ctx, shape);
+  }
+
+  return new IntrinsicType("unknown");
+}
+
+function convertShape(ctx: ConversionContext, shape: ts.Type): ReflectionType {
+  const decl = new DeclarationReflection("__type", ReflectionKind.TypeLiteral, ctx.typeAlias);
+
+  decl.children = shape.getProperties().map((prop) => {
     const member = new DeclarationReflection(prop.name, ReflectionKind.Property, decl);
 
-    const propType = checker.getTypeOfSymbol(prop);
+    const valueDecl = prop.valueDeclaration;
+    const initializer =
+      valueDecl && ts.isPropertyAssignment(valueDecl) ? valueDecl.initializer : undefined;
+    const propType = ctx.checker.getTypeOfSymbol(prop);
 
     if (isTypeReference(propType, "OptionalSchema")) {
       member.flags.setFlag(ReflectionFlag.Optional, true);
 
       const valueType = (propType as ts.TypeReference).typeArguments?.[0];
       member.type = valueType
-        ? convertSchema(checker, typeAlias, valueType, aliases)
+        ? convertSchema(ctx, valueType, initializer)
         : new IntrinsicType("unknown");
     } else {
-      member.type = convertSchema(checker, typeAlias, propType, aliases);
+      member.type = convertSchema(ctx, propType, initializer);
     }
 
-    decl.children.push(member);
-  }
+    return member;
+  });
 
   return new ReflectionType(decl);
 }
