@@ -8,6 +8,7 @@ import {
   ReferenceType,
   ReflectionFlag,
   ReflectionKind,
+  ReflectionSymbolId,
   ReflectionType,
   type SomeType,
   TypeScript as ts,
@@ -16,20 +17,10 @@ import {
 
 const XML_PACKAGE = "@sw-file-lib/xml";
 
-type SchemaKey = ts.Declaration;
-
-/*function getSymbolKey(symbol: ts.Symbol): string | undefined {
-  const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0];
-  if (!declaration) return;
-
-  const sourceFile = declaration.getSourceFile();
-
-  return `${sourceFile.fileName}:${declaration.getStart()}`;
-}*/
-
 export function load(app: Application) {
   let checker: ts.TypeChecker | undefined;
-  const schemaToAlias = new Map<SchemaKey, DeclarationReflection>();
+  const identifierIds = new WeakMap<ts.Identifier, ReflectionSymbolId>();
+  const schemaToAlias = new Map<ReflectionSymbolId, DeclarationReflection>();
   const pending: { typeAlias: DeclarationReflection; schemaType: ts.Type }[] = [];
 
   app.converter.on(
@@ -74,18 +65,35 @@ export function load(app: Application) {
 
       const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
       if (!decl) return;
+      collectIdentifiers(context, decl);
 
-      schemaToAlias.set(decl, refl);
+      const symbolId = context.createSymbolId(symbol);
+
+      schemaToAlias.set(symbolId, refl);
 
       const schemaType = context.checker.getTypeAtLocation(decl);
       pending.push({ typeAlias: refl, schemaType });
     }
   }
 
+  function collectIdentifiers(context: Context, node: ts.Node) {
+    if (ts.isIdentifier(node)) {
+      const symbol = context.checker.getSymbolAtLocation(node);
+      if (symbol) {
+        identifierIds.set(node, context.createSymbolId(context.resolveAliasedSymbol(symbol)));
+      }
+    }
+
+    node.forEachChild((child) => collectIdentifiers(context, child));
+  }
+
   function expandInfer(_context: Context, typeAlias: DeclarationReflection, schemaType: ts.Type) {
     if (!checker) return;
 
-    typeAlias.type = convertSchema({ checker, typeAlias, aliases: schemaToAlias }, schemaType);
+    typeAlias.type = convertSchema(
+      { checker, typeAlias, identifierIds, schemaToAlias },
+      schemaType,
+    );
   }
 }
 
@@ -116,7 +124,8 @@ type SchemaExpression =
 interface ConversionContext {
   checker: ts.TypeChecker;
   typeAlias: DeclarationReflection;
-  aliases: Map<SchemaKey, DeclarationReflection>;
+  identifierIds: WeakMap<ts.Identifier, ReflectionSymbolId>;
+  schemaToAlias: Map<ReflectionSymbolId, DeclarationReflection>;
 }
 
 function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undefined {
@@ -136,7 +145,7 @@ function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undef
     return { kind: "identifier", identifier: current };
   }
 
-  // x.list(...) / x.union(...)
+  // x.number() / x.string() / x.boolean() / x.list(...) / x.union(...)
   if (ts.isCallExpression(current)) {
     const target = current.expression;
     if (!ts.isPropertyAccessExpression(target) || !ts.isIdentifier(target.expression)) return;
@@ -167,11 +176,11 @@ function identifierToAliasType(
   ctx: ConversionContext,
   ident: ts.Identifier,
 ): ReferenceType | undefined {
-  const symbol = ctx.checker.getSymbolAtLocation(ident);
-  if (!symbol) return;
-  const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
-  if (!decl) return;
-  const alias = ctx.aliases.get(decl);
+  const id = ctx.identifierIds.get(ident);
+  if (!id) {
+    return;
+  }
+  const alias = ctx.schemaToAlias.get(id);
   if (!alias) return;
   return ReferenceType.createResolvedReference(alias.name, alias, ctx.typeAlias.project);
 }
