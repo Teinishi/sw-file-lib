@@ -1,11 +1,7 @@
 import type { StrictOmit } from "ts-essentials";
 import { maxVec3, minVec3, vec3 } from "@sw-file-lib/core/math";
-import type {
-  SwVec3,
-  ComponentDefinition,
-  ComponentDefinitionSurface,
-  ComponentDefinitionVoxel,
-} from "..";
+import type { SwVec3, ComponentDefinition } from "..";
+import type { Surface, Voxel } from "../schemas/ComponentDefinition";
 
 function forVoxels(
   from: Readonly<SwVec3>,
@@ -48,9 +44,9 @@ export function createCuboidSurfaces(
   from: Readonly<SwVec3>,
   to: Readonly<SwVec3>,
   orientations: number[],
-  options?: Readonly<StrictOmit<ComponentDefinitionSurface, "position" | "orientation">>,
-): ComponentDefinitionSurface[] {
-  const surfaces: ComponentDefinitionSurface[] = [];
+  options?: Readonly<StrictOmit<Surface, "position" | "orientation">>,
+): Surface[] {
+  const surfaces: Surface[] = [];
 
   forCuboidSurfaces(from, to, (a, b, orientation) => {
     if (!orientations.includes(orientation)) return;
@@ -65,9 +61,9 @@ export function createCuboidSurfaces(
 export function createVoxels(
   from: Readonly<SwVec3>,
   to: Readonly<SwVec3>,
-  options?: Readonly<StrictOmit<ComponentDefinitionVoxel, "position">>,
-): ComponentDefinitionVoxel[] {
-  const voxels: ComponentDefinitionVoxel[] = [];
+  options?: Readonly<StrictOmit<Voxel, "position">>,
+): Voxel[] {
+  const voxels: Voxel[] = [];
 
   forVoxels(from, to, (position) => {
     voxels.push({ ...options, position });
@@ -79,7 +75,7 @@ export function createVoxels(
 export function calculateVoxelBounds(
   data: ComponentDefinition,
   dest: ("voxel" | "voxel_physics")[],
-  filter?: (voxel: ComponentDefinitionVoxel) => boolean,
+  filter?: (voxel: Voxel) => boolean,
 ) {
   const arr = (filter ? data.voxels?.filter(filter) : data.voxels) ?? [];
 

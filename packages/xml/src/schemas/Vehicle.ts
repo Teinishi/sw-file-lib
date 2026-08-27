@@ -1,26 +1,22 @@
 import { SwRgbSchema, SwVec3Schema } from ".";
-import { parseSwXml } from "../parser";
-import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
 import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
 
-export const VehicleAuthorSchema = x.partialObject({
+export const AuthorSchema = x.partialObject({
   steam_id: x.number(),
   username: x.string(),
 });
-export type VehicleAuthor = x.Infer<typeof VehicleAuthorSchema>;
-export type VehicleAuthorImmutable = x.InferImmutable<typeof VehicleAuthorSchema>;
+export type Author = x.Infer<typeof AuthorSchema>;
+export type AuthorImmutable = x.InferImmutable<typeof AuthorSchema>;
 
-export const VehicleComponentLogicSlotSchema = x.partialObject({
+export const ComponentLogicSlotSchema = x.partialObject({
   editor_connected: x.number(),
   value: x.union([x.boolean(), x.number(), x.object({})]),
 });
-export type VehicleComponentLogicSlot = x.Infer<typeof VehicleComponentLogicSlotSchema>;
-export type VehicleComponentLogicSlotImmutable = x.InferImmutable<
-  typeof VehicleComponentLogicSlotSchema
->;
+export type ComponentLogicSlot = x.Infer<typeof ComponentLogicSlotSchema>;
+export type ComponentLogicSlotImmutable = x.InferImmutable<typeof ComponentLogicSlotSchema>;
 
-export const VehicleComponentDisplaySchema = x.partialObject({
+export const ComponentDisplaySchema = x.partialObject({
   type: x.number(),
   name: x.string(),
   channel: x.number(),
@@ -40,12 +36,10 @@ export const VehicleComponentDisplaySchema = x.partialObject({
     }),
   ),
 });
-export type VehicleComponentDisplay = x.Infer<typeof VehicleComponentDisplaySchema>;
-export type VehicleComponentDisplayImmutable = x.InferImmutable<
-  typeof VehicleComponentDisplaySchema
->;
+export type ComponentDisplay = x.Infer<typeof ComponentDisplaySchema>;
+export type ComponentDisplayImmutable = x.InferImmutable<typeof ComponentDisplaySchema>;
 
-export const VehicleComponentSchema = x.partialObject({
+export const ComponentSchema = x.partialObject({
   d: x.string(),
   t: x.number(),
   o: x.partialObject({
@@ -145,12 +139,12 @@ export const VehicleComponentSchema = x.partialObject({
     tyre_pressure: x.number(),
     microprocessor_definition: MicrocontrollerSchema,
     vp: SwVec3Schema,
-    logic_slots: x.list("slot", VehicleComponentLogicSlotSchema),
+    logic_slots: x.list("slot", ComponentLogicSlotSchema),
     delta_damping: SwVec3Schema,
-    display_1: VehicleComponentDisplaySchema,
-    display_2: VehicleComponentDisplaySchema,
-    display_3: VehicleComponentDisplaySchema,
-    display_4: VehicleComponentDisplaySchema,
+    display_1: ComponentDisplaySchema,
+    display_2: ComponentDisplaySchema,
+    display_3: ComponentDisplaySchema,
+    display_4: ComponentDisplaySchema,
     impact_sensor_threshold: TextValuePairSchema,
     m_sweep_limit: TextValuePairSchema,
     m_sweep_speed: TextValuePairSchema,
@@ -179,15 +173,15 @@ export const VehicleComponentSchema = x.partialObject({
     }),
   }),
 });
-export type VehicleComponent = x.Infer<typeof VehicleComponentSchema>;
-export type VehicleComponentImmutable = x.InferImmutable<typeof VehicleComponentSchema>;
+export type Component = x.Infer<typeof ComponentSchema>;
+export type ComponentImmutable = x.InferImmutable<typeof ComponentSchema>;
 
-export const VehicleBodySchema = x.partialObject({
+export const BodySchema = x.partialObject({
   unique_id: x.number(),
-  components: x.list("c", VehicleComponentSchema),
+  components: x.list("c", ComponentSchema),
 });
-export type VehicleBody = x.Infer<typeof VehicleBodySchema>;
-export type VehicleBodyImmutable = x.InferImmutable<typeof VehicleBodySchema>;
+export type Body = x.Infer<typeof BodySchema>;
+export type BodyImmutable = x.InferImmutable<typeof BodySchema>;
 
 export const VehicelLogicNodeLinkSchema = x.partialObject({
   type: x.number(),
@@ -203,34 +197,9 @@ export const VehicleSchema = x.partialObject({
   is_static: x.boolean(),
   bodies_id: x.number(),
   editor_placement_offset: SwVec3Schema,
-  authors: x.list("author", VehicleAuthorSchema),
-  bodies: x.list("body", VehicleBodySchema),
+  authors: x.list("author", AuthorSchema),
+  bodies: x.list("body", BodySchema),
   logic_node_links: x.list("logic_node_link", VehicelLogicNodeLinkSchema),
 });
 export type Vehicle = x.Infer<typeof VehicleSchema>;
 export type VehicleImmutable = x.InferImmutable<typeof VehicleSchema>;
-
-/**
- * Parses a Stormworks vehicle XML document.
- *
- * @throws {@link SchemaError} when the XML content
- * does not match the vehicle schema.
- */
-export function parseVehicleXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): Vehicle {
-  const tree = parseSwXml(input);
-  return VehicleSchema.parse(tree, "vehicle", options);
-}
-
-/**
- * Parses a Stormworks vehicle XML document without throwing schema errors.
- */
-export function safeParseVehicleXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): x.Result<Vehicle, x.SchemaError> {
-  const tree = parseSwXml(input);
-  return VehicleSchema.safeParse(tree, "vehicle", options);
-}

@@ -1,9 +1,7 @@
 import { SwMat3Schema, SwVec3Schema } from ".";
-import { parseSwXml } from "../parser";
-import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
 
-export const ComponentDefinitionSfxLayerSchema = x.partialObject({
+export const SfxLayerSchema = x.partialObject({
   sfx_filename_start: x.string(),
   sfx_filename_loop: x.string(),
   sfx_filename_end: x.string(),
@@ -13,25 +11,21 @@ export const ComponentDefinitionSfxLayerSchema = x.partialObject({
   sfx_volume_fade_speed: x.number(),
   sfx_pitch_fade_speed: x.number(),
 });
-export type ComponentDefinitionSfxLayer = x.Infer<typeof ComponentDefinitionSfxLayerSchema>;
-export type ComponentDefinitionSfxLayerImmutable = x.InferImmutable<
-  typeof ComponentDefinitionSfxLayerSchema
->;
+export type SfxLayer = x.Infer<typeof SfxLayerSchema>;
+export type SfxLayerImmutable = x.InferImmutable<typeof SfxLayerSchema>;
 
-export const ComponentDefinitionSfxDataSchema = x.partialObject({
+export const SfxDataSchema = x.partialObject({
   sfx_name: x.string(),
   sfx_range_inner: x.number(),
   sfx_range_outer: x.number(),
   sfx_priority: x.number(),
   sfx_is_underwater_affected: x.boolean(),
-  sfx_layers: x.list("sfx_layer", ComponentDefinitionSfxLayerSchema),
+  sfx_layers: x.list("sfx_layer", SfxLayerSchema),
 });
-export type ComponentDefinitionSfxData = x.Infer<typeof ComponentDefinitionSfxDataSchema>;
-export type ComponentDefinitionSfxDataImmutable = x.InferImmutable<
-  typeof ComponentDefinitionSfxDataSchema
->;
+export type SfxData = x.Infer<typeof SfxDataSchema>;
+export type SfxDataImmutable = x.InferImmutable<typeof SfxDataSchema>;
 
-export const ComponentDefinitionSurfaceSchema = x.partialObject({
+export const SurfaceSchema = x.partialObject({
   orientation: x.number(),
   rotation: x.number(),
   shape: x.number(),
@@ -41,12 +35,10 @@ export const ComponentDefinitionSurfaceSchema = x.partialObject({
   is_two_sided: x.boolean(),
   position: SwVec3Schema,
 });
-export type ComponentDefinitionSurface = x.Infer<typeof ComponentDefinitionSurfaceSchema>;
-export type ComponentDefinitionSurfaceImmutable = x.InferImmutable<
-  typeof ComponentDefinitionSurfaceSchema
->;
+export type Surface = x.Infer<typeof SurfaceSchema>;
+export type SurfaceImmutable = x.InferImmutable<typeof SurfaceSchema>;
 
-export const ComponentDefinitionLogicNodeSchema = x.partialObject({
+export const LogicNodeSchema = x.partialObject({
   orientation: x.number(),
   label: x.string(),
   mode: x.number(),
@@ -55,12 +47,10 @@ export const ComponentDefinitionLogicNodeSchema = x.partialObject({
   flags: x.number(),
   position: SwVec3Schema,
 });
-export type ComponentDefinitionLogicNode = x.Infer<typeof ComponentDefinitionLogicNodeSchema>;
-export type ComponentDefinitionLogicNodeImmutable = x.InferImmutable<
-  typeof ComponentDefinitionLogicNodeSchema
->;
+export type LogicNode = x.Infer<typeof LogicNodeSchema>;
+export type LogicNodeImmutable = x.InferImmutable<typeof LogicNodeSchema>;
 
-export const ComponentDefinitionCouplingSchema = x.partialObject({
+export const CouplingSchema = x.partialObject({
   orientation: x.number(),
   alignment: x.number(),
   coupling_type: x.string(),
@@ -70,33 +60,25 @@ export const ComponentDefinitionCouplingSchema = x.partialObject({
   allow_bipolar_alignment: x.boolean(),
   position: SwVec3Schema,
 });
-export type ComponentDefinitionCoupling = x.Infer<typeof ComponentDefinitionCouplingSchema>;
-export type ComponentDefinitionCouplingImmutable = x.InferImmutable<
-  typeof ComponentDefinitionCouplingSchema
->;
+export type Coupling = x.Infer<typeof CouplingSchema>;
+export type CouplingImmutable = x.InferImmutable<typeof CouplingSchema>;
 
-export const ComponentDefinitionVoxelSchema = x.partialObject({
+export const VoxelSchema = x.partialObject({
   flags: x.number(),
   physics_shape: x.number(),
   buoy_pipes: x.number(),
   position: SwVec3Schema,
   physics_shape_rotation: SwMat3Schema,
 });
-export type ComponentDefinitionVoxel = x.Infer<typeof ComponentDefinitionVoxelSchema>;
-export type ComponentDefinitionVoxelImmutable = x.InferImmutable<
-  typeof ComponentDefinitionVoxelSchema
->;
+export type Voxel = x.Infer<typeof VoxelSchema>;
+export type VoxelImmutable = x.InferImmutable<typeof VoxelSchema>;
 
-export const ComponentDefinitionJetEngineConnectionSchema = x.partialObject({
+export const JetEngineConnectionSchema = x.partialObject({
   pos: SwVec3Schema,
   normal: SwVec3Schema,
 });
-export type ComponentDefinitionJetEngineConnection = x.Infer<
-  typeof ComponentDefinitionJetEngineConnectionSchema
->;
-export type ComponentDefinitionJetEngineConnectionImmutable = x.InferImmutable<
-  typeof ComponentDefinitionJetEngineConnectionSchema
->;
+export type JetEngineConnection = x.Infer<typeof JetEngineConnectionSchema>;
+export type JetEngineConnectionImmutable = x.InferImmutable<typeof JetEngineConnectionSchema>;
 
 export const ComponentDefinitionSchema = x.partialObject({
   name: x.string(),
@@ -219,12 +201,12 @@ export const ComponentDefinitionSchema = x.partialObject({
   radar_type: x.number(),
   piston_len: x.number(),
   piston_cam: x.number(),
-  sfx_datas: x.list("sfx_data", ComponentDefinitionSfxDataSchema),
-  surfaces: x.list("surface", ComponentDefinitionSurfaceSchema),
-  buoyancy_surfaces: x.list("surface", ComponentDefinitionSurfaceSchema),
-  logic_nodes: x.list("logic_node", ComponentDefinitionLogicNodeSchema),
-  couplings: x.list("coupling", ComponentDefinitionCouplingSchema),
-  voxels: x.list("voxel", ComponentDefinitionVoxelSchema),
+  sfx_datas: x.list("sfx_data", SfxDataSchema),
+  surfaces: x.list("surface", SurfaceSchema),
+  buoyancy_surfaces: x.list("surface", SurfaceSchema),
+  logic_nodes: x.list("logic_node", LogicNodeSchema),
+  couplings: x.list("coupling", CouplingSchema),
+  voxels: x.list("voxel", VoxelSchema),
   voxel_min: SwVec3Schema,
   voxel_max: SwVec3Schema,
   voxel_physics_min: SwVec3Schema,
@@ -263,8 +245,8 @@ export const ComponentDefinitionSchema = x.partialObject({
     tier: x.number(),
     number_rewarded: x.number(),
   }),
-  jet_engine_connections_prev: x.list("j", ComponentDefinitionJetEngineConnectionSchema),
-  jet_engine_connections_next: x.list("j", ComponentDefinitionJetEngineConnectionSchema),
+  jet_engine_connections_prev: x.list("j", JetEngineConnectionSchema),
+  jet_engine_connections_next: x.list("j", JetEngineConnectionSchema),
   seat_exit_position: SwVec3Schema,
   particle_direction: SwVec3Schema,
   particle_offset: SwVec3Schema,
@@ -277,28 +259,3 @@ export const ComponentDefinitionSchema = x.partialObject({
 });
 export type ComponentDefinition = x.Infer<typeof ComponentDefinitionSchema>;
 export type ComponentDefinitionImmutable = x.InferImmutable<typeof ComponentDefinitionSchema>;
-
-/**
- * Parses a Stormworks component definition XML document.
- *
- * @throws {@link SchemaError} when the XML content
- * does not match the component definition schema.
- */
-export function parseComponentDefinitionXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): ComponentDefinition {
-  const tree = parseSwXml(input);
-  return ComponentDefinitionSchema.parse(tree, "definition", options);
-}
-
-/**
- * Parses a Stormworks component definition XML document without throwing schema errors.
- */
-export function safeParseComponentDefinitionXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): x.Result<ComponentDefinition, x.SchemaError> {
-  const tree = parseSwXml(input);
-  return ComponentDefinitionSchema.safeParse(tree, "definition", options);
-}

@@ -1,6 +1,4 @@
 import { SwVec2Schema } from ".";
-import { parseSwXml } from "../parser";
-import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
 
 export const TextValuePairSchema = x.partialObject({
@@ -10,7 +8,7 @@ export const TextValuePairSchema = x.partialObject({
 export type TextValuePair = x.Infer<typeof TextValuePairSchema>;
 export type TextValuePairImmutable = x.InferImmutable<typeof TextValuePairSchema>;
 
-export const MicrocontrollerNodeSchema = x.partialObject({
+export const NodeSchema = x.partialObject({
   id: x.number(),
   component_id: x.number(),
   node: x.partialObject({
@@ -24,20 +22,18 @@ export const MicrocontrollerNodeSchema = x.partialObject({
     }),
   }),
 });
-export type MicrocontrollerNode = x.Infer<typeof MicrocontrollerNodeSchema>;
-export type MicrocontrollerNodeImmutable = x.InferImmutable<typeof MicrocontrollerNodeSchema>;
+export type Node = x.Infer<typeof NodeSchema>;
+export type NodeImmutable = x.InferImmutable<typeof NodeSchema>;
 
-export const MicrocontrollerObjectInSchema = x.partialObject({
+export const ObjectInSchema = x.partialObject({
   component_id: x.number(),
   disabled: x.boolean(),
   node_index: x.number(),
 });
-export type MicrocontrollerObjectIn = x.Infer<typeof MicrocontrollerObjectInSchema>;
-export type MicrocontrollerObjectInImmutable = x.InferImmutable<
-  typeof MicrocontrollerObjectInSchema
->;
+export type ObjectIn = x.Infer<typeof ObjectInSchema>;
+export type ObjectInImmutable = x.InferImmutable<typeof ObjectInSchema>;
 
-export const MicrocontrollerComponentSchema = x.partialObject({
+export const ComponentSchema = x.partialObject({
   type: x.number(),
   object: x.partialObject({
     id: x.number(),
@@ -58,40 +54,40 @@ export const MicrocontrollerComponentSchema = x.partialObject({
     v: x.union([x.string(), TextValuePairSchema]),
     i: x.union([x.number(), TextValuePairSchema]),
     pos: SwVec2Schema,
-    inc: MicrocontrollerObjectInSchema,
-    in1: MicrocontrollerObjectInSchema,
-    in2: MicrocontrollerObjectInSchema,
-    in3: MicrocontrollerObjectInSchema,
-    in4: MicrocontrollerObjectInSchema,
-    in5: MicrocontrollerObjectInSchema,
-    in6: MicrocontrollerObjectInSchema,
-    in7: MicrocontrollerObjectInSchema,
-    in8: MicrocontrollerObjectInSchema,
-    in9: MicrocontrollerObjectInSchema,
-    in10: MicrocontrollerObjectInSchema,
-    in11: MicrocontrollerObjectInSchema,
-    in12: MicrocontrollerObjectInSchema,
-    in13: MicrocontrollerObjectInSchema,
-    in14: MicrocontrollerObjectInSchema,
-    in15: MicrocontrollerObjectInSchema,
-    in16: MicrocontrollerObjectInSchema,
-    in17: MicrocontrollerObjectInSchema,
-    in18: MicrocontrollerObjectInSchema,
-    in19: MicrocontrollerObjectInSchema,
-    in20: MicrocontrollerObjectInSchema,
-    in21: MicrocontrollerObjectInSchema,
-    in22: MicrocontrollerObjectInSchema,
-    in23: MicrocontrollerObjectInSchema,
-    in24: MicrocontrollerObjectInSchema,
-    in25: MicrocontrollerObjectInSchema,
-    in26: MicrocontrollerObjectInSchema,
-    in27: MicrocontrollerObjectInSchema,
-    in28: MicrocontrollerObjectInSchema,
-    in29: MicrocontrollerObjectInSchema,
-    in30: MicrocontrollerObjectInSchema,
-    in31: MicrocontrollerObjectInSchema,
-    in32: MicrocontrollerObjectInSchema,
-    inoff: MicrocontrollerObjectInSchema,
+    inc: ObjectInSchema,
+    in1: ObjectInSchema,
+    in2: ObjectInSchema,
+    in3: ObjectInSchema,
+    in4: ObjectInSchema,
+    in5: ObjectInSchema,
+    in6: ObjectInSchema,
+    in7: ObjectInSchema,
+    in8: ObjectInSchema,
+    in9: ObjectInSchema,
+    in10: ObjectInSchema,
+    in11: ObjectInSchema,
+    in12: ObjectInSchema,
+    in13: ObjectInSchema,
+    in14: ObjectInSchema,
+    in15: ObjectInSchema,
+    in16: ObjectInSchema,
+    in17: ObjectInSchema,
+    in18: ObjectInSchema,
+    in19: ObjectInSchema,
+    in20: ObjectInSchema,
+    in21: ObjectInSchema,
+    in22: ObjectInSchema,
+    in23: ObjectInSchema,
+    in24: ObjectInSchema,
+    in25: ObjectInSchema,
+    in26: ObjectInSchema,
+    in27: ObjectInSchema,
+    in28: ObjectInSchema,
+    in29: ObjectInSchema,
+    in30: ObjectInSchema,
+    in31: ObjectInSchema,
+    in32: ObjectInSchema,
+    inoff: ObjectInSchema,
     min: TextValuePairSchema,
     max: TextValuePairSchema,
     int: TextValuePairSchema,
@@ -110,24 +106,20 @@ export const MicrocontrollerComponentSchema = x.partialObject({
     r: TextValuePairSchema,
   }),
 });
-export type MicrocontrollerComponent = x.Infer<typeof MicrocontrollerComponentSchema>;
-export type MicrocontrollerComponentImmutable = x.InferImmutable<
-  typeof MicrocontrollerComponentSchema
->;
+export type Component = x.Infer<typeof ComponentSchema>;
+export type ComponentImmutable = x.InferImmutable<typeof ComponentSchema>;
 
-export const MicrocontrollerBridgeComponentSchema = x.partialObject({
+export const BridgeComponentSchema = x.partialObject({
   type: x.number(),
   object: x.partialObject({
     id: x.number(),
     pos: SwVec2Schema,
-    in1: MicrocontrollerObjectInSchema,
+    in1: ObjectInSchema,
     out1: x.object({}),
   }),
 });
-export type MicrocontrollerBridgeComponent = x.Infer<typeof MicrocontrollerBridgeComponentSchema>;
-export type MicrocontrollerBridgeComponentImmutable = x.InferImmutable<
-  typeof MicrocontrollerBridgeComponentSchema
->;
+export type BridgeComponent = x.Infer<typeof BridgeComponentSchema>;
+export type BridgeComponentImmutable = x.InferImmutable<typeof BridgeComponentSchema>;
 
 export const MicrocontrollerSchema = x.partialObject({
   name: x.string(),
@@ -153,42 +145,17 @@ export const MicrocontrollerSchema = x.partialObject({
   sym13: x.number(),
   sym14: x.number(),
   sym15: x.number(),
-  nodes: x.list("n", MicrocontrollerNodeSchema),
+  nodes: x.list("n", NodeSchema),
   group: x.partialObject({
     data: x.partialObject({
       type: x.number(),
       inputs: x.object({}),
       outputs: x.object({}),
     }),
-    components: x.list("c", MicrocontrollerComponentSchema),
-    components_bridge: x.list("c", MicrocontrollerBridgeComponentSchema),
+    components: x.list("c", ComponentSchema),
+    components_bridge: x.list("c", BridgeComponentSchema),
     groups: x.object({}),
   }),
 });
 export type Microcontroller = x.Infer<typeof MicrocontrollerSchema>;
 export type MicrocontrollerImmutable = x.InferImmutable<typeof MicrocontrollerSchema>;
-
-/**
- * Parses a Stormworks microcontroller XML document.
- *
- * @throws {@link SchemaError} when the XML content
- * does not match the microcontroller schema.
- */
-export function parseMicrocontrollerXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): Microcontroller {
-  const tree = parseSwXml(input);
-  return MicrocontrollerSchema.parse(tree, "microprocessor", options);
-}
-
-/**
- * Parses a Stormworks microcontroller XML document without throwing schema errors.
- */
-export function safeParseMicrocontrollerXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): x.Result<Microcontroller, x.SchemaError> {
-  const tree = parseSwXml(input);
-  return MicrocontrollerSchema.safeParse(tree, "microprocessor", options);
-}
