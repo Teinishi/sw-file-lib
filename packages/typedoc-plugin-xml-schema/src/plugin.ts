@@ -22,6 +22,7 @@ export function load(app: Application) {
   let checker: ts.TypeChecker | undefined;
   const identifierIds = new WeakMap<ts.Identifier, ReflectionSymbolId>();
   const schemaToAlias = new Map<ReflectionSymbolId, DeclarationReflection>();
+  const schemaToAliasImmutable = new Map<ReflectionSymbolId, DeclarationReflection>();
   const pending: {
     typeAlias: DeclarationReflection;
     schemaType: ts.Type;
@@ -46,6 +47,7 @@ export function load(app: Application) {
 
     pending.length = 0;
     schemaToAlias.clear();
+    schemaToAliasImmutable.clear();
   });
 
   function collect(context: Context, refl: DeclarationReflection) {
@@ -79,7 +81,11 @@ export function load(app: Application) {
 
     const symbolId = context.createSymbolId(symbol);
 
-    schemaToAlias.set(symbolId, refl);
+    if (isInferImmutable) {
+      schemaToAliasImmutable.set(symbolId, refl);
+    } else {
+      schemaToAlias.set(symbolId, refl);
+    }
 
     const schemaType = context.checker.getTypeAtLocation(decl);
     pending.push({ typeAlias: refl, schemaType, isImmutable: isInferImmutable });
@@ -105,7 +111,14 @@ export function load(app: Application) {
     if (!checker) return;
 
     typeAlias.type = convertSchema(
-      { checker, typeAlias, identifierIds, schemaToAlias, isImmutable },
+      {
+        checker,
+        typeAlias,
+        identifierIds,
+        schemaToAlias,
+        schemaToAliasImmutable,
+        isImmutable,
+      },
       schemaType,
     );
   }
@@ -132,6 +145,7 @@ function metaListType(
 type SchemaExpression =
   | { kind: "identifier"; identifier: ts.Identifier }
   | { kind: "list"; item: SchemaExpression }
+  | { kind: "metalist"; meta: SchemaExpression; item: SchemaExpression }
   | { kind: "union"; items: SchemaExpression[] }
   | { kind: "intrinsic"; name: "number" | "string" | "boolean" };
 
@@ -140,6 +154,7 @@ interface ConversionContext {
   typeAlias: DeclarationReflection;
   identifierIds: WeakMap<ts.Identifier, ReflectionSymbolId>;
   schemaToAlias: Map<ReflectionSymbolId, DeclarationReflection>;
+  schemaToAliasImmutable: Map<ReflectionSymbolId, DeclarationReflection>;
   isImmutable: boolean;
 }
 
@@ -171,18 +186,25 @@ function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undef
       case "boolean":
         return { kind: "intrinsic", name: target.name.text };
       case "list":
-        const item = current.arguments[1];
-        if (!item) return;
-        const c = classifySchemaExpression(item);
-        if (!c) return;
-        return { kind: "list", item: c };
+        const listItem = current.arguments[1];
+        if (!listItem) return;
+        const c0 = classifySchemaExpression(listItem);
+        if (!c0) return;
+        return { kind: "list", item: c0 };
+      case "metalist":
+        const metaListMeta = current.arguments[1];
+        const metaListItem = current.arguments[2];
+        const c1 = metaListMeta ? classifySchemaExpression(metaListMeta) : undefined;
+        const c2 = metaListItem ? classifySchemaExpression(metaListItem) : undefined;
+        if (!c1 || !c2) return;
+        return { kind: "metalist", meta: c1, item: c2 };
       case "union":
         const items = current.arguments[0];
         if (!items) return;
         if (!ts.isArrayLiteralExpression(items)) return;
-        const c2 = items.elements.map((e) => classifySchemaExpression(e));
-        if (c2.some((e) => e === undefined)) return;
-        return { kind: "union", items: c2 as SchemaExpression[] };
+        const c3 = items.elements.map((e) => classifySchemaExpression(e));
+        if (c3.some((e) => e === undefined)) return;
+        return { kind: "union", items: c3 as SchemaExpression[] };
     }
   }
 }
@@ -195,14 +217,14 @@ function identifierToAliasType(
   if (!id) {
     return;
   }
-  const alias = ctx.schemaToAlias.get(id);
+  const alias = ctx.isImmutable ? ctx.schemaToAliasImmutable.get(id) : ctx.schemaToAlias.get(id);
   if (!alias) return;
   return ReferenceType.createResolvedReference(alias.name, alias, ctx.typeAlias.project);
 }
 
 function schemaExpressionToType(
   ctx: Readonly<ConversionContext>,
-  expr: SchemaExpression,
+  expr: SchemaExpression
 ): SomeType | undefined {
   switch (expr.kind) {
     case "identifier": {
@@ -212,6 +234,12 @@ function schemaExpressionToType(
       const itemType = schemaExpressionToType(ctx, expr.item);
       if (!itemType) return;
       return new ArrayType(itemType);
+    }
+    case "metalist": {
+      const metaType = expr.meta ? schemaExpressionToType(ctx, expr.meta) : undefined;
+      const itemType = expr.item ? schemaExpressionToType(ctx, expr.item) : undefined;
+      if (!metaType || !itemType) return;
+      return metaListType(ctx.typeAlias, metaType, itemType);
     }
     case "union": {
       const itemTypes = expr.items.map((item) => schemaExpressionToType(ctx, item));
