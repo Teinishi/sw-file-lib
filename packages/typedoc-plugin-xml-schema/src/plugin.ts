@@ -16,6 +16,7 @@ import {
   UnionType,
   TypeOperatorType,
   ProjectReflection,
+  Reflection,
 } from "typedoc";
 
 const XML_PACKAGE = "@sw-file-lib/xml";
@@ -161,13 +162,18 @@ function expandInferOnInterface(
   let propDecls: DeclarationReflection[] | undefined;
   switch (schemaData.node.type) {
     case "object":
-      propDecls = convertSchemaTreeObjectNodeToType(ctx, schemaData.node.properties);
+      propDecls = convertSchemaTreeObjectNodeToType(
+        ctx,
+        schemaData.node.properties,
+        interfaceDecl.declarationRefl,
+      );
       break;
     case "metalist":
       propDecls = convertSchemaTreeMetalistNodeToType(
         ctx,
         schemaData.node.metaType,
         schemaData.node.itemType,
+        interfaceDecl.declarationRefl,
       );
       break;
   }
@@ -199,6 +205,7 @@ function convertSchemaTreeNodeToType(
   ctx: ConversionContext,
   name: string,
   node: SchemaTreeNode,
+  parent: Reflection,
 ): SomeType | undefined {
   switch (node.type) {
     case "identifier":
@@ -212,33 +219,24 @@ function convertSchemaTreeNodeToType(
     case "intrinsic":
       return new IntrinsicType(node.name);
     case "object":
-      const objectDecl = ctx.context.createDeclarationReflection(
-        ReflectionKind.Interface,
-        undefined,
-        undefined,
-        name,
-      );
-      const objectPropDecls = convertSchemaTreeObjectNodeToType(ctx, node.properties);
+      const objectDecl = new DeclarationReflection(name, ReflectionKind.Interface, parent);
+      const objectPropDecls = convertSchemaTreeObjectNodeToType(ctx, node.properties, objectDecl);
       if (!objectPropDecls) return;
       for (const propDecl of objectPropDecls) {
         objectDecl.addChild(propDecl);
       }
       return new ReflectionType(objectDecl);
     case "list":
-      const itemType = convertSchemaTreeNodeToType(ctx, name, node.itemType);
+      const itemType = convertSchemaTreeNodeToType(ctx, name, node.itemType, parent);
       if (!itemType) return;
       return createArrayType(itemType, ctx.isImmutable);
     case "metalist":
-      const metalistDecl = ctx.context.createDeclarationReflection(
-        ReflectionKind.Interface,
-        undefined,
-        undefined,
-        name,
-      );
+      const metalistDecl = new DeclarationReflection(name, ReflectionKind.Interface, parent);
       const metalistPropDecls = convertSchemaTreeMetalistNodeToType(
         ctx,
         node.metaType,
         node.itemType,
+        metalistDecl,
       );
       if (!metalistPropDecls) return;
       for (const propDecl of metalistPropDecls) {
@@ -248,7 +246,7 @@ function convertSchemaTreeNodeToType(
     case "union":
       const unionTypes: SomeType[] = [];
       for (const typeNode of node.types) {
-        const type = convertSchemaTreeNodeToType(ctx, name, typeNode);
+        const type = convertSchemaTreeNodeToType(ctx, name, typeNode, parent);
         if (!type) return;
         unionTypes.push(type);
       }
@@ -261,17 +259,13 @@ function convertSchemaTreeNodeToType(
 function convertSchemaTreeObjectNodeToType(
   ctx: ConversionContext,
   props: ObjectSchemaProperty[],
+  parent: Reflection,
 ): DeclarationReflection[] | undefined {
   const propDecls: DeclarationReflection[] = [];
   for (const prop of props) {
-    const propType = convertSchemaTreeNodeToType(ctx, prop.key, prop.value);
+    const propRefl = new DeclarationReflection(prop.key, ReflectionKind.Property, parent);
+    const propType = convertSchemaTreeNodeToType(ctx, prop.key, prop.value, propRefl);
     if (!propType) return;
-    const propRefl = ctx.context.createDeclarationReflection(
-      ReflectionKind.Property,
-      undefined,
-      undefined,
-      prop.key,
-    );
     propRefl.type = propType;
     propRefl.flags.setFlag(ReflectionFlag.Optional, prop.isOptional);
     propRefl.flags.setFlag(ReflectionFlag.Readonly, ctx.isImmutable);
@@ -284,27 +278,18 @@ function convertSchemaTreeMetalistNodeToType(
   ctx: ConversionContext,
   metaNode: SchemaTreeNode,
   itemNode: SchemaTreeNode,
+  parent: Reflection,
 ): DeclarationReflection[] | undefined {
   const propDecls: DeclarationReflection[] = [];
 
-  const metaRefl = ctx.context.createDeclarationReflection(
-    ReflectionKind.Property,
-    undefined,
-    undefined,
-    "meta",
-  );
-  const metaType = convertSchemaTreeNodeToType(ctx, "meta", metaNode);
+  const metaRefl = new DeclarationReflection("meta", ReflectionKind.Property, parent);
+  const metaType = convertSchemaTreeNodeToType(ctx, "meta", metaNode, metaRefl);
   if (!metaType) return;
   metaRefl.type = metaType;
   propDecls.push(metaRefl);
 
-  const itemsRefl = ctx.context.createDeclarationReflection(
-    ReflectionKind.Property,
-    undefined,
-    undefined,
-    "items",
-  );
-  const itemType = convertSchemaTreeNodeToType(ctx, "items", itemNode);
+  const itemsRefl = new DeclarationReflection("items", ReflectionKind.Property, parent);
+  const itemType = convertSchemaTreeNodeToType(ctx, "items", itemNode, itemsRefl);
   if (!itemType) return;
   itemsRefl.type = createArrayType(itemType, ctx.isImmutable);
   propDecls.push(itemsRefl);
