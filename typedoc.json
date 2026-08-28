@@ -1,6 +1,8 @@
 {
   "$schema": "https://typedoc.org/schema.json",
 
+  "extends": ["./typedoc.base.json"],
+
   "entryPoints": ["packages/core", "packages/geometry", "packages/three", "packages/xml"],
   "entryPointStrategy": "packages",
   "packageOptions": {
@@ -20,6 +22,7 @@
   "docsRoot": "./docs",
   "indexFormat": "table",
   "parametersFormat": "table",
+  "interfacePropertiesFormat": "table",
   "typeAliasPropertiesFormat": "table",
   "propertyMembersFormat": "table",
   "typeDeclarationFormat": "table",

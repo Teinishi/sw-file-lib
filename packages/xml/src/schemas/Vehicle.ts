@@ -6,15 +6,15 @@ export const AuthorSchema = x.partialObject({
   steam_id: x.number(),
   username: x.string(),
 });
-export type Author = x.Infer<typeof AuthorSchema>;
-export type AuthorImmutable = x.InferImmutable<typeof AuthorSchema>;
+export interface Author extends x.Infer<typeof AuthorSchema> {}
+export interface AuthorImmutable extends x.InferImmutable<typeof AuthorSchema> {}
 
 export const LogicSlotSchema = x.partialObject({
   editor_connected: x.number(),
   value: x.union([x.boolean(), x.number(), x.object({})]),
 });
-export type LogicSlot = x.Infer<typeof LogicSlotSchema>;
-export type LogicSlotImmutable = x.InferImmutable<typeof LogicSlotSchema>;
+export interface LogicSlot extends x.Infer<typeof LogicSlotSchema> {}
+export interface LogicSlotImmutable extends x.InferImmutable<typeof LogicSlotSchema> {}
 
 export const ColExtraSchema = x.metalist(
   "c",
@@ -25,8 +25,8 @@ export const ColExtraSchema = x.metalist(
     value: SwRgbSchema,
   }),
 );
-export type ColExtra = x.Infer<typeof ColExtraSchema>;
-export type ColExtraImmutable = x.InferImmutable<typeof ColExtraSchema>;
+export interface ColExtra extends x.Infer<typeof ColExtraSchema> {}
+export interface ColExtraImmutable extends x.InferImmutable<typeof ColExtraSchema> {}
 
 export const DisplaySchema = x.partialObject({
   type: x.number(),
@@ -40,8 +40,8 @@ export const DisplaySchema = x.partialObject({
   max: TextValuePairSchema,
   col_extra: ColExtraSchema,
 });
-export type Display = x.Infer<typeof DisplaySchema>;
-export type DisplayImmutable = x.InferImmutable<typeof DisplaySchema>;
+export interface Display extends x.Infer<typeof DisplaySchema> {}
+export interface DisplayImmutable extends x.InferImmutable<typeof DisplaySchema> {}
 
 export const AxisSensitivitySchema = x.partialObject({
   x: x.number(),
@@ -49,8 +49,8 @@ export const AxisSensitivitySchema = x.partialObject({
   z: x.number(),
   w: x.number(),
 });
-export type AxisSensitivity = x.Infer<typeof AxisSensitivitySchema>;
-export type AxisSensitivityImmutable = x.InferImmutable<typeof AxisSensitivitySchema>;
+export interface AxisSensitivity extends x.Infer<typeof AxisSensitivitySchema> {}
+export interface AxisSensitivityImmutable extends x.InferImmutable<typeof AxisSensitivitySchema> {}
 
 export const ComponentOSchema = x.partialObject({
   r: x.string(),
@@ -177,31 +177,31 @@ export const ComponentOSchema = x.partialObject({
   trim_w_display: TextValuePairSchema,
   axis_sensitivity: AxisSensitivitySchema,
 });
-export type ComponentO = x.Infer<typeof ComponentOSchema>;
-export type ComponentOImmutable = x.InferImmutable<typeof ComponentOSchema>;
+export interface ComponentO extends x.Infer<typeof ComponentOSchema> {}
+export interface ComponentOImmutable extends x.InferImmutable<typeof ComponentOSchema> {}
 
 export const ComponentSchema = x.partialObject({
   d: x.string(),
   t: x.number(),
   o: ComponentOSchema,
 });
-export type Component = x.Infer<typeof ComponentSchema>;
-export type ComponentImmutable = x.InferImmutable<typeof ComponentSchema>;
+export interface Component extends x.Infer<typeof ComponentSchema> {}
+export interface ComponentImmutable extends x.InferImmutable<typeof ComponentSchema> {}
 
 export const BodySchema = x.partialObject({
   unique_id: x.number(),
   components: x.list("c", ComponentSchema),
 });
-export type Body = x.Infer<typeof BodySchema>;
-export type BodyImmutable = x.InferImmutable<typeof BodySchema>;
+export interface Body extends x.Infer<typeof BodySchema> {}
+export interface BodyImmutable extends x.InferImmutable<typeof BodySchema> {}
 
 export const VehicelLogicNodeLinkSchema = x.partialObject({
   type: x.number(),
   voxel_pos_0: SwVec3Schema,
   voxel_pos_1: SwVec3Schema,
 });
-export type VehicelLogicNodeLink = x.Infer<typeof VehicelLogicNodeLinkSchema>;
-export type VehicelLogicNodeLinkImmutable = x.InferImmutable<typeof VehicelLogicNodeLinkSchema>;
+export interface VehicelLogicNodeLink extends x.Infer<typeof VehicelLogicNodeLinkSchema> {}
+export interface VehicelLogicNodeLinkImmutable extends x.InferImmutable<typeof VehicelLogicNodeLinkSchema> {}
 
 export const VehicleSchema = x.partialObject({
   data_version: x.number(),
@@ -213,5 +213,5 @@ export const VehicleSchema = x.partialObject({
   bodies: x.list("body", BodySchema),
   logic_node_links: x.list("logic_node_link", VehicelLogicNodeLinkSchema),
 });
-export type Vehicle = x.Infer<typeof VehicleSchema>;
-export type VehicleImmutable = x.InferImmutable<typeof VehicleSchema>;
+export interface Vehicle extends x.Infer<typeof VehicleSchema> {}
+export interface VehicleImmutable extends x.InferImmutable<typeof VehicleSchema> {}

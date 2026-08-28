@@ -1,5 +1,7 @@
 {
-  "includeVersion": true,
+  "$schema": "https://typedoc.org/schema.json",
+
+  "extends": ["../../typedoc.base.json"],
   "entryPoints": ["src/index.ts", "src/utils/index.ts", "src/xml-schema/index.ts"],
   "entryPointStrategy": "resolve"
 }

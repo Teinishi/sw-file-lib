@@ -5,8 +5,8 @@ export const TextValuePairSchema = x.partialObject({
   text: x.string(),
   value: x.number(),
 });
-export type TextValuePair = x.Infer<typeof TextValuePairSchema>;
-export type TextValuePairImmutable = x.InferImmutable<typeof TextValuePairSchema>;
+export interface TextValuePair extends x.Infer<typeof TextValuePairSchema> {}
+export interface TextValuePairImmutable extends x.InferImmutable<typeof TextValuePairSchema> {}
 
 export const NodeSchema = x.partialObject({
   id: x.number(),
@@ -22,16 +22,16 @@ export const NodeSchema = x.partialObject({
     }),
   }),
 });
-export type Node = x.Infer<typeof NodeSchema>;
-export type NodeImmutable = x.InferImmutable<typeof NodeSchema>;
+export interface Node extends x.Infer<typeof NodeSchema> {}
+export interface NodeImmutable extends x.InferImmutable<typeof NodeSchema> {}
 
 export const ObjectInSchema = x.partialObject({
   component_id: x.number(),
   disabled: x.boolean(),
   node_index: x.number(),
 });
-export type ObjectIn = x.Infer<typeof ObjectInSchema>;
-export type ObjectInImmutable = x.InferImmutable<typeof ObjectInSchema>;
+export interface ObjectIn extends x.Infer<typeof ObjectInSchema> {}
+export interface ObjectInImmutable extends x.InferImmutable<typeof ObjectInSchema> {};
 
 export const ComponentObjectSchema = x.partialObject({
   id: x.number(),
@@ -103,15 +103,15 @@ export const ComponentObjectSchema = x.partialObject({
   kd: TextValuePairSchema,
   r: TextValuePairSchema,
 });
-export type ComponentObject = x.Infer<typeof ComponentObjectSchema>;
-export type ComponentObjectImmutable = x.InferImmutable<typeof ComponentObjectSchema>;
+export interface ComponentObject extends x.Infer<typeof ComponentObjectSchema> {}
+export interface ComponentObjectImmutable extends x.InferImmutable<typeof ComponentObjectSchema> {}
 
 export const ComponentSchema = x.partialObject({
   type: x.number(),
   object: ComponentObjectSchema,
 });
-export type Component = x.Infer<typeof ComponentSchema>;
-export type ComponentImmutable = x.InferImmutable<typeof ComponentSchema>;
+export interface Component extends x.Infer<typeof ComponentSchema> {}
+export interface ComponentImmutable extends x.InferImmutable<typeof ComponentSchema> {}
 
 export const BridgeComponentSchema = x.partialObject({
   type: x.number(),
@@ -122,8 +122,8 @@ export const BridgeComponentSchema = x.partialObject({
     out1: x.object({}),
   }),
 });
-export type BridgeComponent = x.Infer<typeof BridgeComponentSchema>;
-export type BridgeComponentImmutable = x.InferImmutable<typeof BridgeComponentSchema>;
+export interface BridgeComponent extends x.Infer<typeof BridgeComponentSchema> {}
+export interface BridgeComponentImmutable extends x.InferImmutable<typeof BridgeComponentSchema> {}
 
 export const GroupSchema = x.partialObject({
   data: x.partialObject({
@@ -135,8 +135,8 @@ export const GroupSchema = x.partialObject({
   components_bridge: x.list("c", BridgeComponentSchema),
   groups: x.object({}),
 });
-export type Group = x.Infer<typeof GroupSchema>;
-export type GroupImmutable = x.InferImmutable<typeof GroupSchema>;
+export interface Group extends x.Infer<typeof GroupSchema> {}
+export interface GroupImmutable extends x.InferImmutable<typeof GroupSchema> {}
 
 export const MicrocontrollerSchema = x.partialObject({
   name: x.string(),
@@ -165,5 +165,5 @@ export const MicrocontrollerSchema = x.partialObject({
   nodes: x.list("n", NodeSchema),
   group: GroupSchema,
 });
-export type Microcontroller = x.Infer<typeof MicrocontrollerSchema>;
-export type MicrocontrollerImmutable = x.InferImmutable<typeof MicrocontrollerSchema>;
+export interface Microcontroller extends x.Infer<typeof MicrocontrollerSchema> {}
+export interface MicrocontrollerImmutable extends x.InferImmutable<typeof MicrocontrollerSchema> {}

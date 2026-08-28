@@ -11,8 +11,8 @@ export const SfxLayerSchema = x.partialObject({
   sfx_volume_fade_speed: x.number(),
   sfx_pitch_fade_speed: x.number(),
 });
-export type SfxLayer = x.Infer<typeof SfxLayerSchema>;
-export type SfxLayerImmutable = x.InferImmutable<typeof SfxLayerSchema>;
+export interface SfxLayer extends x.Infer<typeof SfxLayerSchema> {}
+export interface SfxLayerImmutable extends x.InferImmutable<typeof SfxLayerSchema> {}
 
 export const SfxDataSchema = x.partialObject({
   sfx_name: x.string(),
@@ -22,8 +22,8 @@ export const SfxDataSchema = x.partialObject({
   sfx_is_underwater_affected: x.boolean(),
   sfx_layers: x.list("sfx_layer", SfxLayerSchema),
 });
-export type SfxData = x.Infer<typeof SfxDataSchema>;
-export type SfxDataImmutable = x.InferImmutable<typeof SfxDataSchema>;
+export interface SfxData extends x.Infer<typeof SfxDataSchema> {}
+export interface SfxDataImmutable extends x.InferImmutable<typeof SfxDataSchema> {}
 
 export const SurfaceSchema = x.partialObject({
   orientation: x.number(),
@@ -35,8 +35,8 @@ export const SurfaceSchema = x.partialObject({
   is_two_sided: x.boolean(),
   position: SwVec3Schema,
 });
-export type Surface = x.Infer<typeof SurfaceSchema>;
-export type SurfaceImmutable = x.InferImmutable<typeof SurfaceSchema>;
+export interface Surface extends x.Infer<typeof SurfaceSchema> {}
+export interface SurfaceImmutable extends x.InferImmutable<typeof SurfaceSchema> {}
 
 export const LogicNodeSchema = x.partialObject({
   orientation: x.number(),
@@ -47,8 +47,8 @@ export const LogicNodeSchema = x.partialObject({
   flags: x.number(),
   position: SwVec3Schema,
 });
-export type LogicNode = x.Infer<typeof LogicNodeSchema>;
-export type LogicNodeImmutable = x.InferImmutable<typeof LogicNodeSchema>;
+export interface LogicNode extends x.Infer<typeof LogicNodeSchema> {}
+export interface LogicNodeImmutable extends x.InferImmutable<typeof LogicNodeSchema> {}
 
 export const CouplingSchema = x.partialObject({
   orientation: x.number(),
@@ -60,8 +60,8 @@ export const CouplingSchema = x.partialObject({
   allow_bipolar_alignment: x.boolean(),
   position: SwVec3Schema,
 });
-export type Coupling = x.Infer<typeof CouplingSchema>;
-export type CouplingImmutable = x.InferImmutable<typeof CouplingSchema>;
+export interface Coupling extends x.Infer<typeof CouplingSchema> {}
+export interface CouplingImmutable extends x.InferImmutable<typeof CouplingSchema> {}
 
 export const VoxelSchema = x.partialObject({
   flags: x.number(),
@@ -70,15 +70,17 @@ export const VoxelSchema = x.partialObject({
   position: SwVec3Schema,
   physics_shape_rotation: SwMat3Schema,
 });
-export type Voxel = x.Infer<typeof VoxelSchema>;
-export type VoxelImmutable = x.InferImmutable<typeof VoxelSchema>;
+export interface Voxel extends x.Infer<typeof VoxelSchema> {}
+export interface VoxelImmutable extends x.InferImmutable<typeof VoxelSchema> {}
 
 export const JetEngineConnectionSchema = x.partialObject({
   pos: SwVec3Schema,
   normal: SwVec3Schema,
 });
-export type JetEngineConnection = x.Infer<typeof JetEngineConnectionSchema>;
-export type JetEngineConnectionImmutable = x.InferImmutable<typeof JetEngineConnectionSchema>;
+export interface JetEngineConnection extends x.Infer<typeof JetEngineConnectionSchema> {}
+export interface JetEngineConnectionImmutable extends x.InferImmutable<
+  typeof JetEngineConnectionSchema
+> {}
 
 export const ComponentDefinitionSchema = x.partialObject({
   name: x.string(),
@@ -257,5 +259,7 @@ export const ComponentDefinitionSchema = x.partialObject({
   weapon_cart_velocity: SwVec3Schema,
   rope_hook_offset: SwVec3Schema,
 });
-export type ComponentDefinition = x.Infer<typeof ComponentDefinitionSchema>;
-export type ComponentDefinitionImmutable = x.InferImmutable<typeof ComponentDefinitionSchema>;
+export interface ComponentDefinition extends x.Infer<typeof ComponentDefinitionSchema> {}
+export interface ComponentDefinitionImmutable extends x.InferImmutable<
+  typeof ComponentDefinitionSchema
+> {}

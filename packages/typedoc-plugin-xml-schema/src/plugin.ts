@@ -1,33 +1,60 @@
 import {
-  Application,
-  ArrayType,
   Context,
   Converter,
   DeclarationReflection,
-  IntrinsicType,
+  ReflectionKind,
+  type Application,
+  TypeScript as ts,
+  ReflectionSymbolId,
+  ContainerReflection,
   ReferenceType,
   ReflectionFlag,
-  ReflectionKind,
-  ReflectionSymbolId,
-  ReflectionType,
   type SomeType,
-  TypeScript as ts,
-  TypeOperatorType,
+  IntrinsicType,
+  ReflectionType,
+  ArrayType,
   UnionType,
+  TypeOperatorType,
+  ProjectReflection,
 } from "typedoc";
 
 const XML_PACKAGE = "@sw-file-lib/xml";
 
+interface InterfaceDeclaration {
+  declarationRefl: DeclarationReflection;
+  schemaRef: ReferenceType;
+  schemaDecl: ts.VariableDeclaration;
+  isImmutable: boolean;
+}
+
+interface ConversionContext {
+  context: Context;
+  interfaceRefl: DeclarationReflection;
+  identifierIds: WeakMap<ts.Identifier, ReflectionSymbolId>;
+  schemaToAlias: Map<ReflectionSymbolId, DeclarationReflection>;
+  schemaToAliasImmutable: Map<ReflectionSymbolId, DeclarationReflection>;
+  isImmutable: boolean;
+}
+
+interface ObjectSchemaProperty {
+  key: string;
+  value: SchemaTreeNode;
+  isOptional: boolean;
+}
+
+type SchemaTreeNode =
+  | { type: "identifier"; identifier: ts.Identifier }
+  | { type: "intrinsic"; name: string }
+  | { type: "object"; properties: ObjectSchemaProperty[] }
+  | { type: "list"; itemType: SchemaTreeNode }
+  | { type: "metalist"; metaType: SchemaTreeNode; itemType: SchemaTreeNode }
+  | { type: "union"; types: SchemaTreeNode[] };
+
 export function load(app: Application) {
-  let checker: ts.TypeChecker | undefined;
   const identifierIds = new WeakMap<ts.Identifier, ReflectionSymbolId>();
   const schemaToAlias = new Map<ReflectionSymbolId, DeclarationReflection>();
   const schemaToAliasImmutable = new Map<ReflectionSymbolId, DeclarationReflection>();
-  const pending: {
-    typeAlias: DeclarationReflection;
-    schemaType: ts.Type;
-    isImmutable: boolean;
-  }[] = [];
+  const interfaceDeclarations: InterfaceDeclaration[] = [];
 
   app.converter.on(
     Converter.EVENT_CREATE_DECLARATION,
@@ -41,54 +68,64 @@ export function load(app: Application) {
   );
 
   app.converter.on(Converter.EVENT_RESOLVE_BEGIN, (context: Context) => {
-    for (const { typeAlias, schemaType, isImmutable } of pending) {
-      expandInfer(context, typeAlias, schemaType, isImmutable);
+    for (const interfaceDecl of interfaceDeclarations) {
+      const success = expandInferOnInterface(
+        {
+          context,
+          interfaceRefl: interfaceDecl.declarationRefl,
+          identifierIds,
+          schemaToAlias,
+          schemaToAliasImmutable,
+          isImmutable: interfaceDecl.isImmutable,
+        },
+        interfaceDecl,
+      );
+      if (!success) {
+        console.log("Skipped expanding Infer on interface:", interfaceDecl.declarationRefl.name);
+      }
     }
 
-    pending.length = 0;
+    interfaceDeclarations.length = 0;
     schemaToAlias.clear();
     schemaToAliasImmutable.clear();
   });
 
   function collect(context: Context, refl: DeclarationReflection) {
-    checker ??= context.checker;
+    if (!refl.kindOf(ReflectionKind.Interface)) return;
 
-    if (
-      !refl.kindOf(ReflectionKind.TypeAlias) ||
-      refl.type?.type !== "reference" ||
-      refl.type.package !== XML_PACKAGE
-    )
-      return;
+    if (refl.extendedTypes?.length !== 1) return;
+    const ext = refl.extendedTypes[0]!;
+    if (ext.type !== "reference" || ext.package !== XML_PACKAGE) return;
 
-    const isInfer = refl.type.qualifiedName === "Infer";
-    const isInferImmutable = refl.type.qualifiedName === "InferImmutable";
-
+    const isInfer = ext.qualifiedName === "Infer";
+    const isInferImmutable = ext.qualifiedName === "InferImmutable";
     if (!isInfer && !isInferImmutable) return;
 
-    const schemaRef = refl.type.typeArguments?.[0]?.visit({
-      query: (t) => t.queryType,
-    });
-
+    const schemaRef = ext.typeArguments?.[0]?.visit({ query: (t) => t.queryType });
     if (!(schemaRef?.reflection instanceof DeclarationReflection)) return;
-    const schemaRefl = schemaRef.reflection;
 
-    const symbol = getSymbol(context, schemaRefl);
+    // schema 定義で使われている symbol の ReflectionSymbolId をすべて集める
+    // EVENT_RESOLVE_BEGIN で context.createSymbolId に触れないため、事前に集めておく必要がある
+    const symbol = getSymbol(context, schemaRef.reflection);
     if (!symbol) return;
-
     const decl = symbol?.valueDeclaration ?? symbol?.declarations?.[0];
-    if (!decl) return;
+    if (!decl || !ts.isVariableDeclaration(decl)) return;
     collectIdentifiers(context, decl);
 
+    // schema からそれを Infer した interface を逆引きできるようにしておく
     const symbolId = context.createSymbolId(symbol);
-
     if (isInferImmutable) {
       schemaToAliasImmutable.set(symbolId, refl);
     } else {
       schemaToAlias.set(symbolId, refl);
     }
 
-    const schemaType = context.checker.getTypeAtLocation(decl);
-    pending.push({ typeAlias: refl, schemaType, isImmutable: isInferImmutable });
+    interfaceDeclarations.push({
+      declarationRefl: refl,
+      schemaRef,
+      schemaDecl: decl,
+      isImmutable: isInferImmutable,
+    });
   }
 
   function collectIdentifiers(context: Context, node: ts.Node) {
@@ -101,304 +138,6 @@ export function load(app: Application) {
 
     node.forEachChild((child) => collectIdentifiers(context, child));
   }
-
-  function expandInfer(
-    _context: Context,
-    typeAlias: DeclarationReflection,
-    schemaType: ts.Type,
-    isImmutable: boolean,
-  ) {
-    if (!checker) return;
-
-    typeAlias.type = convertSchema(
-      {
-        checker,
-        typeAlias,
-        identifierIds,
-        schemaToAlias,
-        schemaToAliasImmutable,
-        isImmutable,
-      },
-      schemaType,
-    );
-  }
-}
-
-function metaListType(
-  typeAlias: DeclarationReflection,
-  metaType: SomeType,
-  itemType: SomeType,
-): ReflectionType {
-  const decl = new DeclarationReflection("__type", ReflectionKind.TypeLiteral, typeAlias);
-
-  const metaProp = new DeclarationReflection("meta", ReflectionKind.Property, decl);
-  const itemsProp = new DeclarationReflection("items", ReflectionKind.Property, decl);
-
-  metaProp.type = metaType;
-  itemsProp.type = new ArrayType(itemType);
-
-  decl.children = [metaProp, itemsProp];
-
-  return new ReflectionType(decl);
-}
-
-type SchemaExpression =
-  | { kind: "identifier"; identifier: ts.Identifier }
-  | { kind: "list"; item: SchemaExpression }
-  | { kind: "metalist"; meta: SchemaExpression; item: SchemaExpression }
-  | { kind: "union"; items: SchemaExpression[] }
-  | { kind: "intrinsic"; name: "number" | "string" | "boolean" };
-
-interface ConversionContext {
-  checker: ts.TypeChecker;
-  typeAlias: DeclarationReflection;
-  identifierIds: WeakMap<ts.Identifier, ReflectionSymbolId>;
-  schemaToAlias: Map<ReflectionSymbolId, DeclarationReflection>;
-  schemaToAliasImmutable: Map<ReflectionSymbolId, DeclarationReflection>;
-  isImmutable: boolean;
-}
-
-function classifySchemaExpression(expr: ts.Expression): SchemaExpression | undefined {
-  let current = expr;
-
-  // Strip trailing .optional() calls only
-  while (ts.isCallExpression(current)) {
-    const target = current.expression;
-    if (ts.isPropertyAccessExpression(target) && target.name.text === "optional") {
-      current = target.expression;
-      continue;
-    }
-    break;
-  }
-
-  if (ts.isIdentifier(current)) {
-    return { kind: "identifier", identifier: current };
-  }
-
-  // x.number() / x.string() / x.boolean() / x.list(...) / x.union(...)
-  if (ts.isCallExpression(current)) {
-    const target = current.expression;
-    if (!ts.isPropertyAccessExpression(target) || !ts.isIdentifier(target.expression)) return;
-
-    switch (target.name.text) {
-      case "number":
-      case "string":
-      case "boolean":
-        return { kind: "intrinsic", name: target.name.text };
-      case "list":
-        const listItem = current.arguments[1];
-        if (!listItem) return;
-        const c0 = classifySchemaExpression(listItem);
-        if (!c0) return;
-        return { kind: "list", item: c0 };
-      case "metalist":
-        const metaListMeta = current.arguments[1];
-        const metaListItem = current.arguments[2];
-        const c1 = metaListMeta ? classifySchemaExpression(metaListMeta) : undefined;
-        const c2 = metaListItem ? classifySchemaExpression(metaListItem) : undefined;
-        if (!c1 || !c2) return;
-        return { kind: "metalist", meta: c1, item: c2 };
-      case "union":
-        const items = current.arguments[0];
-        if (!items) return;
-        if (!ts.isArrayLiteralExpression(items)) return;
-        const c3 = items.elements.map((e) => classifySchemaExpression(e));
-        if (c3.some((e) => e === undefined)) return;
-        return { kind: "union", items: c3 as SchemaExpression[] };
-    }
-  }
-}
-
-function identifierToAliasType(
-  ctx: Readonly<ConversionContext>,
-  ident: ts.Identifier,
-): ReferenceType | undefined {
-  const id = ctx.identifierIds.get(ident);
-  if (!id) {
-    return;
-  }
-  const alias = ctx.isImmutable ? ctx.schemaToAliasImmutable.get(id) : ctx.schemaToAlias.get(id);
-  if (!alias) return;
-  return ReferenceType.createResolvedReference(alias.name, alias, ctx.typeAlias.project);
-}
-
-function schemaExpressionToType(
-  ctx: Readonly<ConversionContext>,
-  expr: SchemaExpression
-): SomeType | undefined {
-  switch (expr.kind) {
-    case "identifier": {
-      return identifierToAliasType(ctx, expr.identifier);
-    }
-    case "list": {
-      const itemType = schemaExpressionToType(ctx, expr.item);
-      if (!itemType) return;
-      return new ArrayType(itemType);
-    }
-    case "metalist": {
-      const metaType = expr.meta ? schemaExpressionToType(ctx, expr.meta) : undefined;
-      const itemType = expr.item ? schemaExpressionToType(ctx, expr.item) : undefined;
-      if (!metaType || !itemType) return;
-      return metaListType(ctx.typeAlias, metaType, itemType);
-    }
-    case "union": {
-      const itemTypes = expr.items.map((item) => schemaExpressionToType(ctx, item));
-      if (itemTypes.some((t) => t === undefined)) return;
-      return new UnionType(itemTypes as SomeType[]);
-    }
-    case "intrinsic": {
-      return new IntrinsicType(expr.name);
-    }
-  }
-}
-
-function convertSchema(
-  ctx: Readonly<ConversionContext>,
-  type: ts.Type,
-  initializer?: ts.Expression,
-): SomeType {
-  const typeStr = ctx.checker.typeToString(type);
-
-  // primitive schemas
-  switch (typeStr) {
-    case "NumberSchema":
-      return new IntrinsicType("number");
-    case "StringSchema":
-      return new IntrinsicType("string");
-    case "BooleanSchema":
-      return new IntrinsicType("boolean");
-  }
-
-  if (initializer) {
-    const c = classifySchemaExpression(initializer);
-    if (c) {
-      const t = schemaExpressionToType(ctx, c);
-      if (t) return t;
-    }
-  }
-
-  // ObjectListSchema<T extends Shape>
-  if (isTypeReference(type, "ObjectListSchema")) {
-    const inner = (type as ts.TypeReference).typeArguments?.[0];
-    const arrayType = new ArrayType(
-      inner ? convertShape(ctx, inner) : new IntrinsicType("unknown"),
-    );
-    if (ctx.isImmutable) {
-      return new TypeOperatorType(arrayType, "readonly");
-    } else {
-      return arrayType;
-    }
-  }
-
-  // ListSchema<T extends ElementSchema>
-  if (isTypeReference(type, "ListSchema")) {
-    const inner = (type as ts.TypeReference).typeArguments?.[0];
-    const arrayType = new ArrayType(
-      inner ? convertSchema(ctx, inner) : new IntrinsicType("unknown"),
-    );
-    if (ctx.isImmutable) {
-      return new TypeOperatorType(arrayType, "readonly");
-    } else {
-      return arrayType;
-    }
-  }
-
-  // ObjectMetaListSchema<T extends Shape>
-  if (isTypeReference(type, "ObjectMetaListSchema")) {
-    const inner0 = (type as ts.TypeReference).typeArguments?.[0];
-    const inner1 = (type as ts.TypeReference).typeArguments?.[1];
-    const metaList = metaListType(
-      ctx.typeAlias,
-      inner0 ? convertShape(ctx, inner0) : new IntrinsicType("unknown"),
-      inner1 ? convertShape(ctx, inner1) : new IntrinsicType("unknown"),
-    );
-    if (ctx.isImmutable) {
-      return new TypeOperatorType(metaList, "readonly");
-    } else {
-      return metaList;
-    }
-  }
-
-  // MetaListSchema<T extends ElementSchema>
-  if (isTypeReference(type, "MetaListSchema")) {
-    const inner0 = (type as ts.TypeReference).typeArguments?.[0];
-    const inner1 = (type as ts.TypeReference).typeArguments?.[1];
-    const metaList = metaListType(
-      ctx.typeAlias,
-      inner0 ? convertShape(ctx, inner0) : new IntrinsicType("unknown"),
-      inner1 ? convertSchema(ctx, inner1) : new IntrinsicType("unknown"),
-    );
-    if (ctx.isImmutable) {
-      return new TypeOperatorType(metaList, "readonly");
-    } else {
-      return metaList;
-    }
-  }
-
-  // OptionalSchema<T>
-  if (isTypeReference(type, "OptionalSchema")) {
-    const inner = (type as ts.TypeReference).typeArguments?.[0];
-    return inner ? convertSchema(ctx, inner) : new IntrinsicType("unknown");
-  }
-
-  // UnionSchema<[...]>
-  if (isTypeReference(type, "UnionSchema")) {
-    const tuple = (type as ts.TypeReference).typeArguments?.[0];
-    if (tuple && ctx.checker.isTupleType(tuple)) {
-      const parts = (tuple as ts.TypeReference).typeArguments ?? [];
-      return new UnionType(parts.map((t) => convertSchema(ctx, t)));
-    }
-  }
-
-  // ObjectSchema<T>
-  if (isTypeReference(type, "ObjectSchema")) {
-    const shape = (type as ts.TypeReference).typeArguments?.[0];
-    if (shape) return convertShape(ctx, shape);
-  }
-
-  return new IntrinsicType("unknown");
-}
-
-function convertShape(ctx: Readonly<ConversionContext>, shape: ts.Type): ReflectionType {
-  const decl = new DeclarationReflection("__type", ReflectionKind.TypeLiteral, ctx.typeAlias);
-
-  decl.children = shape.getProperties().map((prop) => {
-    const root = ctx.checker.getRootSymbols(prop)[0] ?? prop;
-    const valueDecl = root.valueDeclaration ?? root.declarations?.[0];
-
-    const propType = ctx.checker.getTypeOfSymbol(prop);
-
-    let initializer: ts.Expression | undefined;
-    if (valueDecl && ts.isPropertyAssignment(valueDecl)) {
-      initializer = valueDecl.initializer;
-    }
-
-    const member = new DeclarationReflection(prop.name, ReflectionKind.Property, decl);
-
-    if (isTypeReference(propType, "OptionalSchema")) {
-      member.flags.setFlag(ReflectionFlag.Optional, true);
-
-      const valueType = (propType as ts.TypeReference).typeArguments?.[0];
-      member.type = valueType
-        ? convertSchema(ctx, valueType, initializer)
-        : new IntrinsicType("unknown");
-    } else {
-      member.type = convertSchema(ctx, propType, initializer);
-    }
-
-    member.flags.setFlag(ReflectionFlag.Readonly, ctx.isImmutable);
-
-    return member;
-  });
-
-  return new ReflectionType(decl);
-}
-
-function isTypeReference(type: ts.Type, target: string): boolean {
-  if (!(type.flags & ts.TypeFlags.Object)) return false;
-
-  const symbol = type.getSymbol();
-  return symbol?.getName() === target;
 }
 
 function getSymbol(context: Context, refl: DeclarationReflection): ts.Symbol | undefined {
@@ -407,4 +146,305 @@ function getSymbol(context: Context, refl: DeclarationReflection): ts.Symbol | u
   }
 
   return (refl.project as any).getSymbolFromReflection(refl);
+}
+
+function expandInferOnInterface(
+  ctx: ConversionContext,
+  interfaceDecl: InterfaceDeclaration,
+): boolean {
+  const { initializer } = interfaceDecl.schemaDecl;
+  if (!initializer) return false;
+
+  const schemaData = convertSchemaAST(ctx, initializer);
+  if (!schemaData) return false;
+
+  let propDecls: DeclarationReflection[] | undefined;
+  switch (schemaData.node.type) {
+    case "object":
+      propDecls = convertSchemaTreeObjectNodeToType(ctx, schemaData.node.properties);
+      break;
+    case "metalist":
+      propDecls = convertSchemaTreeMetalistNodeToType(
+        ctx,
+        schemaData.node.metaType,
+        schemaData.node.itemType,
+      );
+      break;
+  }
+  if (!propDecls) return false;
+
+  for (const propDecl of propDecls) {
+    replaceChild(interfaceDecl.declarationRefl, propDecl.name, propDecl, ctx.interfaceRefl.project);
+  }
+
+  delete interfaceDecl.declarationRefl.extendedTypes;
+  return true;
+}
+
+function replaceChild(
+  parent: ContainerReflection,
+  key: string,
+  newChild: DeclarationReflection,
+  project: ProjectReflection,
+) {
+  const oldChild = parent.children?.find((c) => c.name === key);
+  if (oldChild) {
+    parent.removeChild(oldChild);
+    project.removeReflection(oldChild);
+  }
+  parent.addChild(newChild);
+}
+
+function convertSchemaTreeNodeToType(
+  ctx: ConversionContext,
+  name: string,
+  node: SchemaTreeNode,
+): SomeType | undefined {
+  switch (node.type) {
+    case "identifier":
+      const symbolId = ctx.identifierIds.get(node.identifier);
+      if (!symbolId) return;
+      const alias = ctx.isImmutable
+        ? ctx.schemaToAliasImmutable.get(symbolId)
+        : ctx.schemaToAlias.get(symbolId);
+      if (!alias) return;
+      return ReferenceType.createResolvedReference(alias.name, alias, ctx.interfaceRefl.project);
+    case "intrinsic":
+      return new IntrinsicType(node.name);
+    case "object":
+      const objectDecl = ctx.context.createDeclarationReflection(
+        ReflectionKind.Interface,
+        undefined,
+        undefined,
+        name,
+      );
+      const objectPropDecls = convertSchemaTreeObjectNodeToType(ctx, node.properties);
+      if (!objectPropDecls) return;
+      for (const propDecl of objectPropDecls) {
+        objectDecl.addChild(propDecl);
+      }
+      return new ReflectionType(objectDecl);
+    case "list":
+      const itemType = convertSchemaTreeNodeToType(ctx, name, node.itemType);
+      if (!itemType) return;
+      return createArrayType(itemType, ctx.isImmutable);
+    case "metalist":
+      const metalistDecl = ctx.context.createDeclarationReflection(
+        ReflectionKind.Interface,
+        undefined,
+        undefined,
+        name,
+      );
+      const metalistPropDecls = convertSchemaTreeMetalistNodeToType(
+        ctx,
+        node.metaType,
+        node.itemType,
+      );
+      if (!metalistPropDecls) return;
+      for (const propDecl of metalistPropDecls) {
+        metalistDecl.addChild(propDecl);
+      }
+      return new ReflectionType(metalistDecl);
+    case "union":
+      const unionTypes: SomeType[] = [];
+      for (const typeNode of node.types) {
+        const type = convertSchemaTreeNodeToType(ctx, name, typeNode);
+        if (!type) return;
+        unionTypes.push(type);
+      }
+      return new UnionType(unionTypes);
+    default:
+      node satisfies never;
+  }
+}
+
+function convertSchemaTreeObjectNodeToType(
+  ctx: ConversionContext,
+  props: ObjectSchemaProperty[],
+): DeclarationReflection[] | undefined {
+  const propDecls: DeclarationReflection[] = [];
+  for (const prop of props) {
+    const propType = convertSchemaTreeNodeToType(ctx, prop.key, prop.value);
+    if (!propType) return;
+    const propRefl = ctx.context.createDeclarationReflection(
+      ReflectionKind.Property,
+      undefined,
+      undefined,
+      prop.key,
+    );
+    propRefl.type = propType;
+    propRefl.flags.setFlag(ReflectionFlag.Optional, prop.isOptional);
+    propRefl.flags.setFlag(ReflectionFlag.Readonly, ctx.isImmutable);
+    propDecls.push(propRefl);
+  }
+  return propDecls;
+}
+
+function convertSchemaTreeMetalistNodeToType(
+  ctx: ConversionContext,
+  metaNode: SchemaTreeNode,
+  itemNode: SchemaTreeNode,
+): DeclarationReflection[] | undefined {
+  const propDecls: DeclarationReflection[] = [];
+
+  const metaRefl = ctx.context.createDeclarationReflection(
+    ReflectionKind.Property,
+    undefined,
+    undefined,
+    "meta",
+  );
+  const metaType = convertSchemaTreeNodeToType(ctx, "meta", metaNode);
+  if (!metaType) return;
+  metaRefl.type = metaType;
+  propDecls.push(metaRefl);
+
+  const itemsRefl = ctx.context.createDeclarationReflection(
+    ReflectionKind.Property,
+    undefined,
+    undefined,
+    "items",
+  );
+  const itemType = convertSchemaTreeNodeToType(ctx, "items", itemNode);
+  if (!itemType) return;
+  itemsRefl.type = createArrayType(itemType, ctx.isImmutable);
+  propDecls.push(itemsRefl);
+
+  return propDecls;
+}
+
+function createArrayType(itemType: SomeType, isReadonly: boolean): ArrayType | TypeOperatorType {
+  const arrayType = new ArrayType(itemType);
+  if (isReadonly) {
+    return new TypeOperatorType(arrayType, "readonly");
+  } else {
+    return arrayType;
+  }
+}
+
+function convertSchemaAST(
+  ctx: ConversionContext,
+  expr: ts.Expression,
+): { node: SchemaTreeNode; isOptional: boolean } | undefined {
+  const { expr: strippedExpr, isOptional } = stripTrailingCall(expr);
+
+  if (ts.isIdentifier(strippedExpr))
+    return { node: { type: "identifier", identifier: strippedExpr }, isOptional };
+
+  if (!ts.isCallExpression(strippedExpr)) return;
+
+  const rightMostIdentifier = getRightMostIdentifier(strippedExpr.expression);
+  if (!rightMostIdentifier) return;
+  const rightMostIdentifierId = ctx.identifierIds.get(rightMostIdentifier);
+  if (!rightMostIdentifierId || rightMostIdentifierId.packageName !== XML_PACKAGE) return;
+
+  const arg0 = strippedExpr.arguments[0];
+  const arg1 = strippedExpr.arguments[1];
+  const arg2 = strippedExpr.arguments[2];
+
+  switch (rightMostIdentifier.text) {
+    case "string":
+    case "number":
+    case "boolean":
+      return { node: { type: "intrinsic", name: rightMostIdentifier.text }, isOptional };
+    case "object":
+      if (!arg0) return;
+      const objectProps = convertObjectLiteral(ctx, arg0, false);
+      if (!objectProps) return;
+      return { node: { type: "object", properties: objectProps }, isOptional };
+    case "partialObject":
+      if (!arg0) return;
+      const partialObjectProps = convertObjectLiteral(ctx, arg0, true);
+      if (!partialObjectProps) return;
+      return { node: { type: "object", properties: partialObjectProps }, isOptional };
+    case "list":
+      if (!arg1) return;
+      const listItemType = convertSchemaAST(ctx, arg1);
+      if (!listItemType) return;
+      return { node: { type: "list", itemType: listItemType.node }, isOptional };
+    case "metalist":
+      if (!arg1 || !arg2) return;
+      const metaListMetaType = convertSchemaAST(ctx, arg1);
+      const metaListItemType = convertSchemaAST(ctx, arg2);
+      if (!metaListMetaType || !metaListItemType) return;
+      return {
+        node: {
+          type: "metalist",
+          metaType: metaListMetaType.node,
+          itemType: metaListItemType.node,
+        },
+        isOptional,
+      };
+    case "union":
+      if (!arg0 || !ts.isArrayLiteralExpression(arg0)) return;
+      const unionTypes: SchemaTreeNode[] = [];
+      for (const arg of arg0.elements) {
+        const unionType = convertSchemaAST(ctx, arg);
+        if (!unionType) return;
+        unionTypes.push(unionType.node);
+      }
+      return { node: { type: "union", types: unionTypes }, isOptional };
+  }
+}
+
+function stripTrailingCall(expr: ts.Expression): { expr: ts.Expression; isOptional: boolean } {
+  let isOptional = false;
+  while (ts.isCallExpression(expr)) {
+    const target = expr.expression;
+    if (ts.isPropertyAccessExpression(target) && target.name.text === "optional") {
+      expr = target.expression;
+      isOptional = true;
+    } else {
+      break;
+    }
+  }
+  return { expr, isOptional };
+}
+
+function getRightMostIdentifier(expr: ts.Expression): ts.Identifier | undefined {
+  if (ts.isIdentifier(expr)) return expr;
+
+  if (ts.isPropertyAccessExpression(expr)) {
+    return getRightMostIdentifier(expr.name);
+  }
+}
+
+function convertObjectLiteral(
+  ctx: ConversionContext,
+  expr: ts.Expression,
+  isPartial: boolean,
+): ObjectSchemaProperty[] | undefined {
+  if (!ts.isObjectLiteralExpression(expr)) return;
+
+  const properties: ObjectSchemaProperty[] = [];
+  for (const prop of expr.properties) {
+    if (!ts.isPropertyAssignment(prop)) return;
+    const value = convertSchemaAST(ctx, prop.initializer);
+    if (!value) return;
+    const key = getPropertyKey(prop);
+    if (!key) return;
+    properties.push({
+      key,
+      value: value.node,
+      isOptional: isPartial || value.isOptional,
+    });
+  }
+  return properties;
+}
+
+function getPropertyKey(prop: ts.PropertyAssignment): string | undefined {
+  if (ts.isIdentifier(prop.name)) {
+    return prop.name.text;
+  }
+  if (ts.isStringLiteral(prop.name)) {
+    return prop.name.text;
+  }
+  if (ts.isNoSubstitutionTemplateLiteral(prop.name)) {
+    return prop.name.text;
+  }
+  if (ts.isNumericLiteral(prop.name)) {
+    return prop.name.text;
+  }
+  if (ts.isBigIntLiteral(prop.name)) {
+    return prop.name.text;
+  }
 }
