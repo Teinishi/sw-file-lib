@@ -17,6 +17,7 @@
   "plugin": [
     "@sw-file-lib/typedoc-plugin-xml-schema",
     "typedoc-plugin-markdown",
+    "@sw-file-lib/typedoc-markdown-codeblock",
     "typedoc-vitepress-theme"
   ],
   "docsRoot": "./docs",

@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@sw-file-lib/typedoc-markdown-codeblock':
+        specifier: workspace:*
+        version: link:packages/typedoc-markdown-codeblock
       '@sw-file-lib/typedoc-plugin-xml-schema':
         specifier: workspace:*
         version: link:packages/typedoc-plugin-xml-schema
@@ -128,11 +131,13 @@ importers:
         specifier: ^0.185.4
         version: 0.185.4
 
-  packages/typedoc-plugin-xml-schema:
+  packages/typedoc-markdown-codeblock:
     devDependencies:
       '@sw-file-lib/xml':
         specifier: workspace:*
         version: link:../xml
+
+  packages/typedoc-plugin-xml-schema: {}
 
   packages/xml:
     dependencies:

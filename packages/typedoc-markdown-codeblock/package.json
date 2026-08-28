@@ -1,8 +1,8 @@
 {
-  "name": "@sw-file-lib/typedoc-plugin-xml-schema",
+  "name": "@sw-file-lib/typedoc-markdown-codeblock",
   "version": "0.1.0",
   "private": true,
-  "description": "Internal TypeDoc plugin which replaces x.infer<typeof schema> with the inferred type.",
+  "description": "Internal TypeDoc plugin which adds code block for interface and class declarations in typedoc-plugin-markdown.",
   "keywords": [],
   "license": "MIT",
   "author": "Teinishi",
@@ -15,5 +15,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsdown",
     "dev": "tsdown --watch"
+  },
+  "devDependencies": {
+    "@sw-file-lib/xml": "workspace:*"
   }
 }
