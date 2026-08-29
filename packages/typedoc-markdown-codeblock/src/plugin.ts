@@ -6,14 +6,16 @@ export function load(app: Application) {
     (app.renderer as any).markdownHooks.on("content.begin", (context: MarkdownThemeContext) => {
       const refl = context.page.model;
       if (!refl.isDeclaration()) return;
-      return interfaceCodeBlock(refl);
+      if (refl.kindOf(ReflectionKind.Interface)) {
+        return interfaceCodeBlock(refl);
+      } else if (refl.kindOf(ReflectionKind.Class)) {
+        return classCodeBlock(refl);
+      }
     });
   }
 }
 
 function interfaceCodeBlock(refl: DeclarationReflection): string | undefined {
-  if (!refl.kindOf(ReflectionKind.Interface)) return;
-
   const md: string[] = [];
 
   md.push("```ts");
@@ -25,14 +27,66 @@ function interfaceCodeBlock(refl: DeclarationReflection): string | undefined {
   }
 
   for (const prop of refl.getProperties()) {
-    const modifiers = prop.flags.isReadonly ? "readonly " : "";
-    const type = prop.type?.toString() ?? "unknown";
-    const optional = prop.flags.isOptional ? "?" : "";
-    md.push(`  ${modifiers}${prop.name}${optional}: ${type};`);
+    const code = propertyCode(prop);
+    if (code !== undefined) md.push(`  ${code}`);
   }
 
   md.push("}");
   md.push("```");
 
   return md.join("\n");
+}
+
+function classCodeBlock(refl: DeclarationReflection): string | undefined {
+  const md: string[] = [];
+
+  md.push("```ts");
+  if (refl.extendedTypes?.length) {
+    const extendsList = refl.extendedTypes.map((t) => t.toString()).join(", ");
+    md.push(`class ${refl.name} extends ${extendsList} {`);
+  } else {
+    md.push(`class ${refl.name} {`);
+  }
+
+  for (const prop of refl.getProperties()) {
+    const code = propertyCode(prop);
+    if (code !== undefined) md.push(`  ${code}`);
+  }
+
+  md.push("}");
+  md.push("```");
+
+  return md.join("\n");
+}
+
+function propertyCode(prop: DeclarationReflection): string | undefined {
+  if (prop.kindOf(ReflectionKind.Property)) {
+    const modifiers = prop.flags.isReadonly ? "readonly " : "";
+    const type = prop.type?.toString() ?? "unknown";
+    const optional = prop.flags.isOptional ? "?" : "";
+    return `${modifiers}${prop.name}${optional}: ${type};`;
+  } else if (prop.kindOf(ReflectionKind.Constructor)) {
+    const params =
+      prop.signatures?.[0]?.parameters
+        ?.map((p) => {
+          const paramName = p.name;
+          const paramType = p.type?.toString() ?? "unknown";
+          const optional = p.flags.isOptional ? "?" : "";
+          return `${paramName}${optional}: ${paramType}`;
+        })
+        .join(", ") ?? "";
+    return `constructor(${params});`;
+  } else if (prop.kindOf(ReflectionKind.Method)) {
+    const params =
+      prop.signatures?.[0]?.parameters
+        ?.map((p) => {
+          const paramName = p.name;
+          const paramType = p.type?.toString() ?? "unknown";
+          const optional = p.flags.isOptional ? "?" : "";
+          return `${paramName}${optional}: ${paramType}`;
+        })
+        .join(", ") ?? "";
+    const returnType = prop.signatures?.[0]?.type?.toString() ?? "void";
+    return `${prop.name}(${params}): ${returnType};`;
+  }
 }
