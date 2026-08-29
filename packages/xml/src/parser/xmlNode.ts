@@ -1,9 +1,4 @@
-import {
-  RawXmlTreeList,
-  type DuplicateChildElementMode,
-  type RawXmlTreeRecord,
-  type RawXmlTreeValue,
-} from ".";
+import { type DuplicateChildElementMode } from ".";
 import { SwXmlStructureError } from "./errors";
 
 /**
@@ -104,21 +99,6 @@ export class SwXmlNodeList {
   childTags(): string[] {
     return [...new Set(this.nodes.map((c) => c.tag))];
   }
-
-  /**
-   * Returns a child node converted to a raw XML tree value.
-   *
-   * This is useful for quick inspection, but schema parsing is preferred for
-   * tools that need reliable behavior across Stormworks XML edge cases.
-   */
-  getRawTree(
-    tag: string,
-    duplicateChildElement: DuplicateChildElementMode = "error",
-  ): RawXmlTreeValue | undefined {
-    const c = this.selectChild(tag, duplicateChildElement);
-    if (!c) return;
-    return c.value.asRawTree(duplicateChildElement);
-  }
 }
 
 /**
@@ -145,101 +125,5 @@ export class SwXmlNode extends SwXmlNodeList {
    */
   setAttr(name: string, value: string): void {
     this.attrs.set(name, value);
-  }
-
-  /**
-   * Converts this node to a raw XML record.
-   *
-   * Prefer schema parsing for typed library and application code.
-   */
-  asRawTreeRecord(duplicateChildElement: DuplicateChildElementMode = "error"): RawXmlTreeRecord {
-    const obj: RawXmlTreeRecord = Object.fromEntries(this.attrs.entries());
-    for (const child of this.nodes) {
-      if (child.tag in obj) {
-        if (duplicateChildElement === "error") {
-          throw new SwXmlStructureError(
-            "duplicate_child_element",
-            `Expected record of unique tags, got more than one of <${child.tag}>.`,
-            {
-              tag: this.tag,
-              childTag: child.tag,
-            },
-          );
-        }
-        if (duplicateChildElement === "first") {
-          continue;
-        }
-      }
-      const c = child.asRawTree(duplicateChildElement);
-      obj[child.tag] = c;
-    }
-    return obj;
-  }
-
-  /**
-   * Converts this node to a raw XML list.
-   *
-   * Prefer schema parsing when the expected shape is known.
-   */
-  asRawTreeList(duplicateChildElement: DuplicateChildElementMode = "error"): RawXmlTreeList {
-    const childTags = this.childTags();
-    if (childTags.length === 0) {
-      throw new SwXmlStructureError(
-        "empty_list",
-        `Expected list of single tags, got none at <${this.tag}>.`,
-        { tag: this.tag },
-      );
-    }
-    if (childTags.length !== 1) {
-      throw new SwXmlStructureError(
-        "invalid_list_shape",
-        `Expected list of single tags at <${this.tag}>, got multiple child tags: <${childTags.join(">, <")}>`,
-        {
-          tag: this.tag,
-          childTags,
-        },
-      );
-    }
-    const nodeList = this.asNodeList();
-    const itemTag = nodeList[0]?.tag;
-    if (itemTag === undefined) {
-      throw new SwXmlStructureError(
-        "empty_list",
-        `Expected list of single tags, got none at <${this.tag}>.`,
-        { tag: this.tag },
-      );
-    }
-    return new RawXmlTreeList(
-      itemTag,
-      nodeList.map((c) => c.asRawTree(duplicateChildElement)),
-    );
-  }
-
-  /**
-   * Converts this node to a raw XML tree value.
-   *
-   * This schema-free conversion is convenient, but it can misclassify elements
-   * whose list or record shape depends on the schema. Prefer schema parsing for
-   * CLI and GUI tools.
-   */
-  asRawTree(duplicateChildElement: DuplicateChildElementMode = "error"): RawXmlTreeValue {
-    const hasNoAttr = this.attrs.size === 0;
-    const uniqueItemTags = this.childTags().length;
-
-    if (this.attrs.size === 0 && uniqueItemTags === 0) return null;
-
-    if (uniqueItemTags === 1 && hasNoAttr) {
-      return this.asRawTreeList(duplicateChildElement);
-    } else if (uniqueItemTags >= 2 || !hasNoAttr) {
-      return this.asRawTreeRecord(duplicateChildElement);
-    } else if (hasNoAttr && uniqueItemTags === 0) {
-      return null;
-    } else {
-      throw new SwXmlStructureError(
-        "unknown_node_shape",
-        `Cannot determine whether <${this.tag}> is a record or a list.`,
-        { tag: this.tag },
-      );
-    }
   }
 }

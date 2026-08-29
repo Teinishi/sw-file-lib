@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { parseSwXml, RawXmlTreeList, SwXmlNode, SwXmlNodeList } from "../../src";
+import { parseSwXml, SwXmlNode, SwXmlNodeList } from "../../src";
 
 describe("parser", () => {
   test("parse 1", () => {
@@ -29,21 +29,6 @@ describe("parser", () => {
           ],
         ),
       ]),
-    );
-
-    expect(tree.getRawTree("root")).toEqual({
-      abc: "def",
-      "01": "23",
-      position: { x: "1", y: "2", z: "3" },
-      empty: null,
-    });
-  });
-
-  test("parse 2", () => {
-    const tree = parseSwXml('<list><item id="0"/><item id="1"/><item id="2"/></list>');
-
-    expect(tree.getRawTree("list")).toEqual(
-      new RawXmlTreeList("item", [{ id: "0" }, { id: "1" }, { id: "2" }]),
     );
   });
 });

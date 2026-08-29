@@ -4,7 +4,6 @@ import { SwXmlParseError } from "./errors";
 import { SwXmlNode, SwXmlNodeList } from "./xmlNode";
 
 export * from "./errors";
-export * from "./rawTree";
 export * from "./xmlNode";
 
 /**
