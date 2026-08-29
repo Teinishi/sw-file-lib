@@ -10,7 +10,7 @@ export default defineConfig({
     nav: [
       { text: "Home", link: "/" },
       { text: "Guide", link: "/guide/" },
-      { text: "API Docs", link: "/api/" },
+      { text: "Reference", link: "/api/" },
     ],
 
     sidebar: [
@@ -20,11 +20,12 @@ export default defineConfig({
           { text: "Getting Started", link: "/guide/" },
           { text: "Markdown Examples", link: "/guide/markdown-examples" },
           { text: "Runtime API Examples", link: "/guide/api-examples" },
+          { text: "XML Schema", link: "/guide/xml-schema" },
         ],
       },
       {
         text: "API",
-        items: typedocSidebar,
+        items: [{ text: "Index", link: "/api/" }, ...typedocSidebar],
       },
     ],
 

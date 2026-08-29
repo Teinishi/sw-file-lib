@@ -6,11 +6,6 @@ import { SwXmlNode, SwXmlNodeList } from "./xmlNode";
 export * from "./errors";
 export * from "./xmlNode";
 
-/**
- * How to resolve duplicate child elements when reading an XML record.
- */
-export type DuplicateChildElementMode = "error" | "last" | "first";
-
 function formatXmlElement(value: unknown): SwXmlNode | null {
   if (!isRecord(value)) {
     throw new SwXmlParseError(

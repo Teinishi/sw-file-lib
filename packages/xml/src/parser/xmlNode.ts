@@ -1,5 +1,9 @@
-import { type DuplicateChildElementMode } from ".";
 import { SwXmlStructureError } from "./errors";
+
+/**
+ * How to resolve duplicate child elements when reading an XML record.
+ */
+export type DuplicateChildElementMode = "error" | "last" | "first";
 
 /**
  * A list of parsed Stormworks XML nodes.

@@ -23,8 +23,7 @@
   "docsRoot": "./docs",
   "indexFormat": "table",
   "parametersFormat": "table",
-  "interfacePropertiesFormat": "table",
-  "typeAliasPropertiesFormat": "table",
+  "interfacePropertiesFormat": "htmlTable",
   "propertyMembersFormat": "table",
   "typeDeclarationFormat": "table",
   "tableColumnSettings": {

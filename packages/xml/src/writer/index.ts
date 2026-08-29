@@ -1,4 +1,13 @@
+/**
+ * Value types that can be used as XML attribute values.
+ */
 export type XmlAttributeValue = string | number | boolean | undefined;
+
+/**
+ * An iterable of key-value pairs representing XML attributes.
+ *
+ * Used by {@link XmlWriter} when writing XML elements with attributes.
+ */
 export type XmlAttributes = Iterable<readonly [string, XmlAttributeValue]>;
 
 /**
