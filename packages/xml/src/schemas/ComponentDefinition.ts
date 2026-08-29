@@ -1,6 +1,24 @@
+/**
+ * Schemas and types for Stormworks component definition XML data.
+ *
+ * The schema and types for root `<definition>` element are re-exported at `'@sw-file-lib/xml'`, see {@link ComponentDefinitionSchema}, {@link ComponentDefinition}, and {@link ComponentDefinitionImmutable}.
+ *
+ * @packageDocumentation
+ */
+
 import { SwMat3Schema, SwVec3Schema } from ".";
 import * as x from "../xml-schema";
 
+/**
+ * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
+ *
+ * Parent: {@link SfxDataSchema}
+ *
+ * @see {@link SfxLayer}
+ * @see {@link SfxLayerImmutable}
+ */
 export const SfxLayerSchema = x.partialObject({
   sfx_filename_start: x.string(),
   sfx_filename_loop: x.string(),
@@ -11,9 +29,48 @@ export const SfxLayerSchema = x.partialObject({
   sfx_volume_fade_speed: x.number(),
   sfx_pitch_fade_speed: x.number(),
 });
+
+/**
+ * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
+ *
+ * Parent: {@link SfxData}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link SfxLayerImmutable} for its parameter type.
+ *
+ * @see {@link SfxLayerSchema}
+ * @see {@link SfxLayerImmutable}
+ */
 export interface SfxLayer extends x.Infer<typeof SfxLayerSchema> {}
+
+/**
+ * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
+ *
+ * Parent: {@link SfxDataImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link SfxLayer} instead
+ * if mutation is required.
+ *
+ * @see {@link SfxLayerSchema}
+ * @see {@link SfxLayer}
+ */
 export interface SfxLayerImmutable extends x.InferImmutable<typeof SfxLayerSchema> {}
 
+/**
+ * Represents `<sfx_data>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link SfxData}
+ * @see {@link SfxDataImmutable}
+ */
 export const SfxDataSchema = x.partialObject({
   sfx_name: x.string(),
   sfx_range_inner: x.number(),
@@ -22,9 +79,50 @@ export const SfxDataSchema = x.partialObject({
   sfx_is_underwater_affected: x.boolean(),
   sfx_layers: x.list("sfx_layer", SfxLayerSchema),
 });
+
+/**
+ * Represents `<sfx_data>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link SfxDataImmutable} for its parameter type.
+ *
+ * @see {@link SfxDataSchema}
+ * @see {@link SfxDataImmutable}
+ */
 export interface SfxData extends x.Infer<typeof SfxDataSchema> {}
+
+/**
+ * Represents `<sfx_data>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link SfxData} instead
+ * if mutation is required.
+ *
+ * @see {@link SfxDataSchema}
+ * @see {@link SfxData}
+ */
 export interface SfxDataImmutable extends x.InferImmutable<typeof SfxDataSchema> {}
 
+/**
+ * Represents `<surface>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <surfaces> / <surface>`
+ * - `<definition> / <buoyancy_surfaces> / <surface>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link Surface}
+ * @see {@link SurfaceImmutable}
+ */
 export const SurfaceSchema = x.partialObject({
   orientation: x.number(),
   rotation: x.number(),
@@ -35,9 +133,52 @@ export const SurfaceSchema = x.partialObject({
   is_two_sided: x.boolean(),
   position: SwVec3Schema,
 });
+
+/**
+ * Represents `<surface>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <surfaces> / <surface>`
+ * - `<definition> / <buoyancy_surfaces> / <surface>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link SurfaceImmutable} for its parameter type.
+ *
+ * @see {@link SurfaceSchema}
+ * @see {@link SurfaceImmutable}
+ */
 export interface Surface extends x.Infer<typeof SurfaceSchema> {}
+
+/**
+ * Represents `<surface>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <surfaces> / <surface>`
+ * - `<definition> / <buoyancy_surfaces> / <surface>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link Surface} instead
+ * if mutation is required.
+ *
+ * @see {@link SurfaceSchema}
+ * @see {@link Surface}
+ */
 export interface SurfaceImmutable extends x.InferImmutable<typeof SurfaceSchema> {}
 
+/**
+ * Represents `<logic_node>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <logic_nodes> / <logic_node>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link LogicNode}
+ * @see {@link LogicNodeImmutable}
+ */
 export const LogicNodeSchema = x.partialObject({
   orientation: x.number(),
   label: x.string(),
@@ -47,9 +188,48 @@ export const LogicNodeSchema = x.partialObject({
   flags: x.number(),
   position: SwVec3Schema,
 });
+
+/**
+ * Represents `<logic_node>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <logic_nodes> / <logic_node>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link LogicNodeImmutable} for its parameter type.
+ *
+ * @see {@link LogicNodeSchema}
+ * @see {@link LogicNodeImmutable}
+ */
 export interface LogicNode extends x.Infer<typeof LogicNodeSchema> {}
+
+/**
+ * Represents `<logic_node>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <logic_nodes> / <logic_node>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link LogicNode} instead
+ * if mutation is required.
+ *
+ * @see {@link LogicNodeSchema}
+ * @see {@link LogicNode}
+ */
 export interface LogicNodeImmutable extends x.InferImmutable<typeof LogicNodeSchema> {}
 
+/**
+ * Represents `<coupling>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <couplings> / <coupling>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link Coupling}
+ * @see {@link CouplingImmutable}
+ */
 export const CouplingSchema = x.partialObject({
   orientation: x.number(),
   alignment: x.number(),
@@ -60,9 +240,48 @@ export const CouplingSchema = x.partialObject({
   allow_bipolar_alignment: x.boolean(),
   position: SwVec3Schema,
 });
+
+/**
+ * Represents `<coupling>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <couplings> / <coupling>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link CouplingImmutable} for its parameter type.
+ *
+ * @see {@link CouplingSchema}
+ * @see {@link CouplingImmutable}
+ */
 export interface Coupling extends x.Infer<typeof CouplingSchema> {}
+
+/**
+ * Represents `<coupling>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <couplings> / <coupling>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link Coupling} instead
+ * if mutation is required.
+ *
+ * @see {@link CouplingSchema}
+ * @see {@link Coupling}
+ */
 export interface CouplingImmutable extends x.InferImmutable<typeof CouplingSchema> {}
 
+/**
+ * Represents `<voxel>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <voxels> / <voxel>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link Voxel}
+ * @see {@link VoxelImmutable}
+ */
 export const VoxelSchema = x.partialObject({
   flags: x.number(),
   physics_shape: x.number(),
@@ -70,18 +289,98 @@ export const VoxelSchema = x.partialObject({
   position: SwVec3Schema,
   physics_shape_rotation: SwMat3Schema,
 });
+
+/**
+ * Represents `<voxel>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <voxels> / <voxel>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link VoxelImmutable} for its parameter type.
+ *
+ * @see {@link VoxelSchema}
+ * @see {@link VoxelImmutable}
+ */
 export interface Voxel extends x.Infer<typeof VoxelSchema> {}
+
+/**
+ * Represents `<voxel>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <voxels> / <voxel>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link Voxel} instead
+ * if mutation is required.
+ *
+ * @see {@link VoxelSchema}
+ * @see {@link Voxel}
+ */
 export interface VoxelImmutable extends x.InferImmutable<typeof VoxelSchema> {}
 
+/**
+ * Represents `<j>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <jet_engine_connections_prev> / <j>`
+ * - `<definition> / <jet_engine_connections_next> / <j>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link JetEngineConnection}
+ * @see {@link JetEngineConnectionImmutable}
+ */
 export const JetEngineConnectionSchema = x.partialObject({
   pos: SwVec3Schema,
   normal: SwVec3Schema,
 });
+
+/**
+ * Represents `<j>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <jet_engine_connections_prev> / <j>`
+ * - `<definition> / <jet_engine_connections_next> / <j>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link JetEngineConnectionImmutable} for its parameter type.
+ *
+ * @see {@link JetEngineConnectionSchema}
+ * @see {@link JetEngineConnectionImmutable}
+ */
 export interface JetEngineConnection extends x.Infer<typeof JetEngineConnectionSchema> {}
+
+/**
+ * Represents `<j>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <jet_engine_connections_prev> / <j>`
+ * - `<definition> / <jet_engine_connections_next> / <j>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link JetEngineConnection} instead
+ * if mutation is required.
+ *
+ * @see {@link JetEngineConnectionSchema}
+ * @see {@link JetEngineConnection}
+ */
 export interface JetEngineConnectionImmutable extends x.InferImmutable<
   typeof JetEngineConnectionSchema
 > {}
 
+/**
+ * Represents root `<definition>` elements in Stormworks component definition data.
+ *
+ * @see {@link ComponentDefinition}
+ * @see {@link ComponentDefinitionImmutable}
+ */
 export const ComponentDefinitionSchema = x.partialObject({
   name: x.string(),
   category: x.number(),
@@ -259,7 +558,28 @@ export const ComponentDefinitionSchema = x.partialObject({
   weapon_cart_velocity: SwVec3Schema,
   rope_hook_offset: SwVec3Schema,
 });
+
+/**
+ * Represents root `<definition>` elements in Stormworks component definition data.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link ComponentDefinitionImmutable} for its parameter type.
+ *
+ * @see {@link ComponentDefinitionSchema}
+ * @see {@link ComponentDefinitionImmutable}
+ */
 export interface ComponentDefinition extends x.Infer<typeof ComponentDefinitionSchema> {}
+
+/**
+ * Represents root `<definition>` elements in Stormworks component definition data.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link ComponentDefinition} instead
+ * if mutation is required.
+ *
+ * @see {@link ComponentDefinitionSchema}
+ * @see {@link ComponentDefinition}
+ */
 export interface ComponentDefinitionImmutable extends x.InferImmutable<
   typeof ComponentDefinitionSchema
 > {}

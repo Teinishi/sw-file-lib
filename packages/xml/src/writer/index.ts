@@ -1,8 +1,26 @@
 export type XmlAttributeValue = string | number | boolean | undefined;
 export type XmlAttributes = Iterable<readonly [string, XmlAttributeValue]>;
 
+/**
+ * Options for configuring the behavior of an {@link XmlWriter} instance.
+ */
 export interface XmlWriterOptions {
+  /**
+   * The string or number of spaces to use for indentation in the generated XML output.
+   *
+   * If a string is provided, it will be used as the indentation for each level of nesting.
+   * If a number is provided, that many spaces will be used for each level of nesting.
+   * If `undefined`, the output code will not be indented and will be a single line.
+   *
+   * @default `undefined`
+   */
   readonly indent?: string | number | undefined;
+
+  /**
+   * Whether to include the XML declaration (`<?xml version="1.0" encoding="UTF-8"?>`) at the beginning of the output.
+   *
+   * @default `true`
+   */
   readonly xmlDeclaration?: boolean;
 }
 
@@ -14,6 +32,22 @@ function getIndent(indent: string | number | undefined): string | undefined {
   }
 }
 
+/**
+ * A utility class for generating XML content programmatically.
+ *
+ * @example
+ * ```ts
+ * const writer = new XmlWriter({ indent: 2 });
+ * writer.begin("root");
+ * writer.element("child", { attr: "value" }, (w) => {
+ *   w.comment("This is a comment");
+ * });
+ * writer.end("root");
+ * console.log(writer.toString());
+ * ```
+ *
+ * @see {@link XmlWriterOptions} for configuration options.
+ */
 export class XmlWriter {
   private readonly lines: string[] = [];
   private readonly indentString: string | undefined;
@@ -27,11 +61,23 @@ export class XmlWriter {
     }
   }
 
+  /**
+   * Begin an XML element with the specified name and optional attributes.
+   *
+   * @param name The name of the XML element to begin.
+   * @param attributes Attributes for the XML element.
+   */
   begin(name: string, attributes?: XmlAttributes): void {
     this.writeLine(`<${name}${this.formatAttributes(attributes)}>`);
     this.elementStack.push(name);
   }
 
+  /**
+   * Close the most recently opened XML element with the specified name.
+   * @param name The name of the XML element to close.
+   *
+   * @throws An error if the closing tag does not match the most recently opened element.
+   */
   end(name: string): void {
     const expected = this.elementStack.pop();
 
@@ -46,10 +92,30 @@ export class XmlWriter {
     this.writeLine(`</${name}>`);
   }
 
+  /**
+   * Create an empty XML element with the specified name and optional attributes.
+   *
+   * @param name The name of the XML element to create.
+   * @param attributes Attributes for the XML element.
+   */
   empty(name: string, attributes?: XmlAttributes): void {
     this.writeLine(`<${name}${this.formatAttributes(attributes)}/>`);
   }
 
+  /**
+   * Create an XML element with the specified name, attributes, and child elements.
+   *
+   * @param name The name of the XML element to create.
+   * @param attributes Attributes for the XML element.
+   * @param children A function that takes a `XmlWriter` instance and writes child elements to it.
+   *
+   * @example
+   * ```ts
+   * writer.element("parent", { attr: "value" }, (w) => {
+   *   w.empty("child", { childAttr: "childValue" });
+   * });
+   * ```
+   */
   element(
     name: string,
     attributes: XmlAttributes | undefined,
@@ -71,10 +137,19 @@ export class XmlWriter {
     }
   }
 
+  /**
+   * Add a comment to the XML output.
+   * @param text The text of the comment to add.
+   */
   comment(text: string): void {
     this.writeLine(`<!-- ${text} -->`);
   }
 
+  /**
+   * Generate the final XML string from the written elements.
+   *
+   * @throws An error if there are unclosed elements when this method is called.
+   */
   toString(): string {
     if (this.elementStack.length > 0) {
       throw new Error(`Unclosed element(s): ${this.elementStack.join(" -> ")}`);
@@ -103,6 +178,14 @@ export class XmlWriter {
   }
 }
 
+/**
+ * Escape special characters in a string for use in XML attribute values.
+ *
+ * The characters `&`, `<`, `>`, and `"` are replaced with their corresponding XML entities.
+ *
+ * @param value The string to escape.
+ * @returns The escaped string.
+ */
 export function escapeXmlAttribute(value: string): string {
   return String(value)
     .replaceAll("&", "&amp;")

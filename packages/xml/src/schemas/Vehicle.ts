@@ -1,21 +1,125 @@
+/**
+ * Schemas and types for Stormworks vehicle XML data.
+ *
+ * The schema and types for root `<vehicle>` element are re-exported at `'@sw-file-lib/xml'`, see {@link VehicleSchema}, {@link Vehicle}, and {@link VehicleImmutable}.
+ *
+ * @packageDocumentation
+ */
+
 import { SwRgbSchema, SwVec3Schema } from ".";
 import * as x from "../xml-schema";
 import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
 
+/**
+ * Represents `<author>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <authors> / <author>`
+ *
+ * Parent: {@link VehicleSchema}
+ *
+ * @see {@link Author}
+ * @see {@link AuthorImmutable}
+ */
 export const AuthorSchema = x.partialObject({
   steam_id: x.number(),
   username: x.string(),
 });
+
+/**
+ * Represents `<author>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <authors> / <author>`
+ *
+ * Parent: {@link Vehicle}
+ *
+ * Inferred from {@link AuthorSchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link AuthorImmutable} for its parameter type.
+ *
+ * @see {@link AuthorSchema}
+ * @see {@link AuthorImmutable}
+ */
 export interface Author extends x.Infer<typeof AuthorSchema> {}
+
+/**
+ * Represents `<author>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <authors> / <author>`
+ *
+ * Parent: {@link VehicleImmutable}
+ *
+ * Inferred from {@link AuthorSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link Author} instead
+ * if mutation is required.
+ *
+ * @see {@link AuthorSchema}
+ * @see {@link Author}
+ */
 export interface AuthorImmutable extends x.InferImmutable<typeof AuthorSchema> {}
 
+/**
+ * Represents `<slot>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <logic_slots> / <slot>`
+ *
+ * Parent: {@link ComponentOSchema}
+ *
+ * @see {@link LogicSlot}
+ * @see {@link LogicSlotImmutable}
+ */
 export const LogicSlotSchema = x.partialObject({
   editor_connected: x.number(),
   value: x.union([x.boolean(), x.number(), x.object({})]),
 });
+
+/**
+ * Represents `<slot>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <logic_slots> / <slot>`
+ *
+ * Parent: {@link ComponentO}
+ *
+ * Inferred from {@link LogicSlotSchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link LogicSlotImmutable} for its parameter type.
+ *
+ * @see {@link LogicSlotSchema}
+ * @see {@link LogicSlotImmutable}
+ */
 export interface LogicSlot extends x.Infer<typeof LogicSlotSchema> {}
+
+/**
+ * Represents `<slot>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <logic_slots> / <slot>`
+ *
+ * Parent: {@link ComponentOImmutable}
+ *
+ * Inferred from {@link LogicSlotSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link LogicSlot} instead
+ * if mutation is required.
+ *
+ * @see {@link LogicSlotSchema}
+ * @see {@link LogicSlot}
+ */
 export interface LogicSlotImmutable extends x.InferImmutable<typeof LogicSlotSchema> {}
 
+/**
+ * Represents `<col_extra>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
+ *
+ * Parent: {@link DisplaySchema}
+ *
+ * @see {@link ColExtra}
+ * @see {@link ColExtraImmutable}
+ */
 export const ColExtraSchema = x.metalist(
   "c",
   x.partialObject({
@@ -25,9 +129,52 @@ export const ColExtraSchema = x.metalist(
     value: SwRgbSchema,
   }),
 );
+
+/**
+ * Represents `<col_extra>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
+ *
+ * Parent: {@link Display}
+ *
+ * Inferred from {@link ColExtraSchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link ColExtraImmutable} for its parameter type.
+ *
+ * @see {@link ColExtraSchema}
+ * @see {@link ColExtraImmutable}
+ */
 export interface ColExtra extends x.Infer<typeof ColExtraSchema> {}
+
+/**
+ * Represents `<col_extra>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
+ *
+ * Parent: {@link DisplayImmutable}
+ *
+ * Inferred from {@link ColExtraSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link ColExtra} instead
+ * if mutation is required.
+ *
+ * @see {@link ColExtraSchema}
+ * @see {@link ColExtra}
+ */
 export interface ColExtraImmutable extends x.InferImmutable<typeof ColExtraSchema> {}
 
+/**
+ * Represents `<display_1>`, `<display_2>`, `<display_3>`, or `<display_4>` in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
+ *
+ * Parent: {@link ComponentOSchema}
+ *
+ * @see {@link Display}
+ * @see {@link DisplayImmutable}
+ */
 export const DisplaySchema = x.partialObject({
   type: x.number(),
   name: x.string(),
@@ -40,18 +187,104 @@ export const DisplaySchema = x.partialObject({
   max: TextValuePairSchema,
   col_extra: ColExtraSchema,
 });
+
+/**
+ * Represents `<display_1>`, `<display_2>`, `<display_3>`, or `<display_4>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
+ *
+ * Parent: {@link ComponentO}
+ *
+ * Inferred from {@link DisplaySchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link DisplayImmutable} for its parameter type.
+ *
+ * @see {@link DisplaySchema}
+ * @see {@link DisplayImmutable}
+ */
 export interface Display extends x.Infer<typeof DisplaySchema> {}
+
+/**
+ * Represents `<display_1>`, `<display_2>`, `<display_3>`, or `<display_4>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
+ *
+ * Parent: {@link ComponentOImmutable}
+ *
+ * Inferred from {@link DisplaySchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link Display} instead
+ * if mutation is required.
+ *
+ * @see {@link DisplaySchema}
+ * @see {@link Display}
+ */
 export interface DisplayImmutable extends x.InferImmutable<typeof DisplaySchema> {}
 
+/**
+ * Represents `<axis_sensitivity>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <axis_sensitivity>`
+ *
+ * Parent: {@link ComponentOSchema}
+ *
+ * @see {@link AxisSensitivity}
+ * @see {@link AxisSensitivityImmutable}
+ */
 export const AxisSensitivitySchema = x.partialObject({
   x: x.number(),
   y: x.number(),
   z: x.number(),
   w: x.number(),
 });
+
+/**
+ * Represents `<axis_sensitivity>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <axis_sensitivity>`
+ *
+ * Parent: {@link ComponentO}
+ *
+ * Inferred from {@link AxisSensitivitySchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link AxisSensitivityImmutable} for its parameter type.
+ *
+ * @see {@link AxisSensitivitySchema}
+ * @see {@link AxisSensitivityImmutable}
+ */
 export interface AxisSensitivity extends x.Infer<typeof AxisSensitivitySchema> {}
+
+/**
+ * Represents `<axis_sensitivity>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <axis_sensitivity>`
+ *
+ * Parent: {@link ComponentOImmutable}
+ *
+ * Inferred from {@link AxisSensitivitySchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link AxisSensitivity} instead
+ * if mutation is required.
+ *
+ * @see {@link AxisSensitivitySchema}
+ * @see {@link AxisSensitivity}
+ */
 export interface AxisSensitivityImmutable extends x.InferImmutable<typeof AxisSensitivitySchema> {}
 
+/**
+ * Represents `<o>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
+ *
+ * Parent: {@link ComponentSchema}
+ *
+ * @see {@link ComponentO}
+ * @see {@link ComponentOImmutable}
+ */
 export const ComponentOSchema = x.partialObject({
   r: x.string(),
   bc: x.string(),
@@ -177,32 +410,200 @@ export const ComponentOSchema = x.partialObject({
   trim_w_display: TextValuePairSchema,
   axis_sensitivity: AxisSensitivitySchema,
 });
+
+/**
+ * Represents `<o>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
+ *
+ * Parent: {@link ComponentSchema}
+ *
+ * Inferred from {@link ComponentOSchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link ComponentOImmutable} for its parameter type.
+ *
+ * @see {@link ComponentOSchema}
+ * @see {@link ComponentOImmutable}
+ */
 export interface ComponentO extends x.Infer<typeof ComponentOSchema> {}
+
+/**
+ * Represents `<o>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
+ *
+ * Parent: {@link ComponentImmutable}
+ *
+ * Inferred from {@link ComponentOSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link ComponentO} instead
+ * if mutation is required.
+ *
+ * @see {@link ComponentOSchema}
+ * @see {@link ComponentO}
+ */
 export interface ComponentOImmutable extends x.InferImmutable<typeof ComponentOSchema> {}
 
+/**
+ * Represents `<c>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c>`
+ *
+ * Parent: {@link BodySchema}
+ *
+ * @see {@link Component}
+ * @see {@link ComponentImmutable}
+ */
 export const ComponentSchema = x.partialObject({
   d: x.string(),
   t: x.number(),
   o: ComponentOSchema,
 });
+
+/**
+ * Represents `<c>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c>`
+ *
+ * Parent: {@link Body}
+ *
+ * Inferred from {@link ComponentSchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link ComponentImmutable} for its parameter type.
+ *
+ * @see {@link ComponentSchema}
+ * @see {@link ComponentImmutable}
+ */
 export interface Component extends x.Infer<typeof ComponentSchema> {}
+
+/**
+ * Represents `<c>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body> / <components> / <c>`
+ *
+ * Parent: {@link BodyImmutable}
+ *
+ * Inferred from {@link ComponentSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link Component} instead
+ * if mutation is required.
+ *
+ * @see {@link ComponentSchema}
+ * @see {@link Component}
+ */
 export interface ComponentImmutable extends x.InferImmutable<typeof ComponentSchema> {}
 
+/**
+ * Represents `<body>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body>`
+ *
+ * Parent: {@link VehicleSchema}
+ *
+ * @see {@link Body}
+ * @see {@link BodyImmutable}
+ */
 export const BodySchema = x.partialObject({
   unique_id: x.number(),
   components: x.list("c", ComponentSchema),
 });
+
+/**
+ * Represents `<body>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body>`
+ *
+ * Parent: {@link Vehicle}
+ *
+ * Inferred from {@link BodySchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link BodyImmutable} for its parameter type.
+ *
+ * @see {@link BodySchema}
+ * @see {@link BodyImmutable}
+ */
 export interface Body extends x.Infer<typeof BodySchema> {}
+
+/**
+ * Represents `<body>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <bodies> / <body>`
+ *
+ * Parent: {@link VehicleImmutable}
+ *
+ * Inferred from {@link BodySchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link Body} instead
+ * if mutation is required.
+ *
+ * @see {@link BodySchema}
+ * @see {@link Body}
+ */
 export interface BodyImmutable extends x.InferImmutable<typeof BodySchema> {}
 
-export const VehicelLogicNodeLinkSchema = x.partialObject({
+/**
+ * Represents `<logic_node_link>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
+ *
+ * Parent: {@link VehicleSchema}
+ *
+ * @see {@link LogicNodeLink}
+ * @see {@link LogicNodeLinkImmutable}
+ */
+export const LogicNodeLinkSchema = x.partialObject({
   type: x.number(),
   voxel_pos_0: SwVec3Schema,
   voxel_pos_1: SwVec3Schema,
 });
-export interface VehicelLogicNodeLink extends x.Infer<typeof VehicelLogicNodeLinkSchema> {}
-export interface VehicelLogicNodeLinkImmutable extends x.InferImmutable<typeof VehicelLogicNodeLinkSchema> {}
 
+/**
+ * Represents `<logic_node_link>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
+ *
+ * Parent: {@link Vehicle}
+ *
+ * Inferred from {@link LogicNodeLinkSchema}.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link LogicNodeLinkImmutable} for its parameter type.
+ *
+ * @see {@link LogicNodeLinkSchema}
+ * @see {@link LogicNodeLinkImmutable}
+ */
+export interface LogicNodeLink extends x.Infer<typeof LogicNodeLinkSchema> {}
+
+/**
+ * Represents `<logic_node_link>` element in Stormworks vehicle data.
+ *
+ * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
+ *
+ * Parent: {@link VehicleImmutable}
+ *
+ * Inferred from {@link LogicNodeLinkSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link LogicNodeLink} instead
+ * if mutation is required.
+ *
+ * @see {@link LogicNodeLinkSchema}
+ * @see {@link LogicNodeLink}
+ */
+export interface LogicNodeLinkImmutable extends x.InferImmutable<typeof LogicNodeLinkSchema> {}
+
+/**
+ * Represents root `<vehicle>` element in Stormworks vehicle data.
+ *
+ * @see {@link Vehicle}
+ * @see {@link VehicleImmutable}
+ */
 export const VehicleSchema = x.partialObject({
   data_version: x.number(),
   is_modded: x.boolean(),
@@ -211,7 +612,33 @@ export const VehicleSchema = x.partialObject({
   editor_placement_offset: SwVec3Schema,
   authors: x.list("author", AuthorSchema),
   bodies: x.list("body", BodySchema),
-  logic_node_links: x.list("logic_node_link", VehicelLogicNodeLinkSchema),
+  logic_node_links: x.list("logic_node_link", LogicNodeLinkSchema),
 });
+
+/**
+ * Represents root `<vehicle>` element in Stormworks vehicle data.
+ *
+ * Inferred from {@link VehicleSchema} and used as the return type of
+ * {@link parseVehicleXml} and {@link safeParseVehicleXml} function.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link VehicleImmutable} for its parameter type.
+ *
+ * @see {@link VehicleSchema}
+ * @see {@link VehicleImmutable}
+ */
 export interface Vehicle extends x.Infer<typeof VehicleSchema> {}
+
+/**
+ * Represents root `<vehicle>` element in Stormworks vehicle data.
+ *
+ * Inferred from {@link VehicleSchema} and made deeply immutable.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * only reads the object and does not modify it. Use {@link Vehicle} instead
+ * if mutation is required.
+ *
+ * @see {@link VehicleSchema}
+ * @see {@link Vehicle}
+ */
 export interface VehicleImmutable extends x.InferImmutable<typeof VehicleSchema> {}

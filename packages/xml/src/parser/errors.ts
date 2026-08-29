@@ -1,5 +1,5 @@
 /**
- * Error codes for unexpected conversion failures in conversion from fast-xml-parser result to internal node tree.
+ * Error codes for {@link SwXmlParseError}.
  */
 export type SwXmlParseErrorCode =
   | "invalid_xml"
@@ -8,7 +8,7 @@ export type SwXmlParseErrorCode =
   | "invalid_child_output";
 
 /**
- * An error thrown when an XML document cannot be parsed into a Stormworks XML node tree.
+ * An error thrown when there were unexpected conversion failures in conversion from fast-xml-parser result to internal node tree.
  */
 export class SwXmlParseError extends Error {
   /**
@@ -24,7 +24,7 @@ export class SwXmlParseError extends Error {
 }
 
 /**
- * Machine-readable XML structure error codes.
+ * Error codes for {@link SwXmlStructureError}.
  */
 export type SwXmlStructureErrorCode =
   | "duplicate_child_element"
