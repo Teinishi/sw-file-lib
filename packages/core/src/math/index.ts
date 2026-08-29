@@ -1,6 +1,7 @@
 /**
+ * Utilities for mathematical operations, including vector and matrix math.
+ *
  * @packageDocumentation
- * @module
  */
 
 export * from "./mat3";
