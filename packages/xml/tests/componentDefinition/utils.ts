@@ -1,7 +1,7 @@
 import type { StrictOmit } from "ts-essentials";
 import { maxVec3, minVec3, vec3 } from "@sw-file-lib/core/math";
-import type { SwVec3, ComponentDefinition } from "..";
-import type { Surface, Voxel } from "../schemas/ComponentDefinition";
+import type { SwVec3 } from "../../src";
+import type { ComponentDefinition, Surface, Voxel } from "../../src/schemas/ComponentDefinition";
 
 function forVoxels(
   from: Readonly<SwVec3>,

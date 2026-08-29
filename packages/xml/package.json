@@ -15,11 +15,6 @@
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
     },
-    "./utils": {
-      "development": "./src/utils/index.ts",
-      "import": "./dist/utils/index.mjs",
-      "types": "./dist/utils/index.d.mts"
-    },
     "./xml-schema": {
       "development": "./src/xml-schema/index.ts",
       "import": "./dist/xml-schema/index.mjs",

@@ -3,8 +3,8 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { searchRom } from "@sw-file-lib/test-utils";
 import { parseSwXml, safeParseComponentDefinitionXml, ComponentDefinitionSchema } from "../../src";
-import * as utils from "../../src/utils";
 import * as x from "../../src/xml-schema";
+import * as utils from "./utils";
 
 describe("componentDefinition", () => {
   test("build component definition", async () => {
