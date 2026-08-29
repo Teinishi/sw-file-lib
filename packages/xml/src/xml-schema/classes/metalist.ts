@@ -36,7 +36,7 @@ import {
 /**
  * Infers the value produced by a metalist schema.
  */
-export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
+export type InferMetalist<M extends Shape, U extends ElementSchema<any>> = {
   meta: InferShape<M>;
   items: Infer<U>[];
 };
@@ -44,8 +44,8 @@ export type InferMetaList<M extends Shape, U extends ElementSchema<any>> = {
 /**
  * A schema that parses XML list elements that have attributes as JavaScript arrays.
  */
-export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> implements ElementSchema<
-  InferMetaList<M, I>
+export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> implements ElementSchema<
+  InferMetalist<M, I>
 > {
   readonly name = "metalist";
 
@@ -59,7 +59,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): Result<InferMetaList<M, I>, SchemaError> {
+  ): Result<InferMetalist<M, I>, SchemaError> {
     const r = validateSchemaInput(input, "xml_element", this.name);
     if (!r.success) return r;
     const value = r.data;
@@ -96,7 +96,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): InferMetaList<M, I> {
+  ): InferMetalist<M, I> {
     return unwrapResult(this.safeParseValue(input, ctx, options));
   }
 
@@ -105,7 +105,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     key: string,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): SchemaParseFieldResult<InferMetaList<M, I>> {
+  ): SchemaParseFieldResult<InferMetalist<M, I>> {
     return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
@@ -113,7 +113,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): Result<InferMetaList<M, I>, SchemaError> {
+  ): Result<InferMetalist<M, I>, SchemaError> {
     return safeParseTree(this, tree, rootTag, options);
   }
 
@@ -121,7 +121,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): InferMetaList<M, I> {
+  ): InferMetalist<M, I> {
     return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
@@ -194,7 +194,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
    * Serializes a metalist value into an XML element without throwing.
    */
   safeSerialize(
-    data: InferMetaList<M, I>,
+    data: InferMetalist<M, I>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -208,22 +208,22 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
    * serialized.
    */
   serialize(
-    data: InferMetaList<M, I>,
+    data: InferMetalist<M, I>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<MetaListSchema<M, I>> {
+  optional(): OptionalSchema<MetalistSchema<M, I>> {
     return new OptionalSchema(this);
   }
 
   /**
    * Returns a new metalist schema with the name of item tags changed.
    */
-  renameItemTag(itemTag: string): MetaListSchema<M, I> {
-    return new MetaListSchema(itemTag, this.metaShape, this.itemSchema);
+  renameItemTag(itemTag: string): MetalistSchema<M, I> {
+    return new MetalistSchema(itemTag, this.metaShape, this.itemSchema);
   }
 
   /**
@@ -241,8 +241,8 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
    * }));
    * ```
    */
-  extendMeta<U extends Shape>(shape: U | ((s: M) => U)): MetaListSchema<ExtendShape<M, U>, I> {
-    return new MetaListSchema(
+  extendMeta<U extends Shape>(shape: U | ((s: M) => U)): MetalistSchema<ExtendShape<M, U>, I> {
+    return new MetalistSchema(
       this.itemTag,
       new ObjectSchema(this.metaShape).extend(shape).shape,
       this.itemSchema,
@@ -252,8 +252,8 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
   /**
    * Returns a new list schema with specified keys are omitted from the meta schema.
    */
-  omitMeta<U extends keyof M>(keys: U[]): MetaListSchema<Omit<M, U>, I> {
-    return new MetaListSchema(
+  omitMeta<U extends keyof M>(keys: U[]): MetalistSchema<Omit<M, U>, I> {
+    return new MetalistSchema(
       this.itemTag,
       new ObjectSchema(this.metaShape).omit(keys).shape,
       this.itemSchema,
@@ -264,7 +264,7 @@ export class MetaListSchema<M extends Shape, I extends ElementSchema<any>> imple
 /**
  * A metalist schema whose item schema is an object schema.
  */
-export class ObjectMetaListSchema<M extends Shape, I extends Shape> extends MetaListSchema<
+export class ObjectMetalistSchema<M extends Shape, I extends Shape> extends MetalistSchema<
   M,
   ObjectSchema<I>
 > {
@@ -285,15 +285,15 @@ export class ObjectMetaListSchema<M extends Shape, I extends Shape> extends Meta
    */
   extendItem<U extends Shape>(
     shape: U | ((s: I) => U),
-  ): ObjectMetaListSchema<M, ExtendShape<I, U>> {
-    return new ObjectMetaListSchema(this.itemTag, this.metaShape, this.itemSchema.extend(shape));
+  ): ObjectMetalistSchema<M, ExtendShape<I, U>> {
+    return new ObjectMetalistSchema(this.itemTag, this.metaShape, this.itemSchema.extend(shape));
   }
 
   /**
    * Returns a new list schema with specified keys are omitted from the item schema.
    */
-  omitItem<U extends keyof I>(keys: U[]): ObjectMetaListSchema<M, Omit<I, U>> {
-    return new ObjectMetaListSchema(this.itemTag, this.metaShape, this.itemSchema.omit(keys));
+  omitItem<U extends keyof I>(keys: U[]): ObjectMetalistSchema<M, Omit<I, U>> {
+    return new ObjectMetalistSchema(this.itemTag, this.metaShape, this.itemSchema.omit(keys));
   }
 }
 
@@ -307,14 +307,14 @@ export function metalist<M extends Shape, I extends ElementSchema<any>>(
   itemTag: string,
   metaSchema: ObjectSchema<M>,
   itemSchema: I,
-): I extends ObjectSchema<any> ? ObjectMetaListSchema<M, ObjectShape<I>> : MetaListSchema<M, I> {
+): I extends ObjectSchema<any> ? ObjectMetalistSchema<M, ObjectShape<I>> : MetalistSchema<M, I> {
   let s;
   if (itemSchema instanceof ObjectSchema) {
-    s = new ObjectMetaListSchema(itemTag, metaSchema.shape, itemSchema);
+    s = new ObjectMetalistSchema(itemTag, metaSchema.shape, itemSchema);
   } else {
-    s = new MetaListSchema(itemTag, metaSchema.shape, itemSchema);
+    s = new MetalistSchema(itemTag, metaSchema.shape, itemSchema);
   }
   return s as I extends ObjectSchema<any>
-    ? ObjectMetaListSchema<M, ObjectShape<I>>
-    : MetaListSchema<M, I>;
+    ? ObjectMetalistSchema<M, ObjectShape<I>>
+    : MetalistSchema<M, I>;
 }
