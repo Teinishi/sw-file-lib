@@ -6,8 +6,8 @@
  * @packageDocumentation
  */
 
-import { SwRgbSchema, SwVec3Schema } from ".";
 import * as x from "../xml-schema";
+import { SwRgbSchema, SwVec3Schema } from "./common";
 import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
 
 /**

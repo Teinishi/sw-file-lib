@@ -6,8 +6,8 @@
  * @packageDocumentation
  */
 
-import { SwVec2Schema } from ".";
 import * as x from "../xml-schema";
+import { SwVec2Schema } from "./common";
 import type { ComponentOSchema, ComponentO, ComponentOImmutable } from "./Vehicle"; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 /**

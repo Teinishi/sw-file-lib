@@ -6,8 +6,8 @@
  * @packageDocumentation
  */
 
-import { SwMat3Schema, SwVec3Schema } from ".";
 import * as x from "../xml-schema";
+import { SwMat3Schema, SwVec3Schema } from "./common";
 
 /**
  * Represents `<sfx_layer>` elements in Stormworks component definition data.
