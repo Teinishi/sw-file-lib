@@ -1,5 +1,3 @@
 # Introduction
 
-[Markdown Examples](./markdown-examples)
-
-[API Examples](./api-examples)
+[XML Schema Guide](./xml-schema)

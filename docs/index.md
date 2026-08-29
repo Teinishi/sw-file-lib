@@ -15,10 +15,16 @@ hero:
       link: /api/
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - icon: 📦
+    title: Modular Packages
+    details: Import only the packages you need with minimal dependencies.
+  - icon: 💾
+    title: Binary Serialization
+    details: Read and write Stormworks' binary file formats.
+  - icon: 🧩
+    title: Type-Safe XML Schemas
+    details: Convert XML to strongly typed objects and back using customizable schemas.
+  - icon: 🌐
+    title: Browser & Node.js
+    details: Works seamlessly in both modern browsers and Node.js environments.
 ---

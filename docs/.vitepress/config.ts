@@ -18,8 +18,6 @@ export default defineConfig({
         text: "Guide",
         items: [
           { text: "Getting Started", link: "/guide/" },
-          { text: "Markdown Examples", link: "/guide/markdown-examples" },
-          { text: "Runtime API Examples", link: "/guide/api-examples" },
           { text: "XML Schema", link: "/guide/xml-schema" },
         ],
       },
@@ -30,5 +28,7 @@ export default defineConfig({
     ],
 
     socialLinks: [{ icon: "github", link: "https://github.com/Teinishi/sw-file-lib" }],
+
+    search: { provider: "local" },
   },
 });
