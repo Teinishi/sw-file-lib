@@ -13,13 +13,10 @@ export default defineConfig(async ({ mode }) => {
       {
         name: "serve-rom",
         configureServer(server: ViteDevServer) {
-          server.middlewares.use(
-            "/rom",
-            sirv(env.STORMWORKS_ROM_PATH, {
-              dev: true,
-              etag: true,
-            }),
-          );
+          const middleware = sirv(env.STORMWORKS_ROM_PATH, {
+            etag: true,
+          });
+          server.middlewares.use("/rom", (req, res, _) => middleware(req, res));
         },
       },
     ],
