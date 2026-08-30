@@ -7,7 +7,7 @@ import {
   createSwMesh,
   createSwPhysMeshGroup,
   assembleVehicleGeometry,
-  createComponentResolver,
+  createComponentAssembler,
 } from "@sw-file-lib/three";
 import { VehicleSchema } from "@sw-file-lib/xml";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
@@ -92,7 +92,7 @@ function getRomPath(base: string, path: string): string {
   return `${base}/${path}`;
 }
 
-const componentResolver = createComponentResolver(
+const componentAssembler = createComponentAssembler(
   (componentName) =>
     fetch(getRomPath("/rom/data/definitions", componentName + ".xml"))
       .then((r) => r.text())
@@ -107,7 +107,7 @@ async function loadVehicle(text: string, name: string) {
   const vehicle = VehicleSchema.parse(text, "vehicle");
 
   const groups = await assembleVehicleGeometry(vehicle, {
-    resolve: componentResolver,
+    componentAssembler,
   });
 
   const builder = new GeometryBuilder();

@@ -20,7 +20,7 @@ import {
   type SurfaceData,
 } from "@sw-file-lib/geometry";
 import type {
-  ComponentDefinitionImmutable,
+  ComponentDefinitionSchemas,
   VehicleImmutable,
   VehicleSchemas,
 } from "@sw-file-lib/xml";
@@ -38,21 +38,19 @@ export type MeshFactory = (
   | undefined
   | Promise<Record<string, THREE.Object3D> | undefined>;
 
-export interface ResolvedComponent {
-  definition: ComponentDefinitionImmutable;
-  meshFactory?: MeshFactory;
-}
+export type ComponentAssemblerResult = {
+  readonly surfaces?: readonly ComponentDefinitionSchemas.SurfaceImmutable[];
+  readonly objects?: Readonly<Record<PropertyKey, THREE.Object3D>>;
+};
 
-export type ComponentResolver = (componentName: string) => Promise<ResolvedComponent | undefined>;
+export type ComponentAssembler = (
+  component: VehicleSchemas.ComponentImmutable,
+  bodyIndex: number,
+  componentIndex: number,
+) => ComponentAssemblerResult | undefined | Promise<ComponentAssemblerResult | undefined>;
 
 export interface AssembleVehicleOptions {
-  /**
-   * A function that resolves component definitions by name.
-   * If a component cannot be resolved, it will be skipped.
-   * The result of this function is cached for each unique component name, so it will only be called once per unique name.
-   */
-  readonly resolve: ComponentResolver;
-
+  readonly componentAssembler: ComponentAssembler;
   readonly surfaceOptions?: BuildSurfaceGeometryOptions;
 }
 
@@ -70,27 +68,20 @@ export async function assembleVehicleGeometry(
     createUniformStore({ overrideColor: { type: "int", value: 0 } }),
   );
 
-  const componentCache: Record<string, ResolvedComponent | undefined> = {};
-
   const result: VehicleRenderGroup[] = [];
 
-  for (const body of vehicle.bodies ?? []) {
+  for (const [bodyIndex, body] of (vehicle.bodies ?? []).entries()) {
     const bodyGroup = new THREE.Group();
 
     const surfaces: SurfaceData[] = [];
 
-    for (const component of body.components ?? []) {
-      const d = component.d ?? "01_block";
-
-      let data: ResolvedComponent | undefined;
-      if (d in componentCache) {
-        data = componentCache[d];
-      } else {
-        data = await options.resolve(d);
-        componentCache[d] = data;
-      }
-
-      if (data === undefined) continue;
+    for (const [componentIndex, component] of (body.components ?? []).entries()) {
+      const assemblerResult = await options.componentAssembler(
+        component,
+        bodyIndex,
+        componentIndex,
+      );
+      if (!assemblerResult) continue;
 
       const componentPosition = vec3(component.o?.vp);
 
@@ -115,7 +106,7 @@ export async function assembleVehicleGeometry(
           .slice(1)
           .map((c) => parseColor(c)) ?? [];
 
-      for (const [index, surface] of (data.definition.surfaces ?? []).entries()) {
+      for (const [index, surface] of (assemblerResult.surfaces ?? []).entries()) {
         const orientation = surface.orientation ?? 0;
         const rotation = surface.rotation ?? 0;
         const shape = surface.shape ?? 0;
@@ -140,19 +131,16 @@ export async function assembleVehicleGeometry(
         });
       }
 
-      if (data.meshFactory) {
-        const meshObjects = await data.meshFactory(component);
-        if (meshObjects && Object.keys(meshObjects).length > 0) {
-          const componentGroup = new THREE.Group();
-          for (const meshObject of Object.values(meshObjects)) {
-            componentGroup.add(meshObject);
-          }
-          componentGroup.matrixAutoUpdate = false;
-          componentGroup.matrix.copy(
-            stormworksToThreeMatrix4(componentMatrix, componentPosition, 0.25),
-          );
-          bodyGroup.add(componentGroup);
+      if (assemblerResult.objects && Object.keys(assemblerResult.objects).length > 0) {
+        const componentGroup = new THREE.Group();
+        for (const meshObject of Object.values(assemblerResult.objects)) {
+          componentGroup.add(meshObject);
         }
+        componentGroup.matrixAutoUpdate = false;
+        componentGroup.matrix.copy(
+          stormworksToThreeMatrix4(componentMatrix, componentPosition, 0.25),
+        );
+        bodyGroup.add(componentGroup);
       }
     }
 
