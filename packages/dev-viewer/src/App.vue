@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { serializeMesh, parseMeshOrPhys, type MeshData } from "@sw-file-lib/core";
+import { serializeMesh, parseMeshOrPhys, type MeshData, parseMesh } from "@sw-file-lib/core";
 import { GeometryBuilder } from "@sw-file-lib/geometry";
 import {
   createSwMesh,
@@ -9,7 +9,7 @@ import {
   assembleVehicleGeometry,
   createComponentAssembler,
 } from "@sw-file-lib/three";
-import { VehicleSchema } from "@sw-file-lib/xml";
+import { parseComponentDefinitionXml, VehicleSchema } from "@sw-file-lib/xml";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
 const COLORS = [0x0f766e, 0x1d4ed8, 0x7c3aed, 0xb45309, 0xdc2626, 0x059669, 0xc026d3, 0x0284c7];
@@ -95,11 +95,11 @@ function getRomPath(base: string, path: string): string {
 const componentAssembler = createComponentAssembler(
   (componentName) =>
     fetch(getRomPath("/rom/data/definitions", componentName + ".xml"))
-      .then((r) => r.text())
+      .then(async (r) => parseComponentDefinitionXml(await r.text()))
       .catch((_) => undefined),
   (meshName) =>
     fetch(getRomPath("/rom", meshName))
-      .then((r) => r.arrayBuffer())
+      .then(async (r) => parseMesh(await r.arrayBuffer()))
       .catch((_) => undefined),
 );
 

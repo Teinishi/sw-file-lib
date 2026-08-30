@@ -1,43 +1,37 @@
 import * as THREE from "three";
-import { parseMesh } from "@sw-file-lib/core";
+import { type MeshData } from "@sw-file-lib/core";
 import { parseColor, type Color } from "@sw-file-lib/core/color";
-import {
-  safeParseComponentDefinitionXml,
-  VehicleSchemas,
-  type ComponentDefinition,
-} from "@sw-file-lib/xml";
+import { VehicleSchemas, type ComponentDefinitionImmutable } from "@sw-file-lib/xml";
 import { applyUniformPatch, createSwMaterials, createSwMeshGeometry } from "..";
 import type { ComponentAssembler } from "./assembleGeometry";
 
+export type ComponentDefinitionGetter = (
+  componentName: string,
+) => Promise<ComponentDefinitionImmutable | undefined>;
+
+export type MeshGetter = (meshName: string) => Promise<MeshData | undefined>;
+
 export function createComponentAssembler(
-  getComponentDefinitionXml: (componentName: string) => Promise<string | undefined>,
-  getMesh: (meshName: string) => Promise<ArrayBuffer | undefined>,
+  getComponentDefinition: ComponentDefinitionGetter,
+  getMesh: MeshGetter,
 ): ComponentAssembler {
-  const componentCache: Map<string, ComponentDefinition | null> = new Map();
+  const componentCache: Map<string, ComponentDefinitionImmutable | null> = new Map();
   const meshCache: Map<string, THREE.BufferGeometry | null> = new Map();
 
   async function getComponentDefinitionCached(
     componentName: string,
-  ): Promise<ComponentDefinition | undefined> {
+  ): Promise<ComponentDefinitionImmutable | undefined> {
     let cacheHit = componentCache.get(componentName);
     if (cacheHit) return cacheHit;
     if (cacheHit === null) return;
 
-    const definitionXml = await getComponentDefinitionXml(componentName);
-    if (!definitionXml) {
+    const definition = await getComponentDefinition(componentName);
+    if (!definition) {
       // onComponentNotFound
       componentCache.set(componentName, null);
       return;
     }
 
-    const parseResult = safeParseComponentDefinitionXml(definitionXml);
-    if (!parseResult.success) {
-      // onComponentParseError
-      componentCache.set(componentName, null);
-      return;
-    }
-
-    const definition = parseResult.data;
     componentCache.set(componentName, definition);
     return definition;
   }
@@ -49,18 +43,9 @@ export function createComponentAssembler(
     if (cacheHit) return cacheHit;
     if (cacheHit === null) return;
 
-    const buf = await getMesh(meshName);
-    if (!buf) {
+    const meshData = await getMesh(meshName);
+    if (!meshData) {
       // onMeshNotFound
-      meshCache.set(meshName, null);
-      return;
-    }
-
-    let meshData;
-    try {
-      meshData = parseMesh(buf);
-    } catch {
-      // onMeshParseError
       meshCache.set(meshName, null);
       return;
     }
