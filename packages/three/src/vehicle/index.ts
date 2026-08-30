@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { parseColor } from "@sw-file-lib/core/color";
 import {
+  type Mat3,
   addVec3,
   mulMat3,
   mulMat3Vec3,
   parseMat3,
   vec3,
   transposeMat3,
-  type Mat3,
   Orientation,
 } from "@sw-file-lib/core/math";
 import {
@@ -19,11 +19,28 @@ import {
   type BuildSurfaceGeometryOptions,
   type SurfaceData,
 } from "@sw-file-lib/geometry";
-import type { ComponentDefinitionImmutable, VehicleImmutable } from "@sw-file-lib/xml";
-import { bufferGeometryFromBuilder, createOpaqueMaterial, createUniformStore } from "..";
+import type {
+  ComponentDefinitionImmutable,
+  VehicleImmutable,
+  VehicleSchemas,
+} from "@sw-file-lib/xml";
+import {
+  bufferGeometryFromBuilder,
+  createOpaqueMaterial,
+  createUniformStore,
+  stormworksToMatrix4,
+} from "..";
+
+export type MeshFactory = (
+  component: VehicleSchemas.ComponentImmutable,
+) =>
+  | Record<string, THREE.Object3D>
+  | undefined
+  | Promise<Record<string, THREE.Object3D> | undefined>;
 
 export interface ResolvedComponent {
   definition: ComponentDefinitionImmutable;
+  meshFactory?: MeshFactory;
 }
 
 export type ComponentResolver = (name: string) => Promise<ResolvedComponent | undefined>;
@@ -41,7 +58,7 @@ export interface AssembleVehicleOptions {
 
 export interface VehicleRenderGroup {
   bodyId: number | undefined;
-  builder: GeometryBuilder;
+  surfaceBuilder: GeometryBuilder;
   object: THREE.Group;
 }
 
@@ -58,7 +75,7 @@ export async function assembleVehicleGeometry(
   const result: VehicleRenderGroup[] = [];
 
   for (const body of vehicle.bodies ?? []) {
-    const group = new THREE.Group();
+    const bodyGroup = new THREE.Group();
 
     const surfaces: SurfaceData[] = [];
 
@@ -122,17 +139,31 @@ export async function assembleVehicleGeometry(
           color: surfaceColors[index] ?? blockColor,
         });
       }
+
+      if (data.meshFactory) {
+        const meshObjects = await data.meshFactory(component);
+        if (meshObjects && Object.keys(meshObjects).length > 0) {
+          const componentGroup = new THREE.Group();
+          for (const meshObject of Object.values(meshObjects)) {
+            componentGroup.add(meshObject);
+          }
+          componentGroup.applyMatrix4(
+            stormworksToMatrix4(componentMatrix, componentPosition, 0.25),
+          );
+          bodyGroup.add(componentGroup);
+        }
+      }
     }
 
-    const builder = buildSurfacesGeometry(surfaces, options.surfaceOptions);
-    const geometry = bufferGeometryFromBuilder(builder);
-    const mesh = new THREE.Mesh(geometry, surfaceMaterial);
-    group.add(mesh);
+    const surfaceBuilder = buildSurfacesGeometry(surfaces, options.surfaceOptions);
+    const surfaceGeometry = bufferGeometryFromBuilder(surfaceBuilder);
+    const surfaceMesh = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+    bodyGroup.add(surfaceMesh);
 
     result.push({
       bodyId: body.unique_id,
-      builder,
-      object: group,
+      surfaceBuilder: surfaceBuilder,
+      object: bodyGroup,
     });
   }
 

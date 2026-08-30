@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { serializeMesh, parseMeshOrPhys, type MeshData } from "@sw-file-lib/core";
+import { serializeMesh, parseMeshOrPhys, type MeshData, parseMesh } from "@sw-file-lib/core";
+import { parseColor, type Color } from "@sw-file-lib/core/color";
 import { GeometryBuilder } from "@sw-file-lib/geometry";
-import { createSwMesh, createSwPhysMeshGroup, assembleVehicleGeometry } from "@sw-file-lib/three";
-import { safeParseComponentDefinitionXml, VehicleSchema } from "@sw-file-lib/xml";
+import {
+  createSwMesh,
+  createSwPhysMeshGroup,
+  assembleVehicleGeometry,
+  createSwMaterials,
+  createSwMeshGeometry,
+  applyUniformPatch,
+} from "@sw-file-lib/three";
+import { safeParseComponentDefinitionXml, VehicleSchema, VehicleSchemas } from "@sw-file-lib/xml";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
 const COLORS = [0x0f766e, 0x1d4ed8, 0x7c3aed, 0xb45309, 0xdc2626, 0x059669, 0xc026d3, 0x0284c7];
@@ -75,12 +83,25 @@ function loadMesh(bytes: ArrayBuffer, name: string) {
   });
 }
 
-function romComponentPath(key: string): string {
-  if (!/^[A-Za-z0-9_-]+$/.test(key)) {
-    throw new Error("Invalid ROM key");
+function getRomPath(base: string, path: string): string {
+  const parts = path.split("/");
+
+  for (const part of parts) {
+    if (!/^[A-Za-z0-9._-]+$/.test(part)) {
+      throw new Error(`Invalid ROM path: ${path}`);
+    }
   }
 
-  return `/rom/data/definitions/${encodeURIComponent(key)}.xml`;
+  return `${base}/${path}`;
+}
+
+function colorToVec4(color: Color | undefined): [number, number, number, number] {
+  return [
+    (color?.r ?? 255) / 255,
+    (color?.g ?? 255) / 255,
+    (color?.b ?? 255) / 255,
+    (color?.a ?? 255) / 255,
+  ];
 }
 
 async function loadVehicle(text: string, name: string) {
@@ -88,19 +109,53 @@ async function loadVehicle(text: string, name: string) {
 
   const groups = await assembleVehicleGeometry(vehicle, {
     async resolve(name) {
-      const res = await fetch(romComponentPath(name));
+      const res = await fetch(getRomPath("/rom/data/definitions", name + ".xml"));
       if (!res.ok) {
-        console.error(
+        throw new Error(
           `Failed to fetch component definition for ${name}: ${res.status} ${res.statusText}`,
         );
-        return undefined;
       }
       const parseResult = safeParseComponentDefinitionXml(await res.text());
       if (!parseResult.success) {
-        console.error(`Failed to parse component definition for ${name}:`, parseResult.error);
-        return undefined;
+        throw new Error(`Failed to parse component definition for ${name}: ${parseResult.error}`);
       }
-      return { definition: parseResult.data };
+
+      const definition = parseResult.data;
+
+      let meshGeometry: THREE.BufferGeometry | undefined;
+      if (definition.mesh_data_name) {
+        const meshRes = await fetch(getRomPath("/rom", definition.mesh_data_name));
+        if (!meshRes.ok) {
+          throw new Error(
+            `Failed to fetch mesh data for ${definition.mesh_data_name}: ${meshRes.status} ${meshRes.statusText}`,
+          );
+        }
+        const meshData = parseMesh(await meshRes.arrayBuffer());
+        meshGeometry = createSwMeshGeometry(meshData);
+      }
+
+      const meshFactory = (component: VehicleSchemas.ComponentImmutable) => {
+        const materials = createSwMaterials();
+
+        const bc = component.o?.bc ? parseColor(component.o.bc) : undefined;
+        const bc2 = component.o?.bc2 ? parseColor(component.o.bc2) : bc;
+        const bc3 = component.o?.bc3 ? parseColor(component.o.bc3) : bc;
+        applyUniformPatch(materials.uniforms.opaque, {
+          overrideColor1: { type: "vec4", value: colorToVec4(bc) },
+          overrideColor2: { type: "vec4", value: colorToVec4(bc2) },
+          overrideColor3: { type: "vec4", value: colorToVec4(bc3) },
+          overrideColor: { type: "int", value: 1 },
+        });
+
+        const materialArr = [materials.opaque, materials.glass, materials.additive];
+        if (meshGeometry) {
+          return {
+            mesh: new THREE.Mesh(meshGeometry, materialArr),
+          };
+        }
+      };
+
+      return { definition, meshFactory };
     },
   });
 
@@ -108,7 +163,7 @@ async function loadVehicle(text: string, name: string) {
   const vehicleGroup = new THREE.Group();
   for (const group of groups) {
     vehicleGroup.add(group.object);
-    builder.merge(group.builder);
+    builder.merge(group.surfaceBuilder);
   }
   vehicleGroup.name = name;
 
