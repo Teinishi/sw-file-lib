@@ -164,7 +164,11 @@ async function loadVehicle(text: string, name: string) {
           overrideColor: { type: "int", value: 1 },
         });
 
-        // const ac = component.o?.ac ? parseColor(component.o.ac) : undefined;
+        const ac = component.o?.ac ? parseColor(component.o.ac) : { r: 255, g: 255, b: 255 };
+        if (ac) {
+          materials.additive.vertexColors = false;
+          materials.additive.color = new THREE.Color(ac.r / 255, ac.g / 255, ac.b / 255);
+        }
 
         const materialArr = [materials.opaque, materials.glass, materials.additive];
 
