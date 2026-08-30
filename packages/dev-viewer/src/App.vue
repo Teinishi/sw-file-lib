@@ -4,8 +4,7 @@ import { computed, markRaw, reactive, ref } from "vue";
 import { serializeMesh, parseMeshOrPhys, type MeshData } from "@sw-file-lib/core";
 import { GeometryBuilder } from "@sw-file-lib/geometry";
 import { createSwMesh, createSwPhysMeshGroup, assembleVehicleGeometry } from "@sw-file-lib/three";
-import { VehicleSchema } from "@sw-file-lib/xml";
-import { BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "./basicBlocks/blocks.ts";
+import { safeParseComponentDefinitionXml, VehicleSchema } from "@sw-file-lib/xml";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
 const COLORS = [0x0f766e, 0x1d4ed8, 0x7c3aed, 0xb45309, 0xdc2626, 0x059669, 0xc026d3, 0x0284c7];
@@ -76,18 +75,32 @@ function loadMesh(bytes: ArrayBuffer, name: string) {
   });
 }
 
+function romComponentPath(key: string): string {
+  if (!/^[A-Za-z0-9_-]+$/.test(key)) {
+    throw new Error("Invalid ROM key");
+  }
+
+  return `/rom/data/definitions/${encodeURIComponent(key)}.xml`;
+}
+
 async function loadVehicle(text: string, name: string) {
   const vehicle = VehicleSchema.parse(text, "vehicle");
 
   const groups = await assembleVehicleGeometry(vehicle, {
     async resolve(name) {
-      if (isBasicBlockType(name)) {
-        return {
-          definition: { surfaces: BLOCK_SURFACE_DEFINITIONS[name] },
-        };
-      } else {
+      const res = await fetch(romComponentPath(name));
+      if (!res.ok) {
+        console.error(
+          `Failed to fetch component definition for ${name}: ${res.status} ${res.statusText}`,
+        );
         return undefined;
       }
+      const parseResult = safeParseComponentDefinitionXml(await res.text());
+      if (!parseResult.success) {
+        console.error(`Failed to parse component definition for ${name}:`, parseResult.error);
+        return undefined;
+      }
+      return { definition: parseResult.data };
     },
   });
 

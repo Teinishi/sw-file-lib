@@ -24,7 +24,7 @@ lerna-debug.log*
 
 *.tsbuildinfo
 
-.env.test.local
+.env.local
 *.tmp
 docs/.vitepress/cache
 docs/api

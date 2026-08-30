@@ -12,16 +12,14 @@ async function fileExists(filePath: PathLike) {
 }
 
 /** cwd がどこだかわからないのでルートを探索 (pnpm-workspace.yaml が存在するディレクトリを探す) */
-export async function loadWorkspaceEnv(filename: string) {
+export async function findWorkspaceRoot(): Promise<string> {
   let dir = process.cwd();
 
   while (true) {
-    const envPath = path.join(dir, filename);
     const workspacePath = path.join(dir, "pnpm-workspace.yaml");
 
     if (await fileExists(workspacePath)) {
-      process.loadEnvFile(envPath);
-      return;
+      return dir;
     }
 
     const parent = path.dirname(dir);
@@ -31,6 +29,12 @@ export async function loadWorkspaceEnv(filename: string) {
 
     dir = parent;
   }
+}
+
+export async function loadWorkspaceEnv(filename: string) {
+  const root = await findWorkspaceRoot();
+  const envPath = path.join(root, filename);
+  process.loadEnvFile(envPath);
 }
 
 async function searchFiles(dirPath: string, extensions: string[]) {
@@ -49,7 +53,7 @@ async function searchFiles(dirPath: string, extensions: string[]) {
 }
 
 export async function searchEnvPath(envVar: string, dirPath: string, extensions: string[]) {
-  await loadWorkspaceEnv(".env.test.local");
+  await loadWorkspaceEnv(".env.local");
 
   const envPath = process.env[envVar];
   if (!envPath) {
