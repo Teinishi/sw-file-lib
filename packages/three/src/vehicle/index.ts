@@ -28,7 +28,7 @@ import {
   bufferGeometryFromBuilder,
   createOpaqueMaterial,
   createUniformStore,
-  stormworksToMatrix4,
+  stormworksToThreeMatrix4,
 } from "..";
 
 export type MeshFactory = (
@@ -147,8 +147,9 @@ export async function assembleVehicleGeometry(
           for (const meshObject of Object.values(meshObjects)) {
             componentGroup.add(meshObject);
           }
-          componentGroup.applyMatrix4(
-            stormworksToMatrix4(componentMatrix, componentPosition, 0.25),
+          componentGroup.matrixAutoUpdate = false;
+          componentGroup.matrix.copy(
+            stormworksToThreeMatrix4(componentMatrix, componentPosition, 0.25),
           );
           bodyGroup.add(componentGroup);
         }

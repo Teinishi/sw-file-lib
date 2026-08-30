@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { Mat3, Vec3 } from "@sw-file-lib/core/math";
 
-export function stormworksToMatrix4(rot: Mat3, pos: Vec3, posScale = 1): THREE.Matrix4 {
+export function stormworksToThreeMatrix4(rot: Mat3, pos: Vec3, posScale = 1): THREE.Matrix4 {
   return new THREE.Matrix4().set(
     rot[0],
     rot[1],
