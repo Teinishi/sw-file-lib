@@ -104,6 +104,14 @@ function colorToVec4(color: Color | undefined): [number, number, number, number]
   ];
 }
 
+async function getMeshGeometryFromRom(path: string) {
+  const res = await fetch(getRomPath("/rom", path));
+  if (!res.ok) {
+    throw new Error(`Failed to fetch mesh data for ${path}: ${res.status} ${res.statusText}`);
+  }
+  return createSwMeshGeometry(parseMesh(await res.arrayBuffer()));
+}
+
 async function loadVehicle(text: string, name: string) {
   const vehicle = VehicleSchema.parse(text, "vehicle");
 
@@ -123,18 +131,27 @@ async function loadVehicle(text: string, name: string) {
       const definition = parseResult.data;
 
       let meshGeometry: THREE.BufferGeometry | undefined;
+      let mesh0Geometry: THREE.BufferGeometry | undefined;
+      let mesh1Geometry: THREE.BufferGeometry | undefined;
+      let mesh2Geometry: THREE.BufferGeometry | undefined;
       if (definition.mesh_data_name) {
-        const meshRes = await fetch(getRomPath("/rom", definition.mesh_data_name));
-        if (!meshRes.ok) {
-          throw new Error(
-            `Failed to fetch mesh data for ${definition.mesh_data_name}: ${meshRes.status} ${meshRes.statusText}`,
-          );
-        }
-        const meshData = parseMesh(await meshRes.arrayBuffer());
-        meshGeometry = createSwMeshGeometry(meshData);
+        meshGeometry = await getMeshGeometryFromRom(definition.mesh_data_name);
+      }
+      if (definition.mesh_0_name) {
+        mesh0Geometry = await getMeshGeometryFromRom(definition.mesh_0_name);
+      }
+      if (definition.mesh_1_name) {
+        mesh1Geometry = await getMeshGeometryFromRom(definition.mesh_1_name);
+      }
+      if (definition.mesh_2_name) {
+        mesh2Geometry = await getMeshGeometryFromRom(definition.mesh_2_name);
       }
 
       const meshFactory = (component: VehicleSchemas.ComponentImmutable) => {
+        if (!meshGeometry && !mesh0Geometry && !mesh1Geometry && !mesh2Geometry) {
+          return undefined;
+        }
+
         const materials = createSwMaterials();
 
         const bc = component.o?.bc ? parseColor(component.o.bc) : undefined;
@@ -147,12 +164,25 @@ async function loadVehicle(text: string, name: string) {
           overrideColor: { type: "int", value: 1 },
         });
 
+        // const ac = component.o?.ac ? parseColor(component.o.ac) : undefined;
+
         const materialArr = [materials.opaque, materials.glass, materials.additive];
+
+        const meshes: Record<string, THREE.Mesh> = {};
         if (meshGeometry) {
-          return {
-            mesh: new THREE.Mesh(meshGeometry, materialArr),
-          };
+          meshes.mesh = new THREE.Mesh(meshGeometry, materialArr);
         }
+        if (mesh0Geometry) {
+          meshes.mesh0 = new THREE.Mesh(mesh0Geometry, materialArr);
+        }
+        if (mesh1Geometry) {
+          meshes.mesh1 = new THREE.Mesh(mesh1Geometry, materialArr);
+        }
+        if (mesh2Geometry) {
+          meshes.mesh2 = new THREE.Mesh(mesh2Geometry, materialArr);
+        }
+
+        return meshes;
       };
 
       return { definition, meshFactory };
