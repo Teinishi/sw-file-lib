@@ -1,2 +1,2 @@
 export * from "./assembleGeometry";
-export * from "./componentResolver";
+export * from "./componentAssembler";
