@@ -2,13 +2,13 @@ import * as THREE from "three";
 import { parseColor } from "@sw-file-lib/core/color";
 import {
   addVec3,
-  detMat3,
   mulMat3,
   mulMat3Vec3,
   parseMat3,
   vec3,
   transposeMat3,
   type Mat3,
+  Orientation,
 } from "@sw-file-lib/core/math";
 import {
   buildSurfacesGeometry,
@@ -16,8 +16,6 @@ import {
   getSurfaceOrientation,
   isValidSurfaceOrientation,
   isValidSurfaceRotation,
-  isValidSurfaceShape,
-  Orientation,
   type BuildSurfaceGeometryOptions,
   type SurfaceData,
 } from "@sw-file-lib/geometry";
@@ -107,7 +105,6 @@ export async function assembleVehicleGeometry(
 
         if (!isValidSurfaceOrientation(orientation)) continue;
         if (!isValidSurfaceRotation(rotation)) continue;
-        if (!isValidSurfaceShape(shape)) continue;
 
         const localPosition = vec3(surface.position);
         const position = addVec3(
@@ -121,7 +118,6 @@ export async function assembleVehicleGeometry(
         surfaces.push({
           position,
           matrix,
-          isFlipped: detMat3(matrix) < 0,
           shape,
           color: surfaceColors[index] ?? blockColor,
         });

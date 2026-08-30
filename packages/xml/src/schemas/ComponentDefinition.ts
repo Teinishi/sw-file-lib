@@ -1,8 +1,25 @@
-import { parseSwXml } from "../parser";
-import * as x from "../schemaLib";
-import type { ParseOptions } from "../types";
+/**
+ * Schemas and types for Stormworks component definition XML data.
+ *
+ * The schema and types for root `<definition>` element are re-exported at `'@sw-file-lib/xml'`, see {@link ComponentDefinitionSchema}, {@link ComponentDefinition}, and {@link ComponentDefinitionImmutable}.
+ *
+ * @packageDocumentation
+ */
 
-export const ComponentDefinitionSfxLayerSchema = x.partialObject({
+import * as x from "../xml-schema";
+import { SwMat3Schema, SwVec3Schema } from "./common";
+
+/**
+ * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
+ *
+ * Parent: {@link SfxDataSchema}
+ *
+ * @see {@link SfxLayer}
+ * @see {@link SfxLayerImmutable}
+ */
+export const SfxLayerSchema = x.partialObject({
   sfx_filename_start: x.string(),
   sfx_filename_loop: x.string(),
   sfx_filename_end: x.string(),
@@ -12,29 +29,101 @@ export const ComponentDefinitionSfxLayerSchema = x.partialObject({
   sfx_volume_fade_speed: x.number(),
   sfx_pitch_fade_speed: x.number(),
 });
-export type ComponentDefinitionSfxLayer = x.InferShape<
-  typeof ComponentDefinitionSfxLayerSchema.shape
->;
-export type ComponentDefinitionSfxLayerImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionSfxLayerSchema.shape
->;
 
-export const ComponentDefinitionSfxDataSchema = x.partialObject({
+/**
+ * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
+ *
+ * Parent: {@link SfxData}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link SfxLayerImmutable} for its parameter type.
+ *
+ * @see {@link SfxLayerSchema}
+ * @see {@link SfxLayerImmutable}
+ */
+export interface SfxLayer extends x.Infer<typeof SfxLayerSchema> {}
+
+/**
+ * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
+ *
+ * Parent: {@link SfxDataImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link SfxLayer} instead
+ * if mutation is required.
+ *
+ * @see {@link SfxLayerSchema}
+ * @see {@link SfxLayer}
+ */
+export interface SfxLayerImmutable extends x.InferImmutable<typeof SfxLayerSchema> {}
+
+/**
+ * Represents `<sfx_data>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link SfxData}
+ * @see {@link SfxDataImmutable}
+ */
+export const SfxDataSchema = x.partialObject({
   sfx_name: x.string(),
   sfx_range_inner: x.number(),
   sfx_range_outer: x.number(),
   sfx_priority: x.number(),
   sfx_is_underwater_affected: x.boolean(),
-  sfx_layers: x.list("sfx_layer", ComponentDefinitionSfxLayerSchema),
+  sfx_layers: x.list("sfx_layer", SfxLayerSchema),
 });
-export type ComponentDefinitionSfxData = x.InferShape<
-  typeof ComponentDefinitionSfxDataSchema.shape
->;
-export type ComponentDefinitionSfxDataImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionSfxDataSchema.shape
->;
 
-export const ComponentDefinitionSurfaceSchema = x.partialObject({
+/**
+ * Represents `<sfx_data>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link SfxDataImmutable} for its parameter type.
+ *
+ * @see {@link SfxDataSchema}
+ * @see {@link SfxDataImmutable}
+ */
+export interface SfxData extends x.Infer<typeof SfxDataSchema> {}
+
+/**
+ * Represents `<sfx_data>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <sfx_datas> / <sfx_data>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link SfxData} instead
+ * if mutation is required.
+ *
+ * @see {@link SfxDataSchema}
+ * @see {@link SfxData}
+ */
+export interface SfxDataImmutable extends x.InferImmutable<typeof SfxDataSchema> {}
+
+/**
+ * Represents `<surface>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <surfaces> / <surface>`
+ * - `<definition> / <buoyancy_surfaces> / <surface>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link Surface}
+ * @see {@link SurfaceImmutable}
+ */
+export const SurfaceSchema = x.partialObject({
   orientation: x.number(),
   rotation: x.number(),
   shape: x.number(),
@@ -42,32 +131,106 @@ export const ComponentDefinitionSurfaceSchema = x.partialObject({
   flags: x.number(),
   is_reverse_normals: x.boolean(),
   is_two_sided: x.boolean(),
-  position: x.vec3(),
+  position: SwVec3Schema,
 });
-export type ComponentDefinitionSurface = x.InferShape<
-  typeof ComponentDefinitionSurfaceSchema.shape
->;
-export type ComponentDefinitionSurfaceImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionSurfaceSchema.shape
->;
 
-export const ComponentDefinitionLogicNodeSchema = x.partialObject({
+/**
+ * Represents `<surface>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <surfaces> / <surface>`
+ * - `<definition> / <buoyancy_surfaces> / <surface>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link SurfaceImmutable} for its parameter type.
+ *
+ * @see {@link SurfaceSchema}
+ * @see {@link SurfaceImmutable}
+ */
+export interface Surface extends x.Infer<typeof SurfaceSchema> {}
+
+/**
+ * Represents `<surface>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <surfaces> / <surface>`
+ * - `<definition> / <buoyancy_surfaces> / <surface>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link Surface} instead
+ * if mutation is required.
+ *
+ * @see {@link SurfaceSchema}
+ * @see {@link Surface}
+ */
+export interface SurfaceImmutable extends x.InferImmutable<typeof SurfaceSchema> {}
+
+/**
+ * Represents `<logic_node>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <logic_nodes> / <logic_node>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link LogicNode}
+ * @see {@link LogicNodeImmutable}
+ */
+export const LogicNodeSchema = x.partialObject({
   orientation: x.number(),
   label: x.string(),
   mode: x.number(),
   type: x.number(),
   description: x.string(),
   flags: x.number(),
-  position: x.vec3(),
+  position: SwVec3Schema,
 });
-export type ComponentDefinitionLogicNode = x.InferShape<
-  typeof ComponentDefinitionLogicNodeSchema.shape
->;
-export type ComponentDefinitionLogicNodeImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionLogicNodeSchema.shape
->;
 
-export const ComponentDefinitionCouplingSchema = x.partialObject({
+/**
+ * Represents `<logic_node>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <logic_nodes> / <logic_node>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link LogicNodeImmutable} for its parameter type.
+ *
+ * @see {@link LogicNodeSchema}
+ * @see {@link LogicNodeImmutable}
+ */
+export interface LogicNode extends x.Infer<typeof LogicNodeSchema> {}
+
+/**
+ * Represents `<logic_node>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <logic_nodes> / <logic_node>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link LogicNode} instead
+ * if mutation is required.
+ *
+ * @see {@link LogicNodeSchema}
+ * @see {@link LogicNode}
+ */
+export interface LogicNodeImmutable extends x.InferImmutable<typeof LogicNodeSchema> {}
+
+/**
+ * Represents `<coupling>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <couplings> / <coupling>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link Coupling}
+ * @see {@link CouplingImmutable}
+ */
+export const CouplingSchema = x.partialObject({
   orientation: x.number(),
   alignment: x.number(),
   coupling_type: x.string(),
@@ -75,38 +238,149 @@ export const ComponentDefinitionCouplingSchema = x.partialObject({
   coupling_gender: x.number(),
   alignment_required: x.boolean(),
   allow_bipolar_alignment: x.boolean(),
-  position: x.vec3(),
+  position: SwVec3Schema,
 });
-export type ComponentDefinitionCoupling = x.InferShape<
-  typeof ComponentDefinitionCouplingSchema.shape
->;
-export type ComponentDefinitionCouplingImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionCouplingSchema.shape
->;
 
-export const ComponentDefinitionVoxelSchema = x.partialObject({
+/**
+ * Represents `<coupling>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <couplings> / <coupling>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link CouplingImmutable} for its parameter type.
+ *
+ * @see {@link CouplingSchema}
+ * @see {@link CouplingImmutable}
+ */
+export interface Coupling extends x.Infer<typeof CouplingSchema> {}
+
+/**
+ * Represents `<coupling>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <couplings> / <coupling>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link Coupling} instead
+ * if mutation is required.
+ *
+ * @see {@link CouplingSchema}
+ * @see {@link Coupling}
+ */
+export interface CouplingImmutable extends x.InferImmutable<typeof CouplingSchema> {}
+
+/**
+ * Represents `<voxel>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <voxels> / <voxel>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link Voxel}
+ * @see {@link VoxelImmutable}
+ */
+export const VoxelSchema = x.partialObject({
   flags: x.number(),
   physics_shape: x.number(),
   buoy_pipes: x.number(),
-  position: x.vec3(),
-  physics_shape_rotation: x.mat3(),
+  position: SwVec3Schema,
+  physics_shape_rotation: SwMat3Schema,
 });
-export type ComponentDefinitionVoxel = x.InferShape<typeof ComponentDefinitionVoxelSchema.shape>;
-export type ComponentDefinitionVoxelImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionVoxelSchema.shape
->;
 
-export const ComponentDefinitionJetEngineConnectionSchema = x.partialObject({
-  pos: x.vec3(),
-  normal: x.vec3(),
+/**
+ * Represents `<voxel>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <voxels> / <voxel>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link VoxelImmutable} for its parameter type.
+ *
+ * @see {@link VoxelSchema}
+ * @see {@link VoxelImmutable}
+ */
+export interface Voxel extends x.Infer<typeof VoxelSchema> {}
+
+/**
+ * Represents `<voxel>` elements in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <voxels> / <voxel>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link Voxel} instead
+ * if mutation is required.
+ *
+ * @see {@link VoxelSchema}
+ * @see {@link Voxel}
+ */
+export interface VoxelImmutable extends x.InferImmutable<typeof VoxelSchema> {}
+
+/**
+ * Represents `<j>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <jet_engine_connections_prev> / <j>`
+ * - `<definition> / <jet_engine_connections_next> / <j>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link JetEngineConnection}
+ * @see {@link JetEngineConnectionImmutable}
+ */
+export const JetEngineConnectionSchema = x.partialObject({
+  pos: SwVec3Schema,
+  normal: SwVec3Schema,
 });
-export type ComponentDefinitionJetEngineConnection = x.InferShape<
-  typeof ComponentDefinitionJetEngineConnectionSchema.shape
->;
-export type ComponentDefinitionJetEngineConnectionImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionJetEngineConnectionSchema.shape
->;
 
+/**
+ * Represents `<j>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <jet_engine_connections_prev> / <j>`
+ * - `<definition> / <jet_engine_connections_next> / <j>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link JetEngineConnectionImmutable} for its parameter type.
+ *
+ * @see {@link JetEngineConnectionSchema}
+ * @see {@link JetEngineConnectionImmutable}
+ */
+export interface JetEngineConnection extends x.Infer<typeof JetEngineConnectionSchema> {}
+
+/**
+ * Represents `<j>` elements in Stormworks component definition data.
+ *
+ * XML location:
+ * - `<definition> / <jet_engine_connections_prev> / <j>`
+ * - `<definition> / <jet_engine_connections_next> / <j>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link JetEngineConnection} instead
+ * if mutation is required.
+ *
+ * @see {@link JetEngineConnectionSchema}
+ * @see {@link JetEngineConnection}
+ */
+export interface JetEngineConnectionImmutable extends x.InferImmutable<
+  typeof JetEngineConnectionSchema
+> {}
+
+/**
+ * Represents root `<definition>` elements in Stormworks component definition data.
+ *
+ * @see {@link ComponentDefinition}
+ * @see {@link ComponentDefinitionImmutable}
+ */
 export const ComponentDefinitionSchema = x.partialObject({
   name: x.string(),
   category: x.number(),
@@ -228,42 +502,42 @@ export const ComponentDefinitionSchema = x.partialObject({
   radar_type: x.number(),
   piston_len: x.number(),
   piston_cam: x.number(),
-  sfx_datas: x.list("sfx_data", ComponentDefinitionSfxDataSchema),
-  surfaces: x.list("surface", ComponentDefinitionSurfaceSchema),
-  buoyancy_surfaces: x.list("surface", ComponentDefinitionSurfaceSchema),
-  logic_nodes: x.list("logic_node", ComponentDefinitionLogicNodeSchema),
-  couplings: x.list("coupling", ComponentDefinitionCouplingSchema),
-  voxels: x.list("voxel", ComponentDefinitionVoxelSchema),
-  voxel_min: x.vec3(),
-  voxel_max: x.vec3(),
-  voxel_physics_min: x.vec3(),
-  voxel_physics_max: x.vec3(),
-  bb_physics_min: x.vec3(),
-  bb_physics_max: x.vec3(),
-  compartment_sample_pos: x.vec3(),
-  constraint_pos_parent: x.vec3(),
-  constraint_pos_child: x.vec3(),
-  voxel_location_child: x.vec3(),
-  seat_offset: x.vec3(),
-  seat_front: x.vec3(),
-  seat_up: x.vec3(),
-  seat_camera: x.vec3(),
-  seat_render: x.vec3(),
-  force_dir: x.vec3(),
-  light_position: x.vec3(),
-  light_color: x.vec3(),
-  light_forward: x.vec3(),
-  door_size: x.vec3(),
-  door_normal: x.vec3(),
-  door_side: x.vec3(),
-  door_up: x.vec3(),
-  door_base_pos: x.vec3(),
-  dynamic_body_position: x.vec3(),
-  dynamic_rotation_axes: x.vec3(),
-  dynamic_side_axis: x.vec3(),
-  magnet_offset: x.vec3(),
-  connector_axis: x.vec3(),
-  connector_up: x.vec3(),
+  sfx_datas: x.list("sfx_data", SfxDataSchema),
+  surfaces: x.list("surface", SurfaceSchema),
+  buoyancy_surfaces: x.list("surface", SurfaceSchema),
+  logic_nodes: x.list("logic_node", LogicNodeSchema),
+  couplings: x.list("coupling", CouplingSchema),
+  voxels: x.list("voxel", VoxelSchema),
+  voxel_min: SwVec3Schema,
+  voxel_max: SwVec3Schema,
+  voxel_physics_min: SwVec3Schema,
+  voxel_physics_max: SwVec3Schema,
+  bb_physics_min: SwVec3Schema,
+  bb_physics_max: SwVec3Schema,
+  compartment_sample_pos: SwVec3Schema,
+  constraint_pos_parent: SwVec3Schema,
+  constraint_pos_child: SwVec3Schema,
+  voxel_location_child: SwVec3Schema,
+  seat_offset: SwVec3Schema,
+  seat_front: SwVec3Schema,
+  seat_up: SwVec3Schema,
+  seat_camera: SwVec3Schema,
+  seat_render: SwVec3Schema,
+  force_dir: SwVec3Schema,
+  light_position: SwVec3Schema,
+  light_color: SwVec3Schema,
+  light_forward: SwVec3Schema,
+  door_size: SwVec3Schema,
+  door_normal: SwVec3Schema,
+  door_side: SwVec3Schema,
+  door_up: SwVec3Schema,
+  door_base_pos: SwVec3Schema,
+  dynamic_body_position: SwVec3Schema,
+  dynamic_rotation_axes: SwVec3Schema,
+  dynamic_side_axis: SwVec3Schema,
+  magnet_offset: SwVec3Schema,
+  connector_axis: SwVec3Schema,
+  connector_up: SwVec3Schema,
   tooltip_properties: x.partialObject({
     description: x.string(),
     short_description: x.string(),
@@ -272,44 +546,40 @@ export const ComponentDefinitionSchema = x.partialObject({
     tier: x.number(),
     number_rewarded: x.number(),
   }),
-  jet_engine_connections_prev: x.list("j", ComponentDefinitionJetEngineConnectionSchema),
-  jet_engine_connections_next: x.list("j", ComponentDefinitionJetEngineConnectionSchema),
-  seat_exit_position: x.vec3(),
-  particle_direction: x.vec3(),
-  particle_offset: x.vec3(),
-  particle_bounds: x.vec3(),
-  weapon_breech_position: x.vec3(),
-  weapon_breech_normal: x.vec3(),
-  weapon_cart_position: x.vec3(),
-  weapon_cart_velocity: x.vec3(),
-  rope_hook_offset: x.vec3(),
+  jet_engine_connections_prev: x.list("j", JetEngineConnectionSchema),
+  jet_engine_connections_next: x.list("j", JetEngineConnectionSchema),
+  seat_exit_position: SwVec3Schema,
+  particle_direction: SwVec3Schema,
+  particle_offset: SwVec3Schema,
+  particle_bounds: SwVec3Schema,
+  weapon_breech_position: SwVec3Schema,
+  weapon_breech_normal: SwVec3Schema,
+  weapon_cart_position: SwVec3Schema,
+  weapon_cart_velocity: SwVec3Schema,
+  rope_hook_offset: SwVec3Schema,
 });
-export type ComponentDefinition = x.InferShape<typeof ComponentDefinitionSchema.shape>;
-export type ComponentDefinitionImmutable = x.InferShapeImmutable<
-  typeof ComponentDefinitionSchema.shape
->;
 
 /**
- * Parses a Stormworks component definition XML document.
+ * Represents root `<definition>` elements in Stormworks component definition data.
  *
- * @throws {@link x.SchemaError} when the XML content
- * does not match the component definition schema.
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link ComponentDefinitionImmutable} for its parameter type.
+ *
+ * @see {@link ComponentDefinitionSchema}
+ * @see {@link ComponentDefinitionImmutable}
  */
-export function parseComponentDefinitionXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): ComponentDefinition {
-  const tree = parseSwXml(input);
-  return ComponentDefinitionSchema.parse(tree, "definition", options);
-}
+export interface ComponentDefinition extends x.Infer<typeof ComponentDefinitionSchema> {}
 
 /**
- * Parses a Stormworks component definition XML document without throwing schema errors.
+ * Represents root `<definition>` elements in Stormworks component definition data.
+ *
+ * This is the recommended type for function parameters when the implementation
+ * does not need to modify the value. Use {@link ComponentDefinition} instead
+ * if mutation is required.
+ *
+ * @see {@link ComponentDefinitionSchema}
+ * @see {@link ComponentDefinition}
  */
-export function safeParseComponentDefinitionXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options: ParseOptions = {},
-): x.Result<ComponentDefinition, x.SchemaError> {
-  const tree = parseSwXml(input);
-  return ComponentDefinitionSchema.safeParse(tree, "definition", options);
-}
+export interface ComponentDefinitionImmutable extends x.InferImmutable<
+  typeof ComponentDefinitionSchema
+> {}

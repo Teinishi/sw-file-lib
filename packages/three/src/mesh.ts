@@ -136,7 +136,7 @@ function setGroups(geometry: THREE.BufferGeometry, mesh: MeshData): void {
     geometry.addGroup(
       g.indexBufferStart,
       g.indexBufferLength,
-      getMaterialIndexForShaderId(g.materialId),
+      getMaterialIndexForShaderId(g.materialIndex),
     );
   });
 }

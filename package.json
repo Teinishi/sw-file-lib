@@ -1,7 +1,7 @@
 {
   "name": "sw-file-lib",
   "private": true,
-  "description": "A monorepo containing libraries and tools for working with Stormworks files.",
+  "description": "TypeScript libraries for working with Stormworks files.",
   "homepage": "https://github.com/Teinishi/sw-file-lib#readme",
   "bugs": {
     "url": "https://github.com/Teinishi/sw-file-lib/issues"
@@ -26,16 +26,26 @@
     "fmt:check": "oxfmt --check",
     "check": "pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
     "release": "bumpp",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "predocs": "typedoc",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
+    "@sw-file-lib/typedoc-markdown-codeblock": "workspace:*",
+    "@sw-file-lib/typedoc-plugin-xml-schema": "workspace:*",
     "@types/node": "^26.1.2",
     "bumpp": "^11.1.0",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "ts-essentials": "^10.2.1",
     "tsdown": "^0.22.5",
-    "typescript": "^7.0.2",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0",
+    "typedoc-vitepress-theme": "^1.1.3",
+    "typescript": "^6.0.3",
+    "vitepress": "2.0.0-alpha.19",
     "vitest": "^4.1.10"
   },
   "packageManager": "pnpm@11.18.0"

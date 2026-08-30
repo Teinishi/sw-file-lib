@@ -18,7 +18,7 @@ export function vec3(val?: Partial<Readonly<Vec3>>): Vec3 {
 }
 
 /** Return the component-wise minimum of two vectors. */
-export function minVec3(a: Vec3, b: Vec3) {
+export function minVec3(a: Vec3, b: Vec3): Vec3 {
   return {
     x: Math.min(a.x, b.x),
     y: Math.min(a.y, b.y),
@@ -27,26 +27,12 @@ export function minVec3(a: Vec3, b: Vec3) {
 }
 
 /** Return the component-wise maximum of two vectors. */
-export function maxVec3(a: Vec3, b: Vec3) {
+export function maxVec3(a: Vec3, b: Vec3): Vec3 {
   return {
     x: Math.max(a.x, b.x),
     y: Math.max(a.y, b.y),
     z: Math.max(a.z, b.z),
   };
-}
-
-/**
- * Convert a vector to an attribute map using `x`, `y`, and `z` keys.
- *
- * Set `omitZero` to skip components whose value is exactly `0`.
- */
-export function vec3ToMap(value: Vec3, omitZero: boolean = false) {
-  const m = new Map<string, number>();
-  const { x, y, z } = value;
-  if (!omitZero || x !== 0) m.set("x", x);
-  if (!omitZero || y !== 0) m.set("y", y);
-  if (!omitZero || z !== 0) m.set("z", z);
-  return m;
 }
 
 /** Add two vectors component-wise. */
@@ -77,7 +63,7 @@ export function mulVec3(a: Readonly<Vec3>, s: number): Vec3 {
 }
 
 /** Return the dot product of two vectors. */
-export function dotVec3(a: Readonly<Vec3>, b: Readonly<Vec3>) {
+export function dotVec3(a: Readonly<Vec3>, b: Readonly<Vec3>): number {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
@@ -97,6 +83,6 @@ export function normalizeVec3(v: Readonly<Vec3>): Vec3 {
 }
 
 /** Return `true` when all vector components are exactly equal. */
-export function eqVec3(a: Readonly<Vec3>, b: Readonly<Vec3>) {
+export function eqVec3(a: Readonly<Vec3>, b: Readonly<Vec3>): boolean {
   return a.x === b.x && a.y === b.y && a.z === b.z;
 }

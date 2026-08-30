@@ -7,5 +7,10 @@
     "emitDeclarationOnly": true
   },
   "files": [],
-  "references": [{ "path": "./packages/core" }]
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/geometry" },
+    { "path": "./packages/three" },
+    { "path": "./packages/xml" }
+  ]
 }

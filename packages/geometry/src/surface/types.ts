@@ -1,29 +1,61 @@
 import type { Color } from "@sw-file-lib/core/color";
 import type { Mat3, Vec3 } from "@sw-file-lib/core/math";
-import type { BasicSurfaceShape } from ".";
 
-/** A resolved component surface ready for geometry generation. */
+/**
+ * A flattened Stormworks surface with its final transform applied.
+ *
+ * Unlike the `<surface>` element in a component definition, `SurfaceData`
+ * stores the surface position and orientation after the component hierarchy
+ * has been resolved. This representation is used for operations that work
+ * across multiple components, such as surface culling and vehicle mesh
+ * generation.
+ */
 export interface SurfaceData {
-  /** Surface origin in Stormworks voxel units. It is scaled by `0.25` when geometry is built. */
+  /** Vehicle-space position of the surface. */
   readonly position: Readonly<Vec3>;
-  /** Row-major orientation matrix in Stormworks' left-handed coordinate system. */
+  /** Vehicle-space orientation matrix of the surface. */
   readonly matrix: Readonly<Mat3>;
-  /** Whether the surface transform includes a mirror/reflection. Used by culling. */
-  readonly isFlipped: boolean;
-  /** Stormworks basic surface shape id. */
-  readonly shape: BasicSurfaceShape;
-  /** Optional per-surface color. Channel values are `0` to `255`. */
+  /**
+   * Stormworks surface shape ID.
+   *
+   * This is the same numeric value as the `shape` attribute of a
+   * `<surface>` element.
+   */
+  readonly shape: number;
+  /** Surface color. */
   readonly color?: Readonly<Color>;
 }
 
-/** Options used when generating geometry from Stormworks basic surfaces. */
+/**
+ * Options for surface geometry generation.
+ */
 export interface BuildSurfaceGeometryOptions {
-  /** Add the dark bevel/edge strip around each generated surface. */
+  /**
+   * Generates a border by offsetting the surface inward.
+   *
+   * @default false
+   */
   readonly edge?: boolean;
-  /** Generate only the edge strip, leaving the center open. Implies `edge`. */
+  /**
+   * Generates only the border geometry.
+   *
+   * Implies `edge=true`.
+   *
+   * @default false
+   */
   readonly hollow?: boolean;
-  /** Default color used when a `SurfaceData` entry does not provide one. */
+  /**
+   * Default color used when a `SurfaceData` entry does not provide one.
+   *
+   * Defaults to white.
+   */
   readonly color?: Readonly<Color>;
-  /** Remove fully covered adjacent surfaces before geometry generation. Defaults to `true`. */
+  /**
+   * Removes hidden internal surfaces before generating geometry.
+   *
+   * This option is only used by {@link buildSurfacesGeometry}.
+   *
+   * @default true
+   */
   readonly cull?: boolean;
 }

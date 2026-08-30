@@ -75,46 +75,82 @@ interface GeometryGroup {
   materialIndex: number;
 }
 
-/** Options for {@link GeometryBuilder}. */
+/**
+ * Options for {@link GeometryBuilder}.
+ */
 export interface GeometryBuilderOptions {
-  /** Run Earcut refinement after polygon triangulation. */
+  /** Run earcut refinement after polygon triangulation. */
   readonly refine?: boolean;
 }
 
-/** Options shared by face-building methods. */
+/**
+ * Options shared by face generation methods.
+ */
 export interface AddFaceOptions {
-  /** Material group index. Stormworks convention is `0` opaque, `1` glass, `2` additive. */
+  /**
+   * Material index assigned to the generated triangles.
+   *
+   * `0` = opaque, `1` = glass, `2` = additive. Other values are not supported by Stormworks.
+   *
+   * @default 0
+   */
   readonly materialIndex?: number;
-  /** Per-vertex color written for the generated face. Channel values are `0` to `255`. */
+  /**
+   * Vertex color applied to the generated face.
+   *
+   * Defaults to white.
+   */
   readonly color?: Readonly<Color>;
-  /** Reverse the face normal and triangle winding. */
+  /**
+   * Whether to reverse the winding order of the generated triangles.
+   *
+   * @default false
+   */
   readonly flip?: boolean;
 }
 
-/** Options for adding a 2D polygon on a constant Z plane. */
+/**
+ * Options for {@link GeometryBuilder.addPolygon}.
+ */
 export interface AddPolygonOptions extends AddFaceOptions {
-  /** Z coordinate used for every polygon vertex. Defaults to `0`. */
+  /**
+   * Z coordinate of the generated polygon.
+   *
+   * @default 0
+   */
   readonly z?: number;
 }
 
-/** Options for adding side faces between two Z planes. */
+/**
+ * Options for {@link GeometryBuilder.addExtrudedSides}.
+ */
 export interface AddExtrudedSideOptions extends AddFaceOptions {
-  /** Close the side strip by connecting the final vertex back to the first. */
+  /**
+   * Whether to connect the last and first vertices.
+   *
+   * @default false
+   */
   readonly close?: boolean;
   /** Start and end Z coordinates for the side strip. */
   readonly zRange: readonly [number, number];
 }
 
+/** Read-only list of 3D vertices. */
 export type VertexList3D = readonly Readonly<Vec3>[];
 
+/** Read-only list of 2D vertices. */
 export type VertexList2D = readonly Readonly<Vec2>[];
 
 /**
- * Incrementally builds Stormworks-space mesh geometry.
+ * Utility for constructing indexed triangle meshes.
  *
- * Positions, normals, indices, and colors are stored in Stormworks' left-handed
- * coordinate system. Convert the result with `@sw-file-lib/three` when creating
- * Three.js geometry.
+ * `GeometryBuilder` provides a lightweight, renderer-independent API for
+ * generating and combining geometry. It is used internally by the Three.js
+ * integration package, but can also be used directly to create procedural
+ * meshes or export geometry in other formats.
+ *
+ * Positions, normals, and indices are stored in Stormworks' left-handed
+ * coordinate system. Color is stored as RGBA with 0-255 integer components.
  */
 export class GeometryBuilder {
   private readonly positions: number[] = [];
@@ -122,8 +158,14 @@ export class GeometryBuilder {
   private readonly colors: number[] = [];
   private readonly indices: number[] = [];
   private readonly groups: GeometryGroup[] = [];
+  /** Whether earcut triangulation refinement is enabled. */
   readonly refine: boolean;
 
+  /**
+   * Creates a new geometry builder.
+   *
+   * @param options - Builder options.
+   */
   constructor(options?: GeometryBuilderOptions) {
     this.refine = options?.refine ?? false;
   }
@@ -192,10 +234,14 @@ export class GeometryBuilder {
   }
 
   /**
-   * Add a coplanar face from ordered vertices.
+   * Adds a planar face from 3D vertices.
    *
-   * The face is triangulated as a fan from the first vertex. Normals are
-   * computed for Stormworks' left-handed coordinate system.
+   * The polygon is triangulated automatically, assuming the vertices are coplanar.
+   *
+   * For convenience, `options` may be either a material index or a color.
+   *
+   * @param vertices - Polygon vertices in winding order.
+   * @param options - Face generation options.
    */
   addFace(vertices: VertexList3D, options?: number | Readonly<Color> | AddFaceOptions) {
     if (vertices.length < 3) {
@@ -222,7 +268,11 @@ export class GeometryBuilder {
   /**
    * Add a triangulated 2D polygon on a constant Z plane.
    *
-   * `polygon[0]` is the outer ring. Additional rings are treated as holes.
+   * The first vertex list is treated as the outer boundary, and any remaining
+   * vertex lists are treated as holes.
+   *
+   * @param polygon - Outer polygon followed by optional holes.
+   * @param options - Polygon generation options.
    */
   addPolygon(polygon: readonly VertexList2D[], options?: AddPolygonOptions) {
     const z = options?.z ?? 0;
@@ -237,9 +287,15 @@ export class GeometryBuilder {
   }
 
   /**
-   * Add quad side faces along a 2D polyline between two Z coordinates.
+   * Generates the side faces of an extruded polygon.
    *
-   * Use `close: true` for a closed prism-like side surface.
+   * Use `{ close: true }` to close the path by connecting the final vertex back to the first.
+   *
+   * This method creates only the side walls. Top and bottom faces can be
+   * generated separately with {@link addPolygon}.
+   *
+   * @param vertices - Polygon outline.
+   * @param options - Extrusion options.
    */
   addExtrudedSides(vertices: VertexList2D, options?: AddExtrudedSideOptions) {
     const [z1, z2] = options?.zRange ?? [0, 1];
@@ -266,10 +322,12 @@ export class GeometryBuilder {
   }
 
   /**
-   * Apply an affine transform to all accumulated vertices and normals.
+   * Applies a transformation to all vertices and normals.
    *
-   * If the matrix determinant is negative, triangle winding is reversed so the
-   * generated geometry remains consistently front-facing.
+   * Either the rotation matrix or the translation may be omitted.
+   *
+   * @param mat - Rotation matrix.
+   * @param translation - Translation vector.
    */
   transform(mat?: Readonly<Mat3>, translation?: Readonly<Vec3>) {
     const { positions, normals } = this;
@@ -301,7 +359,13 @@ export class GeometryBuilder {
     }
   }
 
-  /** Append another builder's geometry to this builder. */
+  /**
+   * Appends all geometry from another builder.
+   *
+   * Material groups are preserved.
+   *
+   * @param other - Other `GeometryBuilder` to merge.
+   */
   merge(other: GeometryBuilder) {
     const vertexOffset = this.positions.length / 3;
     const indexOffset = this.indices.length;
@@ -328,7 +392,10 @@ export class GeometryBuilder {
   }
 
   /**
-   * Return raw attribute arrays suitable for conversion to a rendering backend.
+   * Converts the geometry into raw attribute buffers.
+   *
+   * This is primarily intended as a bridge to Three.js. Most applications
+   * should prefer the higher-level utilities provided by `@sw-file-lib/three`.
    *
    * The returned positions and normals are in three.js coordinates.
    */
@@ -343,10 +410,11 @@ export class GeometryBuilder {
   }
 
   /**
-   * Convert accumulated geometry to core `MeshData`.
+   * Converts the geometry into Stormworks mesh data.
    *
-   * The result can be serialized with `@sw-file-lib/core` and remains in
-   * Stormworks' left-handed coordinate system.
+   * The result can be serialized with `@sw-file-lib/core`.
+   *
+   * @returns Mesh data compatible with `@sw-asset-kit/core`.
    */
   toMeshData(): MeshData {
     const { positions, colors, normals, indices } = this;
@@ -414,7 +482,7 @@ export class GeometryBuilder {
         return {
           indexBufferStart: start,
           indexBufferLength: length,
-          materialId: materialIndex,
+          materialIndex,
           boundsMin,
           boundsMax,
           name: `material-${i}`,

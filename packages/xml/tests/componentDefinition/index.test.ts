@@ -2,13 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { searchRom } from "@sw-file-lib/test-utils";
-import {
-  parseSwXml,
-  safeParseComponentDefinitionXml,
-  ComponentDefinitionSchema,
-  x,
-  utils,
-} from "../../src";
+import { parseSwXml, safeParseComponentDefinitionXml, ComponentDefinitionSchema } from "../../src";
+import * as x from "../../src/xml-schema";
+import * as utils from "./utils";
 
 describe("componentDefinition", () => {
   test("build component definition", async () => {

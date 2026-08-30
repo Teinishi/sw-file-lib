@@ -1,0 +1,22 @@
+{
+  "name": "@sw-file-lib/typedoc-markdown-codeblock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal TypeDoc plugin which adds code block for interface and class declarations in typedoc-plugin-markdown.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Teinishi",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "src/plugin.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "devDependencies": {
+    "@sw-file-lib/xml": "workspace:*"
+  }
+}

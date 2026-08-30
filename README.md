@@ -1,69 +1,172 @@
 # sw-file-lib
 
-**THIS IS WIP**
+TypeScript libraries for reading, writing, and rendering **Stormworks** assets.
 
-A monorepo containing libraries and tools for working with Stormworks files.
+`sw-file-lib` is a modular monorepo that provides strongly typed APIs for working with Stormworks file formats. Each package can be used independently, and packages only depend on the functionality they need.
 
-## Overview
+## Features
 
-`sw-file-lib` provides reusable libraries for reading, writing, generating, and converting Stormworks data.
-
-The project is organized as a pnpm workspace, allowing each package to remain focused while sharing common tooling and configuration.
+- 📦 Modular packages for binary, XML, geometry, and Three.js
+- 🔒 Fully typed APIs designed for TypeScript
+- 🧩 XML schema system with type inference
+- 📐 Vector, matrix, and color utilities
+- 🎮 Three.js integration with Stormworks coordinate conversion
+- 🚫 Zero dependencies in the core package
 
 ## Packages
 
-| Package              | Description                                                                                               |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| `@sw-file-lib/core`  | Binary parse and serialization, geometry generation. No runtime dependencies.                             |
-| `@sw-file-lib/xml`   | XML parse and serialization, math utilities, and geometry generation. Depends on fast-xml-parser and zod. |
-| `@sw-file-lib/three` | Integration with three.js, including Stormworks-style materials and geometry conversion.                  |
+| Package                   | Description                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `@sw-file-lib/core`       | Binary file reading and writing, plus dependency-free core utilities           |
+| `@sw-file-lib/core/math`  | Vectors, matrices, orientation, and math utilities                             |
+| `@sw-file-lib/core/color` | Color types and color conversion utilities                                     |
+| `@sw-file-lib/xml`        | XML parser, writer, and strongly typed schemas                                 |
+| `@sw-file-lib/geometry`   | Geometry construction, mesh generation, and surface operations such as culling |
+| `@sw-file-lib/three`      | Three.js helpers including coordinate conversion, mesh creation, and materials |
 
-Additional packages may be added as the project grows.
+## Installation
 
-## Repository Structure
+Install only the packages you need.
 
-```text
-packages/
-├── core/
-├── xml/
-└── three/
+```bash
+npm install @sw-file-lib/core
+npm install @sw-file-lib/xml
+npm install @sw-file-lib/geometry
+npm install @sw-file-lib/three
 ```
+
+## Quick examples
+
+### Read and write binary data
+
+```ts
+import { BinaryReader, BinaryWriter } from "@sw-file-lib/core";
+
+const input = new Uint8Array([0x78, 0x56, 0x34, 0x12]);
+
+const reader = new BinaryReader(input);
+const value = reader.uint32(); // 0x12345678
+
+const writer = new BinaryWriter();
+writer.uint32(value);
+
+const output = writer.build();
+console.log(output);
+```
+
+### XML with schemas
+
+```ts
+import { x } from "@sw-file-lib/xml";
+
+const exampleSchema = x.object({
+  name: x.string(),
+  value: x.number(),
+});
+
+const xml = '<example name="Hello" value="3.14"/>';
+
+const data = exampleSchema.parse(xml, "example");
+
+console.log(data.name); // "Hello"
+console.log(data.value); // 3.14
+```
+
+### Vector math
+
+```ts
+import { vec3, Mat3 } from "@sw-file-lib/core/math";
+
+const position = vec3(1, 2, 3);
+const transformed = mulMat3Vec3([1, 0, 0, 0, 1, 0, 0, 0, 1], position);
+```
+
+### Three.js integration
+
+```ts
+// todo: example code
+```
+
+## Package overview
+
+### `@sw-file-lib/core`
+
+The foundation package of the library.
+
+It currently provides binary file reading and writing with a lightweight, dependency-free implementation.
+
+- Binary reader and writer
+- Types, reader, and writer for mesh and component mod binary data
+
+Subpath exports:
+
+- `@sw-file-lib/core/math`
+- `@sw-file-lib/core/color`
+
+### `@sw-file-lib/xml`
+
+A strongly typed XML library built around schemas.
+
+- XML parsing and serialization
+- Attribute and element schemas
+- Type inference from schema definitions
+- Detailed validation errors with XML paths
+
+### `@sw-file-lib/geometry`
+
+Utilities for constructing and processing 3D geometry.
+
+- `GeometryBuilder`
+- Surface generation
+- Surface culling
+
+### `@sw-file-lib/three`
+
+Helpers for displaying Stormworks assets in Three.js.
+
+- Stormworks to Three.js coordinate conversion
+- Mesh and material creation
 
 ## Requirements
 
 - Node.js 24+
 - pnpm
 
-## Installation
+---
 
-```sh
-pnpm install
+# Development
+
+This section is only relevant if you want to contribute to the library itself.
+
+## Repository structure
+
+```text
+packages/
+  core/
+  xml/
+  geometry/
+  three/
 ```
 
-## Development
+Each package is independently buildable and publishable while sharing the same workspace.
 
-Build all packages:
+## Build
 
-```sh
+```bash
+pnpm install
 pnpm build
 ```
 
-Run tests:
+## Test
 
-```sh
+```bash
 pnpm test
 ```
 
-Run lint:
+## Type check
 
-```sh
-pnpm lint
-```
-
-Format source code:
-
-```sh
-pnpm fmt
+```bash
+pnpm typecheck
 ```
 
 ## Design Goals
@@ -72,7 +175,6 @@ pnpm fmt
 - Browser and Node.js support.
 - three.js integration provided as a separate package.
 - Strongly typed APIs.
-- Reusable components for future Stormworks tools.
 
 ## License
 

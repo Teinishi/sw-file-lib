@@ -41,7 +41,7 @@ export function mulMat3Vec3(m: Readonly<Mat3>, v: Readonly<Vec3>): Vec3 {
 }
 
 /** Return the determinant of a row-major 3x3 matrix. */
-export function detMat3(m: Readonly<Mat3>) {
+export function detMat3(m: Readonly<Mat3>): number {
   return (
     m[0] * (m[4] * m[8] - m[5] * m[7]) -
     m[1] * (m[3] * m[8] - m[5] * m[6]) +

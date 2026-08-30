@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { x } from "../../src";
+import * as x from "../../src/xml-schema";
 
 describe("schemaLib serialization", () => {
   test("serialize produces the original XML", () => {

@@ -442,7 +442,7 @@
     {
       "indexBufferStart": 0,
       "indexBufferLength": 6,
-      "materialId": 1,
+      "materialIndex": 1,
       "boundsMin": {
         "x": -1,
         "y": -1,
@@ -458,7 +458,7 @@
     {
       "indexBufferStart": 6,
       "indexBufferLength": 6,
-      "materialId": 2,
+      "materialIndex": 2,
       "boundsMin": {
         "x": -1,
         "y": -1,
@@ -474,7 +474,7 @@
     {
       "indexBufferStart": 12,
       "indexBufferLength": 24,
-      "materialId": 0,
+      "materialIndex": 0,
       "boundsMin": {
         "x": -1,
         "y": -1,

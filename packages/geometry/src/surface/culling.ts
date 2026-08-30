@@ -1,5 +1,6 @@
 import {
   addVec3,
+  detMat3,
   eqVec3,
   modulo,
   mulVec3,
@@ -7,12 +8,12 @@ import {
   type Mat3,
   type Vec3,
 } from "@sw-file-lib/core/math";
+import { type SurfaceData } from ".";
 import {
   SURFACE_EDGE_COVERAGE,
   surfaceEdgeCoverageExists,
   type ShapeEdgeCoverage,
-  type SurfaceData,
-} from ".";
+} from "./internal/shapes";
 
 function getMatrixAxis(m: Readonly<Mat3>, axis: "x" | "y" | "z"): Vec3 {
   const i = "xyz".indexOf(axis);
@@ -24,10 +25,13 @@ function cullingMapKey(pos: Readonly<Vec3>, normal: Readonly<Vec3>) {
 }
 
 /**
- * Return indices of surfaces that are fully hidden by adjacent compatible surfaces.
+ * Detects hidden internal surfaces.
  *
- * This is useful before rendering or exporting generated component surfaces. It
- * only culls shapes with known edge coverage data.
+ * The returned set contains the indices of surfaces that can be omitted
+ * without changing the visible exterior geometry.
+ *
+ * @param surfaces - Surfaces to analyze.
+ * @returns Indices of culled surfaces.
  */
 export function cullSurfaces(surfaces: readonly SurfaceData[]): Set<number> {
   const cullingMap: Map<string, Set<number>> = new Map();
@@ -69,7 +73,7 @@ export function cullSurfaces(surfaces: readonly SurfaceData[]): Set<number> {
 
       const up2 = getMatrixAxis(data2.matrix, "y");
       const right2 = getMatrixAxis(data2.matrix, "z");
-      const flip = data1.isFlipped === data2.isFlipped;
+      const flip = detMat3(data1.matrix) * detMat3(data2.matrix) >= 0;
 
       let start;
       if (eqVec3(subVec3(mulVec3(up2, -1), right2), bottomLeft)) {

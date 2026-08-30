@@ -1,0 +1,35 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+
+  "extends": ["./typedoc.base.json"],
+
+  "entryPoints": ["packages/core", "packages/geometry", "packages/three", "packages/xml"],
+  "entryPointStrategy": "packages",
+  "packageOptions": {
+    "includeVersion": true,
+    "entryPoints": ["src/index.ts"],
+    "entryPointStrategy": "resolve"
+  },
+
+  "readme": "README.md",
+  "out": "./docs/api",
+
+  "plugin": [
+    "@sw-file-lib/typedoc-plugin-xml-schema",
+    "typedoc-plugin-markdown",
+    "@sw-file-lib/typedoc-markdown-codeblock",
+    "typedoc-vitepress-theme"
+  ],
+  "docsRoot": "./docs",
+  "indexFormat": "table",
+  "parametersFormat": "table",
+  "interfacePropertiesFormat": "htmlTable",
+  "propertyMembersFormat": "table",
+  "typeDeclarationFormat": "table",
+  "tableColumnSettings": {
+    "hideSources": true
+  },
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "expandParameters": true
+}

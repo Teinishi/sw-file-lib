@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { meshDataToBytes, meshOrPhysDataFromBytes, type MeshData } from "@sw-file-lib/core";
+import { serializeMesh, parseMeshOrPhys, type MeshData } from "@sw-file-lib/core";
 import { GeometryBuilder } from "@sw-file-lib/geometry";
 import { createSwMesh, createSwPhysMeshGroup, assembleVehicleGeometry } from "@sw-file-lib/three";
 import { VehicleSchema } from "@sw-file-lib/xml";
@@ -37,7 +37,7 @@ let dragDepth = 0;
 const sceneObjects = computed(() => loadedObjects.map((item) => item.object));
 
 function loadMesh(bytes: ArrayBuffer, name: string) {
-  const data = meshOrPhysDataFromBytes(bytes);
+  const data = parseMeshOrPhys(bytes);
   const mainObject =
     data.kind === "mesh"
       ? createSwMesh(data, { name })
@@ -154,7 +154,7 @@ function onFileSelect(event: Event) {
 
 function saveObject(item: LoadedObject) {
   if (!item.meshData) return;
-  const bytes = meshDataToBytes(item.meshData);
+  const bytes = serializeMesh(item.meshData);
   const blob = new Blob([bytes], { type: "application/octet-stream" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

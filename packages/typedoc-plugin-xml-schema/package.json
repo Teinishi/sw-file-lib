@@ -1,0 +1,19 @@
+{
+  "name": "@sw-file-lib/typedoc-plugin-xml-schema",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal TypeDoc plugin which replaces x.infer<typeof schema> with the inferred type.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Teinishi",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "src/plugin.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  }
+}

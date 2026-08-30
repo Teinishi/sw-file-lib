@@ -1,4 +1,4 @@
-import type { SchemaParseOptions } from "./schemaLib";
+import type { SchemaParseOptions } from "./xml-schema";
 
 /**
  * Options used when parsing Stormworks XML files.

@@ -2,13 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { searchRom } from "@sw-file-lib/test-utils";
-import {
-  meshDataFromBytes,
-  meshDataToBytes,
-  meshOrPhysDataFromBytes,
-  physDataFromBytes,
-  physDataToBytes,
-} from "../../src";
+import { parseMesh, serializeMesh, parseMeshOrPhys, parsePhys, serializePhys } from "../../src";
 
 describe("mesh roundtrip", () => {
   test("test_cube_1.mesh", async () => {
@@ -18,10 +12,10 @@ describe("mesh roundtrip", () => {
     const buf = await fs.readFile(binPath);
     const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));
 
-    const data = meshDataFromBytes(buf);
+    const data = parseMesh(buf);
     expect(data).toEqual(expected);
 
-    const bytes = meshDataToBytes(data);
+    const bytes = serializeMesh(data);
     expect(buf.equals(bytes)).toBe(true);
   });
 
@@ -32,10 +26,10 @@ describe("mesh roundtrip", () => {
     const buf = await fs.readFile(binPath);
     const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));
 
-    const data = physDataFromBytes(buf);
+    const data = parsePhys(buf);
     expect(data).toEqual(expected);
 
-    const bytes = physDataToBytes(data);
+    const bytes = serializePhys(data);
     expect(buf.equals(bytes)).toBe(true);
   });
 
@@ -46,12 +40,12 @@ describe("mesh roundtrip", () => {
 
       for (const file of files) {
         const buf = await fs.readFile(file);
-        const data = meshOrPhysDataFromBytes(buf);
+        const data = parseMeshOrPhys(buf);
         let bytes;
         if (data.kind === "mesh") {
-          bytes = meshDataToBytes(data);
+          bytes = serializeMesh(data);
         } else {
-          bytes = physDataToBytes(data);
+          bytes = serializePhys(data);
         }
 
         const matched = buf.equals(bytes);
