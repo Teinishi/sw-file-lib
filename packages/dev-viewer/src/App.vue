@@ -8,6 +8,14 @@ import { VehicleSchema } from "@sw-file-lib/xml";
 import { BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "./basicBlocks/blocks.ts";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
+const COLORS = [0x0f766e, 0x1d4ed8, 0x7c3aed, 0xb45309, 0xdc2626, 0x059669, 0xc026d3, 0x0284c7];
+let nextColorIndex = 0;
+function getColor() {
+  const color = COLORS[nextColorIndex]!;
+  nextColorIndex = (nextColorIndex + 1) % COLORS.length;
+  return color;
+}
+
 type LoadedObject = {
   id: number;
   name: string;
@@ -30,10 +38,33 @@ const sceneObjects = computed(() => loadedObjects.map((item) => item.object));
 
 function loadMesh(bytes: ArrayBuffer, name: string) {
   const data = meshOrPhysDataFromBytes(bytes);
-  const object =
+  const mainObject =
     data.kind === "mesh"
       ? createSwMesh(data, { name })
       : createSwPhysMeshGroup(data, physMaterial, { name });
+
+  const object = new THREE.Group();
+  object.add(mainObject);
+
+  // group のワイヤーフレーム表示
+  if (data.kind === "mesh") {
+    for (const group of data.groups) {
+      const { boundsMin, boundsMax } = group;
+      const geometry = new THREE.BoxGeometry(
+        boundsMax.x - boundsMin.x,
+        boundsMax.y - boundsMin.y,
+        boundsMax.z - boundsMin.z,
+      );
+      const material = new THREE.MeshBasicMaterial({ color: getColor(), wireframe: true });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(
+        (boundsMin.x + boundsMax.x) / 2,
+        (boundsMin.y + boundsMax.y) / 2,
+        -(boundsMin.z + boundsMax.z) / 2,
+      );
+      object.add(mesh);
+    }
+  }
 
   loadedObjects.push({
     id: nextObjectId++,
