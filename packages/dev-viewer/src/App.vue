@@ -107,7 +107,8 @@ function colorToVec4(color: Color | undefined): [number, number, number, number]
 async function getMeshGeometryFromRom(path: string) {
   const res = await fetch(getRomPath("/rom", path));
   if (!res.ok) {
-    throw new Error(`Failed to fetch mesh data for ${path}: ${res.status} ${res.statusText}`);
+    console.error(`Failed to fetch mesh data for ${path}: ${res.status} ${res.statusText}`);
+    return;
   }
   return createSwMeshGeometry(parseMesh(await res.arrayBuffer()));
 }
@@ -158,9 +159,9 @@ async function loadVehicle(text: string, name: string) {
         const bc2 = component.o?.bc2 ? parseColor(component.o.bc2) : bc;
         const bc3 = component.o?.bc3 ? parseColor(component.o.bc3) : bc;
         applyUniformPatch(materials.uniforms.opaque, {
-          overrideColor1: { type: "vec4", value: colorToVec4(bc) },
-          overrideColor2: { type: "vec4", value: colorToVec4(bc2) },
-          overrideColor3: { type: "vec4", value: colorToVec4(bc3) },
+          blockColor1: { type: "vec4", value: colorToVec4(bc) },
+          blockColor2: { type: "vec4", value: colorToVec4(bc2) },
+          blockColor3: { type: "vec4", value: colorToVec4(bc3) },
           overrideColor: { type: "int", value: 1 },
         });
 

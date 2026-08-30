@@ -36,7 +36,7 @@ void main() {
 }
 `;
 
-/** Create the default opaque material used for shaderId 0 groups. */
+/** Create the default opaque material used for materialIndex 0 groups. */
 export function createOpaqueMaterial(
   uniforms = createUniformStore(createDefaultOpaqueUniforms()),
   materialParameters?: THREE.MeshStandardMaterialParameters,
@@ -55,9 +55,9 @@ export function createOpaqueMaterial(
       .replace(
         "#include <common>",
         /* glsl */ `#include <common>
-uniform vec4 overrideColor1;
-uniform vec4 overrideColor2;
-uniform vec4 overrideColor3;
+uniform vec4 blockColor1;
+uniform vec4 blockColor2;
+uniform vec4 blockColor3;
 uniform int overrideColor;`,
       )
       .replace(
@@ -65,9 +65,9 @@ uniform int overrideColor;`,
         /* glsl */ `#ifdef USE_COLOR
 vColor.xyz = color.xyz;
 if (overrideColor == 1) {
-  if (distance(color.rgb, vec3(1.0, 0.494, 0.0)) < 0.01) vColor = overrideColor1;
-  else if (distance(color.rgb, vec3(0.608, 0.494, 0.0)) < 0.01) vColor = overrideColor2;
-  else if (distance(color.rgb, vec3(0.216, 0.494, 0.0)) < 0.01) vColor = overrideColor3;
+  if (distance(color.rgb, vec3(1.0, 0.494, 0.0)) < 0.01) vColor = blockColor1;
+  else if (distance(color.rgb, vec3(0.608, 0.494, 0.0)) < 0.01) vColor = blockColor2;
+  else if (distance(color.rgb, vec3(0.216, 0.494, 0.0)) < 0.01) vColor = blockColor3;
 }
 vColor.rgb = pow(vColor.rgb, vec3(2.2));
 #endif`,
@@ -86,7 +86,7 @@ reflectedLight.directDiffuse += diffuseColor.rgb * incidence * distanceFactor * 
   return material;
 }
 
-/** Create the default glass material used for shaderId 1 groups. */
+/** Create the default glass material used for materialIndex 1 groups. */
 export function createGlassMaterial(
   uniforms = createUniformStore(createDefaultGlassUniforms()),
   materialParameters?: THREE.ShaderMaterialParameters,
@@ -105,7 +105,7 @@ export function createGlassMaterial(
   });
 }
 
-/** Create the default additive material used for shaderId 2 groups. */
+/** Create the default additive material used for materialIndex 2 groups. */
 export function createAdditiveMaterial(
   uniforms = createUniformStore(),
   materialParameters?: THREE.MeshBasicMaterialParameters,

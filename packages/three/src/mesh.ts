@@ -133,16 +133,6 @@ function setGroups(geometry: THREE.BufferGeometry, mesh: MeshData): void {
   }
 
   mesh.groups.forEach((g) => {
-    geometry.addGroup(
-      g.indexBufferStart,
-      g.indexBufferLength,
-      getMaterialIndexForShaderId(g.materialIndex),
-    );
+    geometry.addGroup(g.indexBufferStart, g.indexBufferLength, g.materialIndex);
   });
-}
-
-function getMaterialIndexForShaderId(shaderId: number): number {
-  if (shaderId === 1) return 1;
-  if (shaderId === 2) return 2;
-  return 0;
 }

@@ -42,9 +42,9 @@ export function applyUniformPatch(store: SwUniformStore, patch: SwUniformPatch =
 /** Create the default uniform values used by opaque mesh materials. */
 export function createDefaultOpaqueUniforms(): SwUniformPatch {
   return {
-    overrideColor1: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    overrideColor2: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    overrideColor3: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
+    blockColor1: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
+    blockColor2: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
+    blockColor3: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
     overrideColor: { type: "int", value: 1 },
   };
 }
