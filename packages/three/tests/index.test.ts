@@ -8,21 +8,11 @@ import {
   createSwMeshGeometry,
   createSwPhysMeshGroup,
   createSwPhysGroupGeometry,
-  stormworksVec3AttributeToThree,
 } from "../src";
 
 function arrayWithoutNegativeZero(values: ArrayLike<number>): number[] {
   return Array.from(values, (value) => (Object.is(value, -0) ? 0 : value));
 }
-
-test("stormworksVec3AttributeToThree flips z without mutating the source", () => {
-  const values = new Float32Array([1, 2, 3, 4, 5, -6]);
-
-  expect(arrayWithoutNegativeZero(stormworksVec3AttributeToThree(values))).toEqual([
-    1, 2, -3, 4, 5, 6,
-  ]);
-  expect(Array.from(values)).toEqual([1, 2, 3, 4, 5, -6]);
-});
 
 test("bufferGeometryFromBuilder converts Stormworks left-handed geometry to Three.js", () => {
   const builder = new GeometryBuilder();

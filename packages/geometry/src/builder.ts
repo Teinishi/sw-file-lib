@@ -330,12 +330,12 @@ export class GeometryBuilder {
   /**
    * Return raw attribute arrays suitable for conversion to a rendering backend.
    *
-   * The returned positions and normals are still in Stormworks coordinates.
+   * The returned positions and normals are in three.js coordinates.
    */
   toBufferGeometryAttributes() {
     return {
-      position: new Float32Array(this.positions),
-      normal: new Float32Array(this.normals),
+      position: new Float32Array(this.positions.map((v, i) => (i % 3 === 2 ? -v : v))),
+      normal: new Float32Array(this.normals.map((v, i) => (i % 3 === 2 ? -v : v))),
       color: new Float32Array(this.colors),
       index: this.indices,
       groups: this.groups.map((g) => ({ ...g })),
