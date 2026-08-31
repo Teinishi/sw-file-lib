@@ -27,7 +27,7 @@ import type {
 import {
   bufferGeometryFromBuilder,
   createOpaqueMaterial,
-  createUniformStore,
+  OpaqueUniformStore,
   stormworksToThreeMatrix4,
 } from "..";
 
@@ -64,9 +64,10 @@ export async function assembleVehicleGeometry(
   vehicle: VehicleImmutable,
   options: AssembleVehicleOptions,
 ): Promise<VehicleRenderGroup[]> {
-  const surfaceMaterial = createOpaqueMaterial(
-    createUniformStore({ overrideColor: { type: "int", value: 0 } }),
-  );
+  const uniforms = new OpaqueUniformStore({
+    overrideColorEnabled: false,
+  });
+  const surfaceMaterial = createOpaqueMaterial(uniforms);
 
   const result: VehicleRenderGroup[] = [];
 

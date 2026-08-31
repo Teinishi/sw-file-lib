@@ -1,7 +1,12 @@
 import * as THREE from "three";
 import { parseColor, type Color } from "@sw-file-lib/core/color";
 import type { ComponentDefinitionImmutable, VehicleSchemas } from "@sw-file-lib/xml";
-import { createAdditiveMaterial, createOpaqueMaterial, createUniformStore } from "../..";
+import {
+  AdditiveUniformStore,
+  createAdditiveMaterial,
+  createOpaqueMaterial,
+  OpaqueUniformStore,
+} from "../..";
 import { ADDITIVE_LUT } from "./additiveLut";
 
 export async function assemblePaintableSign(
@@ -36,7 +41,7 @@ export async function assemblePaintableSign(
   const gc = component.o?.gc?.split(",").map((c) => parseColor(c)) ?? [];
   const geom1 = createPixelGeometry(gc, 0.125);
   const opaqueMaterial = createOpaqueMaterial(
-    createUniformStore({ overrideColor: { type: "int", value: 0 } }),
+    new OpaqueUniformStore({ overrideColorEnabled: false }),
   );
   objects.sign = new THREE.Mesh(geom1, opaqueMaterial);
 
@@ -44,9 +49,7 @@ export async function assemblePaintableSign(
     const gca = component.o?.gca?.split(",").map((c) => parseColor(c)) ?? [];
     const geom2 = createPixelGeometry(gca, 0.125, true);
     const additiveMaterial = createAdditiveMaterial(
-      createUniformStore({
-        enableOverrideColor: { type: "int", value: 0 },
-      }),
+      new AdditiveUniformStore({ overrideColorEnabled: false }),
     );
     objects.sign_additive = new THREE.Mesh(geom2, additiveMaterial);
   }

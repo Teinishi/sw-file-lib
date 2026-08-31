@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { parseColor, type Color } from "@sw-file-lib/core/color";
+import { parseColor } from "@sw-file-lib/core/color";
 import type { VehicleSchemas } from "@sw-file-lib/xml";
-import { applyUniformPatch, createSwMaterials, type SwMaterialSet } from "../..";
+import { createSwMaterials, type SwMaterialSet } from "../..";
 
 export function createMeshObjects(
   component: VehicleSchemas.ComponentImmutable,
@@ -42,22 +42,14 @@ export function createComponentMaterials(
   const bc = component.o?.bc ? parseColor(component.o.bc) : undefined;
   const bc2 = component.o?.bc2 ? parseColor(component.o.bc2) : bc;
   const bc3 = component.o?.bc3 ? parseColor(component.o.bc3) : bc;
-  applyUniformPatch(materials.uniforms.opaque, {
-    blockColor1: { type: "vec4", value: colorToVec4(bc) },
-    blockColor2: { type: "vec4", value: colorToVec4(bc2) },
-    blockColor3: { type: "vec4", value: colorToVec4(bc3) },
-    overrideColor: { type: "int", value: 1 },
-  });
+  if (bc) materials.uniforms.opaque.setOverrideColor1(bc);
+  if (bc2) materials.uniforms.opaque.setOverrideColor2(bc2);
+  if (bc3) materials.uniforms.opaque.setOverrideColor3(bc3);
+  materials.uniforms.opaque.setOverrideColorEnabled(true);
 
-  const ac = (component.o?.ac ? parseColor(component.o.ac) : undefined) ?? {
-    r: 255,
-    g: 255,
-    b: 255,
-  };
-  applyUniformPatch(materials.uniforms.additive, {
-    overrideColor: { type: "vec4", value: colorToVec4(ac) },
-    enableOverrideColor: { type: "int", value: 1 },
-  });
+  const ac = component.o?.ac ? parseColor(component.o.ac) : undefined;
+  if (ac) materials.uniforms.additive.setOverrideColor(ac);
+  materials.uniforms.additive.setOverrideColorEnabled(true);
 
   return materials;
 }
@@ -73,13 +65,4 @@ export function combineGeometries(
     }
   }
   return group;
-}
-
-function colorToVec4(color: Color | undefined): [number, number, number, number] {
-  return [
-    (color?.r ?? 255) / 255,
-    (color?.g ?? 255) / 255,
-    (color?.b ?? 255) / 255,
-    (color?.a ?? 255) / 255,
-  ];
 }
