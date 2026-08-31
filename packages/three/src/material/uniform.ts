@@ -63,6 +63,13 @@ export function createDefaultGlassUniforms(): SwUniformPatch {
   };
 }
 
+export function createDefaultAdditiveUniforms(): SwUniformPatch {
+  return {
+    overrideColor: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
+    enableOverrideColor: { type: "int", value: 1 },
+  };
+}
+
 function createUniformRuntimeValue(
   uniform: SwUniformValue,
 ): number | THREE.Vector2 | THREE.Vector3 | THREE.Vector4 | THREE.Color {

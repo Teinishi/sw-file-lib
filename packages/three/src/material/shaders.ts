@@ -1,5 +1,10 @@
 import * as THREE from "three";
-import { createDefaultGlassUniforms, createDefaultOpaqueUniforms, createUniformStore } from ".";
+import {
+  createDefaultAdditiveUniforms,
+  createDefaultGlassUniforms,
+  createDefaultOpaqueUniforms,
+  createUniformStore,
+} from ".";
 
 const GLASS_VERTEX_SHADER = /* glsl */ `
 out vec3 vWorldPosition;
@@ -107,7 +112,7 @@ export function createGlassMaterial(
 
 /** Create the default additive material used for materialIndex 2 groups. */
 export function createAdditiveMaterial(
-  uniforms = createUniformStore(),
+  uniforms = createUniformStore(createDefaultAdditiveUniforms()),
   materialParameters?: THREE.MeshBasicMaterialParameters,
 ) {
   const material = new THREE.MeshBasicMaterial({
@@ -120,6 +125,24 @@ export function createAdditiveMaterial(
 
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
+
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        /* glsl */ `#include <common>
+uniform vec4 overrideColor;
+uniform int enableOverrideColor;`,
+      )
+      .replace(
+        "#include <color_vertex>",
+        /* glsl */ `#include <color_vertex>
+if (enableOverrideColor == 1)
+{
+  vColor.r = pow(overrideColor.r, 2.2);
+  vColor.g = pow(overrideColor.g, 2.2);
+  vColor.b = pow(overrideColor.b, 2.2);
+}`,
+      );
   };
 
   return material;
