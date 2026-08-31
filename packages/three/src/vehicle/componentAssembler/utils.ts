@@ -42,14 +42,14 @@ export function createComponentMaterials(
   const bc = component.o?.bc ? parseColor(component.o.bc) : undefined;
   const bc2 = component.o?.bc2 ? parseColor(component.o.bc2) : bc;
   const bc3 = component.o?.bc3 ? parseColor(component.o.bc3) : bc;
-  if (bc) materials.uniforms.opaque.setOverrideColor1(bc);
-  if (bc2) materials.uniforms.opaque.setOverrideColor2(bc2);
-  if (bc3) materials.uniforms.opaque.setOverrideColor3(bc3);
-  materials.uniforms.opaque.setOverrideColorEnabled(true);
+  if (bc) materials.uniforms.opaque.set("overrideColor1", bc);
+  if (bc2) materials.uniforms.opaque.set("overrideColor2", bc2);
+  if (bc3) materials.uniforms.opaque.set("overrideColor3", bc3);
+  materials.uniforms.opaque.set("overrideColorEnabled", true);
 
   const ac = component.o?.ac ? parseColor(component.o.ac) : undefined;
-  if (ac) materials.uniforms.additive.setOverrideColor(ac);
-  materials.uniforms.additive.setOverrideColorEnabled(true);
+  if (ac) materials.uniforms.additive.set("overrideColor", ac);
+  materials.uniforms.additive.set("overrideColorEnabled", true);
 
   return materials;
 }

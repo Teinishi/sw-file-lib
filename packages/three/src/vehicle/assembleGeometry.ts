@@ -26,8 +26,8 @@ import type {
 } from "@sw-file-lib/xml";
 import {
   bufferGeometryFromBuilder,
+  createOpaqueUniforms,
   createOpaqueMaterial,
-  OpaqueUniformStore,
   stormworksToThreeMatrix4,
 } from "..";
 
@@ -64,7 +64,7 @@ export async function assembleVehicleGeometry(
   vehicle: VehicleImmutable,
   options: AssembleVehicleOptions,
 ): Promise<VehicleRenderGroup[]> {
-  const uniforms = new OpaqueUniformStore({
+  const uniforms = createOpaqueUniforms({
     overrideColorEnabled: false,
   });
   const surfaceMaterial = createOpaqueMaterial(uniforms);

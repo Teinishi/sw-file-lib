@@ -1,7 +1,22 @@
 import * as THREE from "three";
-import { AdditiveUniformStore, createAdditiveMaterial, type AdditiveUniforms } from "./additive";
-import { createGlassMaterial, GlassUniformStore, type GlassUniforms } from "./glass";
-import { createOpaqueMaterial, OpaqueUniformStore, type OpaqueUniforms } from "./opqaue";
+import {
+  createAdditiveMaterial,
+  createAdditiveUniforms,
+  type AdditiveUniforms,
+  type AdditiveUniformStore,
+} from "./additive";
+import {
+  createGlassMaterial,
+  createGlassUniforms,
+  type GlassUniforms,
+  type GlassUniformStore,
+} from "./glass";
+import {
+  createOpaqueMaterial,
+  createOpaqueUniforms,
+  type OpaqueUniforms,
+  type OpaqueUniformStore,
+} from "./opaque";
 
 /** Material families for Stormworks mesh. */
 export type SwMaterialKind = "opaque" | "glass" | "additive";
@@ -46,9 +61,9 @@ export interface CreateSwMaterialsOptions {
  * should intentionally share uniform updates.
  */
 export function createSwMaterials(options: CreateSwMaterialsOptions = {}): SwMaterialSet {
-  const opaqueUniforms = new OpaqueUniformStore(options.uniforms?.opaque);
-  const glassUniforms = new GlassUniformStore(options.uniforms?.glass);
-  const additiveUniforms = new AdditiveUniformStore(options.uniforms?.additive);
+  const opaqueUniforms = createOpaqueUniforms(options.uniforms?.opaque);
+  const glassUniforms = createGlassUniforms(options.uniforms?.glass);
+  const additiveUniforms = createAdditiveUniforms(options.uniforms?.additive);
 
   return {
     opaque: createOpaqueMaterial(opaqueUniforms),

@@ -1,46 +1,33 @@
 import * as THREE from "three";
 import { WHITE, type Color } from "@sw-file-lib/core/color";
-import { colorToUniform4, UniformStore, uniformValueToColor } from "./internal/uniformStore";
+import {
+  CREATE,
+  ATTACH,
+  boolTransformer,
+  colorVec4Transformer,
+  UniformController,
+} from "./uniformController";
 
 export interface AdditiveUniforms {
   overrideColorEnabled: boolean;
   overrideColor: Color;
 }
 
-export class AdditiveUniformStore extends UniformStore {
-  constructor(defaults: Partial<AdditiveUniforms> = {}) {
-    super();
-    this.patch({
-      overrideColorEnabled: true,
-      overrideColor: WHITE,
-      ...defaults,
-    });
-  }
+export type AdditiveUniformStore = UniformController<AdditiveUniforms>;
 
-  patch(patch: Partial<AdditiveUniforms>) {
-    if (patch.overrideColor !== undefined) {
-      this.setOverrideColor(patch.overrideColor);
-    }
-    if (patch.overrideColorEnabled !== undefined) {
-      this.setOverrideColorEnabled(patch.overrideColorEnabled);
-    }
-  }
-
-  getOverrideColorEnabled(): boolean {
-    return this.getValue("overrideColorEnabled") === 1;
-  }
-
-  setOverrideColorEnabled(enabled: boolean) {
-    this.setValue("overrideColorEnabled", enabled ? 1 : 0);
-  }
-
-  getOverrideColor(): Color | undefined {
-    return uniformValueToColor(this.getValue("overrideColor"));
-  }
-
-  setOverrideColor(color: Color) {
-    this.setValue("overrideColor", colorToUniform4(color));
-  }
+export function createAdditiveUniforms(
+  defaults: Partial<AdditiveUniforms> = {},
+): AdditiveUniformStore {
+  const controller = UniformController[CREATE]<AdditiveUniforms>({
+    overrideColorEnabled: boolTransformer,
+    overrideColor: colorVec4Transformer,
+  });
+  controller.patch({
+    overrideColorEnabled: true,
+    overrideColor: WHITE,
+    ...defaults,
+  });
+  return controller;
 }
 
 /** Create the default additive material used for materialIndex 2 groups. */
@@ -48,7 +35,7 @@ export function createAdditiveMaterial(
   uniforms?: AdditiveUniformStore,
   materialParameters?: THREE.MeshBasicMaterialParameters,
 ) {
-  uniforms ??= new AdditiveUniformStore();
+  uniforms ??= createAdditiveUniforms();
 
   const material = new THREE.MeshBasicMaterial({
     vertexColors: true,
@@ -59,7 +46,7 @@ export function createAdditiveMaterial(
   });
 
   material.onBeforeCompile = (shader) => {
-    uniforms._setShaderUniforms(shader.uniforms);
+    uniforms[ATTACH](shader.uniforms);
 
     shader.vertexShader = shader.vertexShader
       .replace(

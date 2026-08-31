@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Color } from "@sw-file-lib/core/color";
-import { colorToUniform3, UniformStore, uniformValueToColor } from "./internal/uniformStore";
+import { CREATE, ATTACH, colorVec3Transformer, UniformController } from "./uniformController";
 
 const SKY_COLOR_UP = new THREE.Color(0.0, 61.0 / 255.0, 182.0 / 255.0);
 const SKY_COLOR_DOWN = new THREE.Color(139.0 / 255.0, 210.0 / 255.0, 207.0 / 255.0);
@@ -45,40 +45,19 @@ export interface GlassUniforms {
   skyColorDown: Color;
 }
 
-export class GlassUniformStore extends UniformStore {
-  constructor(defaults: Partial<GlassUniforms> = {}) {
-    super();
-    this.patch({
-      skyColorUp: SKY_COLOR_UP,
-      skyColorDown: SKY_COLOR_DOWN,
-      ...defaults,
-    });
-  }
+export type GlassUniformStore = UniformController<GlassUniforms>;
 
-  patch(patch: Partial<GlassUniforms>) {
-    if (patch.skyColorUp !== undefined) {
-      this.setSkyColorUp(patch.skyColorUp);
-    }
-    if (patch.skyColorDown !== undefined) {
-      this.setSkyColorDown(patch.skyColorDown);
-    }
-  }
-
-  getSkyColorUp(): Color | undefined {
-    return uniformValueToColor(this.getValue("skyColorUp"));
-  }
-
-  setSkyColorUp(color: Color) {
-    this.setValue("skyColorUp", colorToUniform3(color));
-  }
-
-  getSkyColorDown(): Color | undefined {
-    return uniformValueToColor(this.getValue("skyColorDown"));
-  }
-
-  setSkyColorDown(color: Color) {
-    this.setValue("skyColorDown", colorToUniform3(color));
-  }
+export function createGlassUniforms(defaults: Partial<GlassUniforms> = {}): GlassUniformStore {
+  const controller = UniformController[CREATE]<GlassUniforms>({
+    skyColorUp: colorVec3Transformer,
+    skyColorDown: colorVec3Transformer,
+  });
+  controller.patch({
+    skyColorUp: SKY_COLOR_UP,
+    skyColorDown: SKY_COLOR_DOWN,
+    ...defaults,
+  });
+  return controller;
 }
 
 /** Create the default glass material used for materialIndex 1 groups. */
@@ -86,11 +65,11 @@ export function createGlassMaterial(
   uniforms?: GlassUniformStore,
   materialParameters?: THREE.ShaderMaterialParameters,
 ) {
-  uniforms ??= new GlassUniformStore();
+  uniforms ??= createGlassUniforms();
 
   const shaderUniforms: { [uniform: string]: THREE.IUniform<any> } = {};
 
-  uniforms._setShaderUniforms(shaderUniforms);
+  uniforms[ATTACH](shaderUniforms);
 
   return new THREE.ShaderMaterial({
     vertexShader: GLASS_VERTEX_SHADER,
