@@ -1,15 +1,8 @@
 import * as THREE from "three";
-import {
-  applyUniformPatch,
-  createAdditiveMaterial,
-  createDefaultGlassUniforms,
-  createDefaultOpaqueUniforms,
-  createGlassMaterial,
-  createOpaqueMaterial,
-  createUniformStore,
-  type SwUniformPatch,
-  type SwUniformStore,
-} from ".";
+import { applyUniformPatch, createUniformStore, type SwUniformPatch, type SwUniformStore } from ".";
+import { createAdditiveMaterial, createDefaultAdditiveUniforms } from "./additive";
+import { createDefaultGlassUniforms, createGlassMaterial } from "./glass";
+import { createDefaultOpaqueUniforms, createOpaqueMaterial } from "./opqaue";
 
 /** Material families for Stormworks mesh. */
 export type SwMaterialKind = "opaque" | "glass" | "additive";
@@ -72,7 +65,7 @@ export function createSwMaterials(options: CreateSwMaterialsOptions = {}): SwMat
 export function createSwUniformStores(uniforms: SwUniforms = {}): SwUniformStores {
   const opaque = createUniformStore(createDefaultOpaqueUniforms());
   const glass = createUniformStore(createDefaultGlassUniforms());
-  const additive = createUniformStore();
+  const additive = createUniformStore(createDefaultAdditiveUniforms());
 
   applyUniformPatch(opaque, uniforms.opaque);
   applyUniformPatch(glass, uniforms.glass);

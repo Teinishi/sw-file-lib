@@ -1,8 +1,5 @@
 import * as THREE from "three";
 
-const SKY_COLOR_UP = new THREE.Color(0.0, 61.0 / 255.0, 182.0 / 255.0);
-const SKY_COLOR_DOWN = new THREE.Color(139.0 / 255.0, 210.0 / 255.0, 207.0 / 255.0);
-
 /** A supported runtime value that can be assigned to shader uniforms. */
 export type SwUniformValue =
   | { type: "int"; value: number }
@@ -37,37 +34,6 @@ export function applyUniformPatch(store: SwUniformStore, patch: SwUniformPatch =
       store[name] = { value };
     }
   });
-}
-
-/** Create the default uniform values used by opaque mesh materials. */
-export function createDefaultOpaqueUniforms(): SwUniformPatch {
-  return {
-    blockColor1: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    blockColor2: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    blockColor3: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    overrideColor: { type: "int", value: 1 },
-  };
-}
-
-/** Create the default uniform values used by glass mesh materials. */
-export function createDefaultGlassUniforms(): SwUniformPatch {
-  return {
-    skyColorUp: {
-      type: "vec3",
-      value: SKY_COLOR_UP,
-    },
-    skyColorDown: {
-      type: "vec3",
-      value: SKY_COLOR_DOWN,
-    },
-  };
-}
-
-export function createDefaultAdditiveUniforms(): SwUniformPatch {
-  return {
-    overrideColor: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    enableOverrideColor: { type: "int", value: 1 },
-  };
 }
 
 function createUniformRuntimeValue(
