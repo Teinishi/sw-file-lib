@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { WHITE, type Color } from "@sw-file-lib/core/color";
-import { colorToUniformValue, UniformStore, uniformValueToColor } from "./internal/uniformStore";
+import { colorToUniform4, UniformStore, uniformValueToColor } from "./internal/uniformStore";
 
 export interface AdditiveUniforms {
   overrideColorEnabled: boolean;
@@ -39,7 +39,7 @@ export class AdditiveUniformStore extends UniformStore {
   }
 
   setOverrideColor(color: Color) {
-    this.setValue("overrideColor", colorToUniformValue(color));
+    this.setValue("overrideColor", colorToUniform4(color));
   }
 }
 

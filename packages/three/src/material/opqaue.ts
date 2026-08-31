@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { WHITE, type Color } from "@sw-file-lib/core/color";
-import { colorToUniformValue, UniformStore, uniformValueToColor } from "./internal/uniformStore";
+import { colorToUniform4, UniformStore, uniformValueToColor } from "./internal/uniformStore";
 
 export interface OpaqueUniforms {
   overrideColorEnabled: boolean;
@@ -49,7 +49,7 @@ export class OpaqueUniformStore extends UniformStore {
   }
 
   setOverrideColor1(color: Color) {
-    this.setValue("overrideColor1", colorToUniformValue(color));
+    this.setValue("overrideColor1", colorToUniform4(color));
   }
 
   getOverrideColor2(): Color | undefined {
@@ -57,7 +57,7 @@ export class OpaqueUniformStore extends UniformStore {
   }
 
   setOverrideColor2(color: Color) {
-    this.setValue("overrideColor2", colorToUniformValue(color));
+    this.setValue("overrideColor2", colorToUniform4(color));
   }
 
   getOverrideColor3(): Color | undefined {
@@ -65,7 +65,7 @@ export class OpaqueUniformStore extends UniformStore {
   }
 
   setOverrideColor3(color: Color) {
-    this.setValue("overrideColor3", colorToUniformValue(color));
+    this.setValue("overrideColor3", colorToUniform4(color));
   }
 }
 

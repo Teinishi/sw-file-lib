@@ -41,7 +41,11 @@ export class UniformStore {
   }
 }
 
-export function colorToUniformValue(color: Color): [number, number, number, number] {
+export function colorToUniform3(color: Color): [number, number, number] {
+  return [color.r / 255, color.g / 255, color.b / 255];
+}
+
+export function colorToUniform4(color: Color): [number, number, number, number] {
   return [color.r / 255, color.g / 255, color.b / 255, color.a !== undefined ? color.a / 255 : 1.0];
 }
 

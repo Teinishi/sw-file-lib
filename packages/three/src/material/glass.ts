@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Color } from "@sw-file-lib/core/color";
-import { colorToUniformValue, UniformStore, uniformValueToColor } from "./internal/uniformStore";
+import { colorToUniform3, UniformStore, uniformValueToColor } from "./internal/uniformStore";
 
 const SKY_COLOR_UP = new THREE.Color(0.0, 61.0 / 255.0, 182.0 / 255.0);
 const SKY_COLOR_DOWN = new THREE.Color(139.0 / 255.0, 210.0 / 255.0, 207.0 / 255.0);
@@ -34,7 +34,7 @@ void main() {
   reflectionFactor = clamp(reflectionFactor, 0.0, 1.0);
 
   float angleFactor = reflectedDir.y * 0.5 + 0.5;
-  vec3 skyColor = mix(skyColorDown, skyColorUp, angleFactor);
+  vec3 skyColor = mix(skyColorDown.rgb, skyColorUp.rgb, angleFactor);
 
   gl_FragColor = vec4(skyColor * reflectionFactor * 0.823, 0.0);
 }
@@ -69,7 +69,7 @@ export class GlassUniformStore extends UniformStore {
   }
 
   setSkyColorUp(color: Color) {
-    this.setValue("skyColorUp", colorToUniformValue(color));
+    this.setValue("skyColorUp", colorToUniform3(color));
   }
 
   getSkyColorDown(): Color | undefined {
@@ -77,7 +77,7 @@ export class GlassUniformStore extends UniformStore {
   }
 
   setSkyColorDown(color: Color) {
-    this.setValue("skyColorDown", colorToUniformValue(color));
+    this.setValue("skyColorDown", colorToUniform3(color));
   }
 }
 
