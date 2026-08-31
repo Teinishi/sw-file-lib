@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { createUniformStore, type SwUniformPatch } from "./uniform";
+import type { Color } from "@sw-file-lib/core/color";
+import { colorToUniformValue, UniformStore, uniformValueToColor } from "./internal/uniformStore";
 
 const SKY_COLOR_UP = new THREE.Color(0.0, 61.0 / 255.0, 182.0 / 255.0);
 const SKY_COLOR_DOWN = new THREE.Color(139.0 / 255.0, 210.0 / 255.0, 207.0 / 255.0);
@@ -39,15 +40,62 @@ void main() {
 }
 `;
 
+export interface GlassUniforms {
+  skyColorUp: Color;
+  skyColorDown: Color;
+}
+
+export class GlassUniformStore extends UniformStore {
+  constructor(defaults: Partial<GlassUniforms> = {}) {
+    super();
+    this.patch({
+      skyColorUp: SKY_COLOR_UP,
+      skyColorDown: SKY_COLOR_DOWN,
+      ...defaults,
+    });
+  }
+
+  patch(patch: Partial<GlassUniforms>) {
+    if (patch.skyColorUp !== undefined) {
+      this.setSkyColorUp(patch.skyColorUp);
+    }
+    if (patch.skyColorDown !== undefined) {
+      this.setSkyColorDown(patch.skyColorDown);
+    }
+  }
+
+  getSkyColorUp(): Color | undefined {
+    return uniformValueToColor(this.getValue("skyColorUp"));
+  }
+
+  setSkyColorUp(color: Color) {
+    this.setValue("skyColorUp", colorToUniformValue(color));
+  }
+
+  getSkyColorDown(): Color | undefined {
+    return uniformValueToColor(this.getValue("skyColorDown"));
+  }
+
+  setSkyColorDown(color: Color) {
+    this.setValue("skyColorDown", colorToUniformValue(color));
+  }
+}
+
 /** Create the default glass material used for materialIndex 1 groups. */
 export function createGlassMaterial(
-  uniforms = createUniformStore(createDefaultGlassUniforms()),
+  uniforms?: GlassUniformStore,
   materialParameters?: THREE.ShaderMaterialParameters,
 ) {
+  uniforms ??= new GlassUniformStore();
+
+  const shaderUniforms: { [uniform: string]: THREE.IUniform<any> } = {};
+
+  uniforms._setShaderUniforms(shaderUniforms);
+
   return new THREE.ShaderMaterial({
     vertexShader: GLASS_VERTEX_SHADER,
     fragmentShader: GLASS_FRAGMENT_SHADER,
-    uniforms: { ...uniforms },
+    uniforms: shaderUniforms,
     transparent: true,
     depthWrite: false,
     blending: THREE.CustomBlending,
@@ -56,18 +104,4 @@ export function createGlassMaterial(
     blendEquation: THREE.AddEquation,
     ...materialParameters,
   });
-}
-
-/** Create the default uniform values used by glass mesh materials. */
-export function createDefaultGlassUniforms(): SwUniformPatch {
-  return {
-    skyColorUp: {
-      type: "vec3",
-      value: SKY_COLOR_UP,
-    },
-    skyColorDown: {
-      type: "vec3",
-      value: SKY_COLOR_DOWN,
-    },
-  };
 }

@@ -1,23 +1,19 @@
 import * as THREE from "three";
-import { applyUniformPatch, createUniformStore, type SwUniformPatch, type SwUniformStore } from ".";
-import { createAdditiveMaterial, createDefaultAdditiveUniforms } from "./additive";
-import { createDefaultGlassUniforms, createGlassMaterial } from "./glass";
-import { createDefaultOpaqueUniforms, createOpaqueMaterial } from "./opqaue";
+import { AdditiveUniformStore, createAdditiveMaterial, type AdditiveUniforms } from "./additive";
+import { createGlassMaterial, GlassUniformStore, type GlassUniforms } from "./glass";
+import { createOpaqueMaterial, OpaqueUniformStore, type OpaqueUniforms } from "./opqaue";
 
 /** Material families for Stormworks mesh. */
 export type SwMaterialKind = "opaque" | "glass" | "additive";
 
-/** Uniform patches keyed by Stormworks material family. */
-export type SwUniforms = Partial<Record<SwMaterialKind, SwUniformPatch>>;
-
 /** Mutable Three.js uniform stores owned by a Stormworks material set. */
 export interface SwUniformStores {
   /** Uniforms used by the opaque render material. */
-  opaque: SwUniformStore;
+  opaque: OpaqueUniformStore;
   /** Uniforms used by the glass render material. */
-  glass: SwUniformStore;
+  glass: GlassUniformStore;
   /** Uniforms used by the additive render material. */
-  additive: SwUniformStore;
+  additive: AdditiveUniformStore;
 }
 
 /** Materials and their uniform stores used by Stormworks object creation helpers. */
@@ -35,7 +31,11 @@ export interface SwMaterialSet {
 /** Options used when creating the default Stormworks material set. */
 export interface CreateSwMaterialsOptions {
   /** Initial uniforms applied after each material family's defaults are created. */
-  readonly uniforms?: Readonly<SwUniforms>;
+  readonly uniforms?: {
+    opaque?: Partial<OpaqueUniforms>;
+    glass?: Partial<GlassUniforms>;
+    additive?: Partial<AdditiveUniforms>;
+  };
 }
 
 /**
@@ -46,37 +46,18 @@ export interface CreateSwMaterialsOptions {
  * should intentionally share uniform updates.
  */
 export function createSwMaterials(options: CreateSwMaterialsOptions = {}): SwMaterialSet {
-  const uniformStores = createSwUniformStores(options.uniforms);
+  const opaqueUniforms = new OpaqueUniformStore(options.uniforms?.opaque);
+  const glassUniforms = new GlassUniformStore(options.uniforms?.glass);
+  const additiveUniforms = new AdditiveUniformStore(options.uniforms?.additive);
 
   return {
-    opaque: createOpaqueMaterial(uniformStores.opaque),
-    glass: createGlassMaterial(uniformStores.glass),
-    additive: createAdditiveMaterial(uniformStores.additive),
-    uniforms: uniformStores,
+    opaque: createOpaqueMaterial(opaqueUniforms),
+    glass: createGlassMaterial(glassUniforms),
+    additive: createAdditiveMaterial(additiveUniforms),
+    uniforms: {
+      opaque: opaqueUniforms,
+      glass: glassUniforms,
+      additive: additiveUniforms,
+    },
   };
-}
-
-/**
- * Create mutable uniform stores for each Stormworks material family.
- *
- * Default opaque and glass uniforms are included before the optional patch is
- * applied.
- */
-export function createSwUniformStores(uniforms: SwUniforms = {}): SwUniformStores {
-  const opaque = createUniformStore(createDefaultOpaqueUniforms());
-  const glass = createUniformStore(createDefaultGlassUniforms());
-  const additive = createUniformStore(createDefaultAdditiveUniforms());
-
-  applyUniformPatch(opaque, uniforms.opaque);
-  applyUniformPatch(glass, uniforms.glass);
-  applyUniformPatch(additive, uniforms.additive);
-
-  return { opaque, glass, additive };
-}
-
-/** Apply material-family uniform patches to an existing Stormworks material set. */
-export function applySwUniforms(materials: SwMaterialSet, uniforms: SwUniforms = {}): void {
-  applyUniformPatch(materials.uniforms.opaque, uniforms.opaque);
-  applyUniformPatch(materials.uniforms.glass, uniforms.glass);
-  applyUniformPatch(materials.uniforms.additive, uniforms.additive);
 }

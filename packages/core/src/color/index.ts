@@ -16,6 +16,9 @@ export interface Color {
   a?: number;
 }
 
+export const BLACK: Color = { r: 0, g: 0, b: 0 } as const;
+export const WHITE: Color = { r: 255, g: 255, b: 255 } as const;
+
 /**
  * Check whether a value is a `Color` object.
  */

@@ -1,11 +1,55 @@
 import * as THREE from "three";
-import { createUniformStore, type SwUniformPatch } from "./uniform";
+import { WHITE, type Color } from "@sw-file-lib/core/color";
+import { colorToUniformValue, UniformStore, uniformValueToColor } from "./internal/uniformStore";
+
+export interface AdditiveUniforms {
+  overrideColorEnabled: boolean;
+  overrideColor: Color;
+}
+
+export class AdditiveUniformStore extends UniformStore {
+  constructor(defaults: Partial<AdditiveUniforms> = {}) {
+    super();
+    this.patch({
+      overrideColorEnabled: true,
+      overrideColor: WHITE,
+      ...defaults,
+    });
+  }
+
+  patch(patch: Partial<AdditiveUniforms>) {
+    if (patch.overrideColor !== undefined) {
+      this.setOverrideColor(patch.overrideColor);
+    }
+    if (patch.overrideColorEnabled !== undefined) {
+      this.setOverrideColorEnabled(patch.overrideColorEnabled);
+    }
+  }
+
+  getOverrideColorEnabled(): boolean {
+    return this.getValue("overrideColorEnabled") === 1;
+  }
+
+  setOverrideColorEnabled(enabled: boolean) {
+    this.setValue("overrideColorEnabled", enabled ? 1 : 0);
+  }
+
+  getOverrideColor(): Color | undefined {
+    return uniformValueToColor(this.getValue("overrideColor"));
+  }
+
+  setOverrideColor(color: Color) {
+    this.setValue("overrideColor", colorToUniformValue(color));
+  }
+}
 
 /** Create the default additive material used for materialIndex 2 groups. */
 export function createAdditiveMaterial(
-  uniforms = createUniformStore(createDefaultAdditiveUniforms()),
+  uniforms?: AdditiveUniformStore,
   materialParameters?: THREE.MeshBasicMaterialParameters,
 ) {
+  uniforms ??= new AdditiveUniformStore();
+
   const material = new THREE.MeshBasicMaterial({
     vertexColors: true,
     transparent: true,
@@ -15,19 +59,19 @@ export function createAdditiveMaterial(
   });
 
   material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms);
+    uniforms._setShaderUniforms(shader.uniforms);
 
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
         /* glsl */ `#include <common>
 uniform vec4 overrideColor;
-uniform int enableOverrideColor;`,
+uniform int overrideColorEnabled;`,
       )
       .replace(
         "#include <color_vertex>",
         /* glsl */ `#include <color_vertex>
-if (enableOverrideColor == 1)
+if (overrideColorEnabled == 1)
 {
   vColor.r = pow(overrideColor.r, 2.2);
   vColor.g = pow(overrideColor.g, 2.2);
@@ -37,11 +81,4 @@ if (enableOverrideColor == 1)
   };
 
   return material;
-}
-
-export function createDefaultAdditiveUniforms(): SwUniformPatch {
-  return {
-    overrideColor: { type: "vec4", value: [1.0, 1.0, 1.0, 1.0] },
-    enableOverrideColor: { type: "int", value: 1 },
-  };
 }
