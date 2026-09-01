@@ -16,6 +16,7 @@ import {
   type Result,
   type SchemaParseFieldResult,
   SchemaSerializeError,
+  type Immutable,
 } from "..";
 import { isStringKeyRecord } from "../../internal";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
@@ -162,7 +163,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    * Serializes an object value into an XML element without throwing.
    */
   safeSerialize(
-    data: InferShape<T>,
+    data: Immutable<InferShape<T>>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -175,7 +176,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    * @throws {@link SchemaSerializeError} when any field cannot be serialized.
    */
   serialize(
-    data: InferShape<T>,
+    data: Immutable<InferShape<T>>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {

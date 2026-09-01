@@ -1,5 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import { isRecord, isStringRecord } from "../internal";
+import * as x from "../xml-schema"; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { SwXmlParseError } from "./errors";
 import { SwXmlNode, SwXmlNodeList } from "./xmlNode";
 
@@ -67,6 +68,10 @@ const parser = new XMLParser({
 
 /**
  * Parses a Stormworks XML document into a node tree.
+ *
+ * Intended for internal use. Most applications never need it, but it can
+ * improve performance when parsing XML with multiple root elements by calling
+ * `parseSwXml()` only once and passing to {@link x.ElementSchema.parse} or {@link x.ElementSchema.safeParse}.
  */
 export function parseSwXml(input: string | Uint8Array<ArrayBufferLike>): SwXmlNodeList {
   try {

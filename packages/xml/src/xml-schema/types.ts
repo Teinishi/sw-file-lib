@@ -240,7 +240,7 @@ export interface ElementSchema<T> extends Schema<T> {
    * Serializes data into an XmlWriter without throwing an error.
    */
   safeSerialize: (
-    data: T,
+    data: Immutable<T>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ) => Result<XmlWriter, SchemaSerializeError>;
@@ -251,7 +251,11 @@ export interface ElementSchema<T> extends Schema<T> {
    * @throws {@link SchemaSerializeError} when the value cannot be serialized by
    * the schema.
    */
-  serialize: (data: T, rootTag: string, writer?: XmlWriter | XmlWriterOptions) => XmlWriter;
+  serialize: (
+    data: Immutable<T>,
+    rootTag: string,
+    writer?: XmlWriter | XmlWriterOptions,
+  ) => XmlWriter;
 }
 
 /**

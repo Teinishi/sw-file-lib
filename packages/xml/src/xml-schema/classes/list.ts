@@ -16,6 +16,7 @@ import {
   type Result,
   type SchemaParseFieldResult,
   SchemaSerializeError,
+  type Immutable,
 } from "..";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer";
@@ -140,7 +141,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
    * Serializes an array value into an XML element without throwing.
    */
   safeSerialize(
-    data: Infer<T>[],
+    data: Immutable<Infer<T>[]>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -153,7 +154,11 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
    * @throws {@link SchemaSerializeError} when the value or any item cannot be
    * serialized.
    */
-  serialize(data: Infer<T>[], rootTag: string, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
+  serialize(
+    data: Immutable<Infer<T>[]>,
+    rootTag: string,
+    writer?: XmlWriter | XmlWriterOptions,
+  ): XmlWriter {
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 

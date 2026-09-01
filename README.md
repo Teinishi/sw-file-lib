@@ -15,14 +15,15 @@ TypeScript libraries for reading, writing, and rendering **Stormworks** assets.
 
 ## Packages
 
-| Package                   | Description                                                                    |
-| ------------------------- | ------------------------------------------------------------------------------ |
-| `@sw-file-lib/core`       | Binary file reading and writing, plus dependency-free core utilities           |
-| `@sw-file-lib/core/math`  | Vectors, matrices, orientation, and math utilities                             |
-| `@sw-file-lib/core/color` | Color types and color conversion utilities                                     |
-| `@sw-file-lib/xml`        | XML parser, writer, and strongly typed schemas                                 |
-| `@sw-file-lib/geometry`   | Geometry construction, mesh generation, and surface operations such as culling |
-| `@sw-file-lib/three`      | Three.js helpers including coordinate conversion, mesh creation, and materials |
+| Package                       | Description                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| `@sw-file-lib/core`           | Binary file reading and writing                                                |
+| `@sw-file-lib/core/math`      | Vectors, matrices, orientation, and math utilities                             |
+| `@sw-file-lib/core/color`     | Color types and parse utility                                                  |
+| `@sw-file-lib/xml`            | Parser, serializer, and typed schemas for Stormworks XML files                 |
+| `@sw-file-lib/xml/xml-schema` | Library for defining typed XML schemas                                         |
+| `@sw-file-lib/geometry`       | Geometry construction, mesh generation, and surface operations such as culling |
+| `@sw-file-lib/three`          | Three.js helpers including coordinate conversion, mesh creation, and materials |
 
 ## Installation
 

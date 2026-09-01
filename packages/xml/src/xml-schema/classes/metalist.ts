@@ -17,6 +17,7 @@ import {
   type Result,
   type SchemaParseFieldResult,
   SchemaSerializeError,
+  type Immutable,
 } from "..";
 import { isStringKeyRecord } from "../../internal";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
@@ -194,7 +195,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
    * Serializes a metalist value into an XML element without throwing.
    */
   safeSerialize(
-    data: InferMetalist<M, I>,
+    data: Immutable<InferMetalist<M, I>>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -208,7 +209,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
    * serialized.
    */
   serialize(
-    data: InferMetalist<M, I>,
+    data: Immutable<InferMetalist<M, I>>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
