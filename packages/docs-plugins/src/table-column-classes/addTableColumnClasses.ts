@@ -41,7 +41,7 @@ export function addTableColumnClasses(markdown: string): string {
   let result = markdown;
 
   for (let i = regions.length - 1; i >= 0; i--) {
-    const region = regions[i];
+    const region = regions[i]!;
     const edits = buildClassEdits(region.content);
     const updated = applyEdits(region.content, edits);
     result = result.slice(0, region.start) + updated + result.slice(region.end);
@@ -141,10 +141,10 @@ function* scanTags(html: string): Generator<TagMatch> {
   let m: RegExpExecArray | null;
   while ((m = re.exec(html))) {
     const [raw, closingSlash, name, attrs] = m;
-    const nameEnd = m.index + 1 + (closingSlash ? 1 : 0) + name.length;
+    const nameEnd = m.index + 1 + (closingSlash ? 1 : 0) + name!.length;
     yield {
       raw,
-      tag: name.toLowerCase() as TagName,
+      tag: name!.toLowerCase() as TagName,
       closing: !!closingSlash,
       attrs: attrs ?? "",
       start: m.index,

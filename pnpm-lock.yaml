@@ -108,6 +108,10 @@ importers:
       typedoc-plugin-markdown:
         specifier: ^4.12.0
         version: 4.12.0(typedoc@0.28.20(typescript@6.0.3))
+    devDependencies:
+      vite:
+        specifier: ^8.2.1
+        version: 8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0)
 
   packages/geometry:
     dependencies:

@@ -1,6 +1,6 @@
 import { defineConfig } from "vitepress";
+import tableColumnClassesPlugin from "@sw-file-lib/docs-plugins/table-column-classes";
 import typedocSidebar from "../api/typedoc-sidebar.json" with { type: "json" };
-import { addTableColumnClasses } from "./addTableColumnClasses";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -33,15 +33,6 @@ export default defineConfig({
     search: { provider: "local" },
   },
   vite: {
-    plugins: [
-      {
-        name: "add-table-column-classes",
-        enforce: "pre",
-        transform(code, id) {
-          if (!id.includes("/api/") || !id.endsWith(".md")) return;
-          return addTableColumnClasses(code);
-        },
-      },
-    ],
+    plugins: [tableColumnClassesPlugin()],
   },
 });
