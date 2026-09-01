@@ -1,9 +1,9 @@
-import type { Vec3, Mat3 } from ".";
+import type { Vec3, Mat3, ReadonlyVec3 } from ".";
 
-/** Axis name used by an axis-aligned orientation. */
+/** Axis name used by an axis-aligned orientation. Used in {@link Orientation}. */
 export type Axis = "x" | "y" | "z";
 
-/** Mapping from an output axis to a signed input axis. */
+/** Mapping from an output axis to a signed input axis. Used in {@link Orientation}. */
 export interface AxisMapping {
   /** Source axis to read from. */
   axis: Axis;
@@ -130,7 +130,7 @@ export class Orientation {
   }
 
   /** Transform a position or direction vector by this orientation. */
-  transformPosition(src: Readonly<Vec3>): Vec3 {
+  transformPosition(src: ReadonlyVec3): Vec3 {
     const get = (m: AxisMapping) => src[m.axis] * m.sign;
 
     return {

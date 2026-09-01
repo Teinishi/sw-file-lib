@@ -1,4 +1,4 @@
-import type { Vec3 } from "@sw-file-lib/core/math";
+import type { ReadonlyVec3 } from "@sw-file-lib/core/math";
 
 export const SURFACE_SHAPES = {
   1: [
@@ -362,7 +362,7 @@ export const SURFACE_SHAPES = {
   ],
 } as const;
 
-export function getSurfaceShape(shape: number): readonly Readonly<Vec3>[] | undefined {
+export function getSurfaceShape(shape: number): readonly ReadonlyVec3[] | undefined {
   return SURFACE_SHAPES[shape as keyof typeof SURFACE_SHAPES];
 }
 

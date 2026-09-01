@@ -5,6 +5,7 @@ import {
   mulVec3,
   normalizeVec3,
   subVec3,
+  type ReadonlyVec3,
   type Vec3,
 } from "@sw-file-lib/core/math";
 import { cullSurfaces, type BuildSurfaceGeometryOptions, type SurfaceData } from ".";
@@ -29,7 +30,7 @@ function getInnerRing(shape: number): Vec3[] | undefined {
   return innerRingCache[shape] ?? undefined;
 }
 
-function offsetPolygon3D(vertices: readonly Readonly<Vec3>[], offset: number): Vec3[] {
+function offsetPolygon3D(vertices: readonly ReadonlyVec3[], offset: number): Vec3[] {
   if (vertices.length < 3) return [...vertices];
 
   const v0 = vertices[0]!;
@@ -141,7 +142,7 @@ export function buildSurfacesGeometry(
   return builder;
 }
 
-function scaleStormworksPosition(v: Readonly<Vec3>): Vec3 {
+function scaleStormworksPosition(v: ReadonlyVec3): Vec3 {
   return {
     x: 0.25 * v.x,
     y: 0.25 * v.y,

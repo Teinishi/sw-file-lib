@@ -16,6 +16,22 @@ export interface Color {
   a?: number;
 }
 
+/**
+ * Read only {@link Color} type.
+ *
+ * Type alias for function parameters that do not modify the color.
+ */
+export interface ReadonlyColor {
+  /** Red channel, from `0` to `255`. */
+  readonly r: number;
+  /** Green channel, from `0` to `255`. */
+  readonly g: number;
+  /** Blue channel, from `0` to `255`. */
+  readonly b: number;
+  /** Optional alpha channel, from `0` to `255`. */
+  readonly a?: number;
+}
+
 export const BLACK: Color = { r: 0, g: 0, b: 0 } as const;
 export const WHITE: Color = { r: 255, g: 255, b: 255 } as const;
 
@@ -40,7 +56,7 @@ export function isColor(value: unknown): value is Color {
 /**
  * Parse a Stormworks-style color string.
  *
- * Accepts `RRGGBB`, `RRGGBBAA`, and the same values prefixed with `#`.
+ * Accepts `RRGGBB` and the same values prefixed with `#`.
  * Stormworks' special values are also supported: `""` is black and `"x"` is
  * white. Invalid values return `undefined`.
  */

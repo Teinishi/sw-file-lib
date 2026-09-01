@@ -1,14 +1,16 @@
 import * as earcut from "earcut";
 import type { DeepReadonly } from "ts-essentials";
 import type { MeshData, MeshVertex } from "@sw-file-lib/core";
-import { isColor, type Color } from "@sw-file-lib/core/color";
+import { isColor, type Color, type ReadonlyColor } from "@sw-file-lib/core/color";
 import {
   type Vec2,
   type Vec3,
-  type Mat3,
   mulMat3Vec3,
   addVec3,
   detMat3,
+  type ReadonlyVec3,
+  type ReadonlyVec2,
+  type ReadonlyMat3,
 } from "@sw-file-lib/core/math";
 
 const DEFAULT_OPAQUE_COLOR = {
@@ -28,7 +30,7 @@ const DEFAULT_ADDITIVE_COLOR = {
   b: 255,
 };
 
-function computeNormal(a: Readonly<Vec3>, b: Readonly<Vec3>, c: Readonly<Vec3>): Vec3 {
+function computeNormal(a: ReadonlyVec3, b: ReadonlyVec3, c: ReadonlyVec3): Vec3 {
   const abx = b.x - a.x;
   const aby = b.y - a.y;
   const abz = b.z - a.z;
@@ -100,7 +102,7 @@ export interface AddFaceOptions {
    *
    * Defaults to white.
    */
-  readonly color?: Readonly<Color>;
+  readonly color?: ReadonlyColor;
   /**
    * Whether to reverse the winding order of the generated triangles.
    *
@@ -136,10 +138,10 @@ export interface AddExtrudedSideOptions extends AddFaceOptions {
 }
 
 /** Read-only list of 3D vertices. */
-export type VertexList3D = readonly Readonly<Vec3>[];
+export type VertexList3D = readonly ReadonlyVec3[];
 
 /** Read-only list of 2D vertices. */
-export type VertexList2D = readonly Readonly<Vec2>[];
+export type VertexList2D = readonly ReadonlyVec2[];
 
 /**
  * Utility for constructing indexed triangle meshes.
@@ -243,7 +245,7 @@ export class GeometryBuilder {
    * @param vertices - Polygon vertices in winding order.
    * @param options - Face generation options.
    */
-  addFace(vertices: VertexList3D, options?: number | Readonly<Color> | AddFaceOptions) {
+  addFace(vertices: VertexList3D, options?: number | ReadonlyColor | AddFaceOptions) {
     if (vertices.length < 3) {
       return;
     }
@@ -329,7 +331,7 @@ export class GeometryBuilder {
    * @param mat - Rotation matrix.
    * @param translation - Translation vector.
    */
-  transform(mat?: Readonly<Mat3>, translation?: Readonly<Vec3>) {
+  transform(mat?: ReadonlyMat3, translation?: ReadonlyVec3) {
     const { positions, normals } = this;
     for (let i = 0; 3 * i + 2 < positions.length; i++) {
       let p = getVertexFromFlat(positions, i)!;

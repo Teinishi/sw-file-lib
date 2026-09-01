@@ -1,5 +1,5 @@
-import type { Color } from "@sw-file-lib/core/color";
-import type { Mat3, Vec3 } from "@sw-file-lib/core/math";
+import type { ReadonlyColor } from "@sw-file-lib/core/color";
+import type { ReadonlyMat3, ReadonlyVec3 } from "@sw-file-lib/core/math";
 
 /**
  * A flattened Stormworks surface with its final transform applied.
@@ -12,9 +12,9 @@ import type { Mat3, Vec3 } from "@sw-file-lib/core/math";
  */
 export interface SurfaceData {
   /** Vehicle-space position of the surface. */
-  readonly position: Readonly<Vec3>;
+  readonly position: ReadonlyVec3;
   /** Vehicle-space orientation matrix of the surface. */
-  readonly matrix: Readonly<Mat3>;
+  readonly matrix: ReadonlyMat3;
   /**
    * Stormworks surface shape ID.
    *
@@ -23,7 +23,7 @@ export interface SurfaceData {
    */
   readonly shape: number;
   /** Surface color. */
-  readonly color?: Readonly<Color>;
+  readonly color?: ReadonlyColor;
 }
 
 /**
@@ -49,7 +49,7 @@ export interface BuildSurfaceGeometryOptions {
    *
    * Defaults to white.
    */
-  readonly color?: Readonly<Color>;
+  readonly color?: ReadonlyColor;
   /**
    * Removes hidden internal surfaces before generating geometry.
    *

@@ -5,7 +5,8 @@ import {
   modulo,
   mulVec3,
   subVec3,
-  type Mat3,
+  type ReadonlyMat3,
+  type ReadonlyVec3,
   type Vec3,
 } from "@sw-file-lib/core/math";
 import { type SurfaceData } from ".";
@@ -15,12 +16,12 @@ import {
   type ShapeEdgeCoverage,
 } from "./internal/shapes";
 
-function getMatrixAxis(m: Readonly<Mat3>, axis: "x" | "y" | "z"): Vec3 {
+function getMatrixAxis(m: ReadonlyMat3, axis: "x" | "y" | "z"): Vec3 {
   const i = "xyz".indexOf(axis);
   return { x: m[i]!, y: m[i + 3]!, z: m[i + 6]! };
 }
 
-function cullingMapKey(pos: Readonly<Vec3>, normal: Readonly<Vec3>) {
+function cullingMapKey(pos: ReadonlyVec3, normal: ReadonlyVec3) {
   return `${pos.x},${pos.y},${pos.z}:${normal.x},${normal.y},${normal.z}`;
 }
 
