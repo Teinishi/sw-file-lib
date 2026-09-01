@@ -8,12 +8,9 @@ importers:
 
   .:
     devDependencies:
-      '@sw-file-lib/typedoc-markdown-codeblock':
+      '@sw-file-lib/docs-plugins':
         specifier: workspace:*
-        version: link:packages/typedoc-markdown-codeblock
-      '@sw-file-lib/typedoc-plugin-xml-schema':
-        specifier: workspace:*
-        version: link:packages/typedoc-plugin-xml-schema
+        version: link:packages/docs-plugins
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
@@ -103,6 +100,15 @@ importers:
         specifier: ^3.3.10
         version: 3.3.10(typescript@6.0.3)
 
+  packages/docs-plugins:
+    dependencies:
+      typedoc:
+        specifier: ^0.28.20
+        version: 0.28.20(typescript@6.0.3)
+      typedoc-plugin-markdown:
+        specifier: ^4.12.0
+        version: 4.12.0(typedoc@0.28.20(typescript@6.0.3))
+
   packages/geometry:
     dependencies:
       '@sw-file-lib/core':
@@ -136,14 +142,6 @@ importers:
       '@types/three':
         specifier: ^0.185.4
         version: 0.185.4
-
-  packages/typedoc-markdown-codeblock:
-    devDependencies:
-      '@sw-file-lib/xml':
-        specifier: workspace:*
-        version: link:../xml
-
-  packages/typedoc-plugin-xml-schema: {}
 
   packages/xml:
     dependencies:

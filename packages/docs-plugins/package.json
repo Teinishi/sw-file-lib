@@ -1,0 +1,32 @@
+{
+  "name": "@sw-file-lib/docs-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal TypeDoc/Vite plugins for documentation generation.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Teinishi",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    "./xml-schema-infer": {
+      "import": "./dist/xml-schema-infer/index.mjs",
+      "types": "./dist/xml-schema-infer/index.d.mts"
+    },
+    "./markdown-codeblock": {
+      "import": "./dist/markdown-codeblock/index.mjs",
+      "types": "./dist/markdown-codeblock/index.d.mts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "peerDependencies": {
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0"
+  }
+}
