@@ -1,6 +1,13 @@
 :root {
   --vp-c-brand-1: #4091b4;
   --vp-c-brand-2: #c07856;
+  --vp-button-brand-bg: #4091b4;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-hover-bg: #c07856;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-active-bg: #b06146;
 }
 
 table .column-description {
