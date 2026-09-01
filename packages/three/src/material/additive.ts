@@ -8,16 +8,54 @@ import {
   UniformController,
 } from "./uniformController";
 
+/** Uniforms used by the additive material. */
 export interface AdditiveUniforms {
+  /**
+   * Whether to override the vertex colors with a single color.
+   *
+   * When enabled, the `overrideColor` uniform is used instead of the vertex colors.
+   */
   overrideColorEnabled: boolean;
+  /** The color to use when `overrideColorEnabled` is true. */
   overrideColor: Color;
 }
 
-export type AdditiveUniformStore = UniformController<AdditiveUniforms>;
+/**
+ * Manages shader uniforms for the additive material.
+ *
+ * This can be created using {@link createAdditiveUniforms} and attached to a material using {@link createAdditiveMaterial}.
+ *
+ * @example
+ * ```ts
+ * const additiveUniforms: AdditiveUniformController = createAdditiveUniforms();
+ *
+ * additiveUniforms.set("overrideColorEnabled", true);
+ * additiveUniforms.set("overrideColor", { r: 255, g: 0, b: 0 });
+ * ```
+ */
+export type AdditiveUniformController = UniformController<AdditiveUniforms>;
 
+/**
+ * Create the default uniforms used for additive materials.
+ *
+ * An additive material can be created using {@link createAdditiveMaterial}.
+ *
+ * The default uniforms are:
+ * - `overrideColorEnabled`: true
+ * - `overrideColor`: white
+ *
+ * @example
+ * ```ts
+ * const additiveUniforms = createAdditiveUniforms({
+ *  overrideColorEnabled: false
+ * });
+ *
+ * const additiveMaterial = createAdditiveMaterial(additiveUniforms);
+ * ```
+ */
 export function createAdditiveUniforms(
   defaults: Partial<AdditiveUniforms> = {},
-): AdditiveUniformStore {
+): AdditiveUniformController {
   const controller = UniformController[CREATE]<AdditiveUniforms>({
     overrideColorEnabled: boolTransformer,
     overrideColor: colorVec4Transformer,
@@ -30,11 +68,19 @@ export function createAdditiveUniforms(
   return controller;
 }
 
-/** Create the default additive material used for materialIndex 2 groups. */
+/**
+ * Create an additive material used for materialIndex 2 groups.
+ *
+ * If you want to use custom uniforms, you can create them using {@link createAdditiveUniforms} and pass them to this function.
+ *
+ * You can override the material parameters by passing a `THREE.MeshBasicMaterialParameters` object as the second argument.
+ *
+ * @returns A new `THREE.MeshBasicMaterial` with the specified uniforms, or a default one if not provided.
+ */
 export function createAdditiveMaterial(
-  uniforms?: AdditiveUniformStore,
+  uniforms?: AdditiveUniformController | undefined | null,
   materialParameters?: THREE.MeshBasicMaterialParameters,
-) {
+): THREE.MeshBasicMaterial {
   uniforms ??= createAdditiveUniforms();
 
   const material = new THREE.MeshBasicMaterial({

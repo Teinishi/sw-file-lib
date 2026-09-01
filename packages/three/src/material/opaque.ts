@@ -8,16 +8,62 @@ import {
   UniformController,
 } from "./uniformController";
 
+/** Uniforms used by the opaque material. */
 export interface OpaqueUniforms {
+  /**
+   * Whether to override the vertex colors.
+   *
+   * When enabled, the `overrideColor1`, `overrideColor2`, and `overrideColor3` uniforms are used instead of certain vertex colors.
+   */
   overrideColorEnabled: boolean;
+  /** The color to override vertex colors that is close to `(255, 126, 0)` with when `overrideColorEnabled` is true. */
   overrideColor1: Color;
+  /** The color to override vertex colors that is close to `(155, 126, 0)` with when `overrideColorEnabled` is true. */
   overrideColor2: Color;
+  /** The color to override vertex colors that is close to `(55, 126, 0)` with when `overrideColorEnabled` is true. */
   overrideColor3: Color;
 }
 
-export type OpaqueUniformStore = UniformController<OpaqueUniforms>;
+/**
+ * Manages shader uniforms for the opaque material.
+ *
+ * This can be created using {@link createOpaqueUniforms} and attached to a material using {@link createOpaqueMaterial}.
+ *
+ * @example
+ * ```ts
+ * const opaqueUniforms: OpaqueUniformController = createOpaqueUniforms();
+ *
+ * opaqueUniforms.set("overrideColorEnabled", true);
+ * opaqueUniforms.set("overrideColor1", { r: 255, g: 0, b: 0 });
+ * opaqueUniforms.set("overrideColor2", { r: 0, g: 255, b: 0 });
+ * opaqueUniforms.set("overrideColor3", { r: 0, g: 0, b: 255 });
+ * ```
+ */
+export type OpaqueUniformController = UniformController<OpaqueUniforms>;
 
-export function createOpaqueUniforms(defaults: Partial<OpaqueUniforms> = {}): OpaqueUniformStore {
+/**
+ * Create the default uniforms used for opaque materials.
+ *
+ * An opaque material can be created using {@link createOpaqueMaterial}.
+ *
+ * The default uniforms are:
+ * - `overrideColorEnabled`: true
+ * - `overrideColor1`: white
+ * - `overrideColor2`: white
+ * - `overrideColor3`: white
+ *
+ * @example
+ * ```ts
+ * const opaqueUniforms = createOpaqueUniforms({
+ *  overrideColorEnabled: false
+ * });
+ *
+ * const opaqueMaterial = createOpaqueMaterial(opaqueUniforms);
+ * ```
+ */
+export function createOpaqueUniforms(
+  defaults: Partial<OpaqueUniforms> = {},
+): OpaqueUniformController {
   const controller = UniformController[CREATE]<OpaqueUniforms>({
     overrideColorEnabled: boolTransformer,
     overrideColor1: colorVec4Transformer,
@@ -34,11 +80,19 @@ export function createOpaqueUniforms(defaults: Partial<OpaqueUniforms> = {}): Op
   return controller;
 }
 
-/** Create the default opaque material used for materialIndex 0 groups. */
+/**
+ * Create the default opaque material used for materialIndex 0 groups.
+ *
+ * If you want to use custom uniforms, you can create them using {@link createOpaqueUniforms} and pass them to this function.
+ *
+ * You can override the material parameters by passing a `THREE.MeshStandardMaterialParameters` object as the second argument.
+ *
+ * @returns A new `THREE.MeshStandardMaterial` with the specified uniforms, or a default one if not provided.
+ */
 export function createOpaqueMaterial(
-  uniforms?: OpaqueUniformStore,
+  uniforms?: OpaqueUniformController,
   materialParameters?: THREE.MeshStandardMaterialParameters,
-) {
+): THREE.MeshStandardMaterial {
   uniforms ??= createOpaqueUniforms();
 
   const material = new THREE.MeshStandardMaterial({

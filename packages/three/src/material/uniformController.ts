@@ -43,6 +43,9 @@ export const colorVec4Transformer: UniformTransformer<Color> = {
       : undefined,
 };
 
+/**
+ * Manages shader uniforms for a material.
+ */
 export class UniformController<T extends object> {
   private transformers: UniformTransformerMap<T>;
   private pending: Partial<T> = {};
@@ -67,6 +70,7 @@ export class UniformController<T extends object> {
     this.pending = {};
   }
 
+  /** Gets the value of a uniform. */
   get<K extends keyof T>(key: K): T[K] | undefined {
     if (this.shaderUniforms) {
       const entry = this.shaderUniforms[key as string];
@@ -77,6 +81,7 @@ export class UniformController<T extends object> {
     }
   }
 
+  /** Sets the value of a uniform. */
   set<K extends keyof T>(key: K, value: T[K]) {
     if (!this.shaderUniforms) {
       this.pending[key] = value;
@@ -93,6 +98,7 @@ export class UniformController<T extends object> {
     }
   }
 
+  /** Patches multiple uniforms at once. */
   patch(values: Partial<T>) {
     for (const key in values) {
       this.set(key, values[key]!);

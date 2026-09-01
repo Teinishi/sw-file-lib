@@ -7,11 +7,11 @@ import {
   createOpaqueMaterial,
   createOpaqueUniforms,
 } from "../..";
-import { ADDITIVE_LUT } from "./additiveLut";
+import { ADDITIVE_LUT } from "../utils";
 
 export async function assemblePaintableSign(
+  componentInstance: VehicleSchemas.ComponentImmutable,
   definition: ComponentDefinitionImmutable,
-  component: VehicleSchemas.ComponentImmutable,
 ) {
   const isNoAdditive = (((definition.flags ?? 0) >> 22) & 1) !== 0;
 
@@ -36,28 +36,25 @@ export async function assemblePaintableSign(
     return surfaces ? { surfaces } : {};
   }
 
-  const objects: Record<string, THREE.Mesh> = {};
+  const objects: THREE.Mesh[] = [];
 
-  const gc = component.o?.gc?.split(",").map((c) => parseColor(c)) ?? [];
+  const gc = componentInstance.o?.gc?.split(",").map((c) => parseColor(c)) ?? [];
   const geom1 = createPixelGeometry(gc, 0.125);
   const opaqueMaterial = createOpaqueMaterial(
     createOpaqueUniforms({ overrideColorEnabled: false }),
   );
-  objects.sign = new THREE.Mesh(geom1, opaqueMaterial);
+  objects.push(new THREE.Mesh(geom1, opaqueMaterial));
 
   if (!isNoAdditive) {
-    const gca = component.o?.gca?.split(",").map((c) => parseColor(c)) ?? [];
+    const gca = componentInstance.o?.gca?.split(",").map((c) => parseColor(c)) ?? [];
     const geom2 = createPixelGeometry(gca, 0.125, true);
     const additiveMaterial = createAdditiveMaterial(
       createAdditiveUniforms({ overrideColorEnabled: false }),
     );
-    objects.sign_additive = new THREE.Mesh(geom2, additiveMaterial);
+    objects.push(new THREE.Mesh(geom2, additiveMaterial));
   }
 
-  return {
-    ...(surfaces ? { surfaces } : {}),
-    objects,
-  };
+  return { surfaces, objects };
 }
 
 function createPixelGeometry(

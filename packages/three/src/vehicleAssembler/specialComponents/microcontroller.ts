@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { VehicleSchemas } from "@sw-file-lib/xml";
-import { combineGeometries, createComponentMaterials } from "./utils";
+import type { VehicleAssetResolver } from "../assetResolver";
+import { combineGeometries, createMaterialsForComponent } from "../utils";
 
 const MICROCONTROLLER_CORNER_MESH = "meshes/component_microprocessor_corner.mesh";
 const MICROCONTROLLER_EDGE_MESH = "meshes/component_microprocessor_edge.mesh";
@@ -9,10 +10,10 @@ const MICROCONTROLLER_TOP_CORNER_MESH = "meshes/component_microprocessor_top_cor
 const MICROCONTROLLER_TOP_EDGE_MESH = "meshes/component_microprocessor_top_edge.mesh";
 
 export async function assembleMicrocontroller(
-  component: VehicleSchemas.ComponentImmutable,
-  getMeshGeometry: (name: string) => Promise<THREE.BufferGeometry | undefined>,
+  componentInstance: VehicleSchemas.ComponentImmutable,
+  assets: VehicleAssetResolver,
 ) {
-  const microcontroller = component.o?.microprocessor_definition;
+  const microcontroller = componentInstance.o?.microprocessor_definition;
   if (!microcontroller) return;
 
   const width = microcontroller.width ?? 0;
@@ -61,13 +62,12 @@ export async function assembleMicrocontroller(
     });
   }
 
-  const materials = createComponentMaterials(component);
-  const materialArr = [materials.opaque, materials.glass, materials.additive];
+  const { materialArr } = createMaterialsForComponent(componentInstance);
 
   const group = new THREE.Group();
 
-  const cornerMesh = await getMeshGeometry(MICROCONTROLLER_CORNER_MESH);
-  const topCornerMesh = await getMeshGeometry(MICROCONTROLLER_TOP_CORNER_MESH);
+  const cornerMesh = await assets.resolveMesh(MICROCONTROLLER_CORNER_MESH);
+  const topCornerMesh = await assets.resolveMesh(MICROCONTROLLER_TOP_CORNER_MESH);
   if (cornerMesh || topCornerMesh) {
     const corner1 = combineGeometries([cornerMesh, topCornerMesh], materialArr);
     const corner2 = corner1.clone();
@@ -86,8 +86,8 @@ export async function assembleMicrocontroller(
     group.add(corner4);
   }
 
-  const edgeMesh = await getMeshGeometry(MICROCONTROLLER_EDGE_MESH);
-  const topEdgeMesh = await getMeshGeometry(MICROCONTROLLER_TOP_EDGE_MESH);
+  const edgeMesh = await assets.resolveMesh(MICROCONTROLLER_EDGE_MESH);
+  const topEdgeMesh = await assets.resolveMesh(MICROCONTROLLER_TOP_EDGE_MESH);
   if (edgeMesh || topEdgeMesh) {
     const edge = combineGeometries([edgeMesh, topEdgeMesh], materialArr);
     for (let x = 0; x < width - 1; x++) {
@@ -113,7 +113,7 @@ export async function assembleMicrocontroller(
     }
   }
 
-  const topMesh = await getMeshGeometry(MICROCONTROLLER_TOP_MESH);
+  const topMesh = await assets.resolveMesh(MICROCONTROLLER_TOP_MESH);
   if (topMesh) {
     for (let x = 0; x < width - 1; x++) {
       for (let z = 0; z < length - 1; z++) {
@@ -125,5 +125,5 @@ export async function assembleMicrocontroller(
     }
   }
 
-  return { surfaces, objects: { microcontroller: group } };
+  return { surfaces, objects: [group] };
 }

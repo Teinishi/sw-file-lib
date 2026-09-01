@@ -3,32 +3,32 @@ import {
   createAdditiveMaterial,
   createAdditiveUniforms,
   type AdditiveUniforms,
-  type AdditiveUniformStore,
+  type AdditiveUniformController,
 } from "./additive";
 import {
   createGlassMaterial,
   createGlassUniforms,
   type GlassUniforms,
-  type GlassUniformStore,
+  type GlassUniformController,
 } from "./glass";
 import {
   createOpaqueMaterial,
   createOpaqueUniforms,
   type OpaqueUniforms,
-  type OpaqueUniformStore,
+  type OpaqueUniformController,
 } from "./opaque";
 
 /** Material families for Stormworks mesh. */
 export type SwMaterialKind = "opaque" | "glass" | "additive";
 
 /** Mutable Three.js uniform stores owned by a Stormworks material set. */
-export interface SwUniformStores {
+export interface SwUniformControllers {
   /** Uniforms used by the opaque render material. */
-  opaque: OpaqueUniformStore;
+  opaque: OpaqueUniformController;
   /** Uniforms used by the glass render material. */
-  glass: GlassUniformStore;
+  glass: GlassUniformController;
   /** Uniforms used by the additive render material. */
-  additive: AdditiveUniformStore;
+  additive: AdditiveUniformController;
 }
 
 /** Materials and their uniform stores used by Stormworks object creation helpers. */
@@ -40,7 +40,7 @@ export interface SwMaterialSet {
   /** Material used for shader id `2` groups. */
   additive: THREE.MeshBasicMaterial;
   /** Uniform stores attached to this material set. */
-  uniforms: SwUniformStores;
+  uniforms: SwUniformControllers;
 }
 
 /** Options used when creating the default Stormworks material set. */

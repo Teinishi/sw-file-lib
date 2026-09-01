@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { computed, markRaw, reactive, ref } from "vue";
-import { serializeMesh, parseMeshOrPhys, type MeshData, parseMesh } from "@sw-file-lib/core";
+import { serializeMesh, parseMeshOrPhys, type MeshData } from "@sw-file-lib/core";
 import { GeometryBuilder } from "@sw-file-lib/geometry";
 import {
   createSwMesh,
   createSwPhysMeshGroup,
-  assembleVehicleGeometry,
-  createComponentAssembler,
+  createVehicleAssetResolver,
+  VehicleBodyAssembler,
 } from "@sw-file-lib/three";
-import { parseComponentDefinitionXml, VehicleSchema } from "@sw-file-lib/xml";
+import { VehicleSchema } from "@sw-file-lib/xml";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
 const COLORS = [0x0f766e, 0x1d4ed8, 0x7c3aed, 0xb45309, 0xdc2626, 0x059669, 0xc026d3, 0x0284c7];
@@ -92,38 +92,45 @@ function getRomPath(base: string, path: string): string {
   return `${base}/${path}`;
 }
 
-const componentAssembler = createComponentAssembler(
-  (componentName) =>
-    fetch(getRomPath("/rom/data/definitions", componentName + ".xml"))
-      .then(async (r) => parseComponentDefinitionXml(await r.text()))
-      .catch((_) => undefined),
-  (meshName) =>
-    fetch(getRomPath("/rom", meshName))
-      .then(async (r) => parseMesh(await r.arrayBuffer()))
-      .catch((_) => undefined),
+const assetResolver = createVehicleAssetResolver(
+  (componentId) =>
+    fetch(getRomPath("/rom/data/definitions", componentId + ".xml")).then(async (res) => {
+      if (!res.ok) return undefined;
+      return await res.text();
+    }),
+  (meshPath) =>
+    fetch(getRomPath("/rom", meshPath)).then(async (res) => {
+      if (!res.ok) return undefined;
+      return await res.arrayBuffer();
+    }),
 );
 
 async function loadVehicle(text: string, name: string) {
   const vehicle = VehicleSchema.parse(text, "vehicle");
 
-  const groups = await assembleVehicleGeometry(vehicle, {
-    componentAssembler,
-  });
+  const vehicleGroup = new THREE.Group();
+  vehicleGroup.name = name;
 
   const builder = new GeometryBuilder();
-  const vehicleGroup = new THREE.Group();
-  for (const group of groups) {
-    vehicleGroup.add(group.object);
-    builder.merge(group.surfaceBuilder);
+
+  for (const body of vehicle.bodies ?? []) {
+    const assembler = new VehicleBodyAssembler(assetResolver);
+    for (const component of body.components ?? []) {
+      await assembler.appendComponent(component);
+    }
+
+    const obj = assembler.build();
+    vehicleGroup.add(obj);
+
+    builder.merge(assembler.buildSurfaceMesh());
   }
-  vehicleGroup.name = name;
 
   loadedObjects.push({
     id: nextObjectId++,
     name,
     kind: "vehicle",
     object: markRaw(vehicleGroup),
-    meshData: builder.toMeshData(),
+    meshData: markRaw(builder.toMeshData()),
     visible: true,
   });
 }
