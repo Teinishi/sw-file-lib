@@ -25,12 +25,8 @@ import {
   VehicleSchemas,
   type ComponentDefinitionImmutable,
 } from "@sw-file-lib/xml";
-import {
-  bufferGeometryFromBuilder,
-  createOpaqueMaterial,
-  createOpaqueUniforms,
-  stormworksToThreeMatrix4,
-} from "..";
+import { bufferGeometryFromBuilder, createOpaqueMaterial, createOpaqueUniforms } from "..";
+import { stormworksToThreeMatrix4 } from "../internal";
 import type { VehicleAssetResolver, createVehicleAssetResolver } from "./assetResolver"; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { assembleMicrocontroller, assemblePaintableSign } from "./specialComponents";
 import { createMaterialsForComponent } from "./utils";
@@ -78,6 +74,39 @@ export type MeshAttributeName = (typeof MESH_ATTRIBUTE_NAMES)[number];
  * `THREE.Group` containing a culled surface mesh and any additional meshes.
  *
  * A single instance should be used for one vehicle body.
+ *
+ * The primary methods most applications should call are {@link appendComponent} and {@link build}.
+ *
+ * @example
+ * ```ts
+ * import * as THREE from "three";
+ * import { parseVehicleXml } from "@sw-file-lib/xml";
+ * import { createVehicleAssetResolver, VehicleBodyAssembler } from "@sw-file-lib/three";
+ *
+ * const assetResolver = createVehicleAssetResolver(
+ *   (componentId) =>
+ *     fetch(`/rom/data/definitions/${componentId}.xml`)
+ *     .then((res) => res.ok ? res.text() : undefined),
+ *   (meshPath) =>
+ *     fetch(`/rom/${meshPath}`)
+ *     .then((res) => res.ok ? res.arrayBuffer() : undefined)
+ * );
+ *
+ * const vehicle = parseVehicleXml(text);
+ * const vehicleGroup = new THREE.Group();
+ *
+ * for (const body of vehicle.bodies ?? []) {
+ *   const assembler = new VehicleBodyAssembler(assetResolver);
+ *   for (const component of body.components ?? []) {
+ *     await assembler.appendComponent(component);
+ *   }
+ *
+ *   const obj = assembler.build();
+ *   vehicleGroup.add(obj);
+ * }
+ *
+ * scene.add(vehicleGroup);
+ * ```
  */
 export class VehicleBodyAssembler {
   private assets: VehicleAssetResolver;

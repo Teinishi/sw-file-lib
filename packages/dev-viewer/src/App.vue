@@ -9,7 +9,7 @@ import {
   createVehicleAssetResolver,
   VehicleBodyAssembler,
 } from "@sw-file-lib/three";
-import { VehicleSchema } from "@sw-file-lib/xml";
+import { parseVehicleXml } from "@sw-file-lib/xml";
 import ViewerCanvas from "./components/ViewerCanvas.vue";
 
 const COLORS = [0x0f766e, 0x1d4ed8, 0x7c3aed, 0xb45309, 0xdc2626, 0x059669, 0xc026d3, 0x0284c7];
@@ -94,19 +94,15 @@ function getRomPath(base: string, path: string): string {
 
 const assetResolver = createVehicleAssetResolver(
   (componentId) =>
-    fetch(getRomPath("/rom/data/definitions", componentId + ".xml")).then(async (res) => {
-      if (!res.ok) return undefined;
-      return await res.text();
-    }),
+    fetch(getRomPath("/rom/data/definitions", componentId + ".xml")).then((res) =>
+      res.ok ? res.text() : undefined,
+    ),
   (meshPath) =>
-    fetch(getRomPath("/rom", meshPath)).then(async (res) => {
-      if (!res.ok) return undefined;
-      return await res.arrayBuffer();
-    }),
+    fetch(getRomPath("/rom", meshPath)).then((res) => (res.ok ? res.arrayBuffer() : undefined)),
 );
 
 async function loadVehicle(text: string, name: string) {
-  const vehicle = VehicleSchema.parse(text, "vehicle");
+  const vehicle = parseVehicleXml(text);
 
   const vehicleGroup = new THREE.Group();
   vehicleGroup.name = name;

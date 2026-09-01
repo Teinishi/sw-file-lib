@@ -1,6 +1,15 @@
 import { BufferAttribute, BufferGeometry } from "three";
 import type { GeometryBuilder } from "@sw-file-lib/geometry";
 
+/**
+ * Transfers the contents of a {@link GeometryBuilder} into a `THREE.BufferGeometry`.
+ *
+ * This function clears the existing attributes and groups of the buffer geometry,
+ * then copies the position, normal, color, index, and group data from the builder.
+ *
+ * @param builder The source geometry builder.
+ * @param buffer The target buffer geometry.
+ */
 export function applyBuilderOnBufferGeometry(builder: GeometryBuilder, buffer: BufferGeometry) {
   buffer.clearGroups();
 
@@ -21,6 +30,9 @@ export function applyBuilderOnBufferGeometry(builder: GeometryBuilder, buffer: B
   }
 }
 
+/**
+ * Creates a new `THREE.BufferGeometry` from a {@link GeometryBuilder}.
+ */
 export function bufferGeometryFromBuilder(builder: GeometryBuilder): BufferGeometry {
   const buffer = new BufferGeometry();
   applyBuilderOnBufferGeometry(builder, buffer);
