@@ -2,6 +2,8 @@ import type { PathLike } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+export * from "./basicBlocks";
+
 async function fileExists(filePath: PathLike) {
   try {
     await fs.access(filePath);
