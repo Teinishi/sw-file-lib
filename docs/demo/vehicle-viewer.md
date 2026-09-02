@@ -26,7 +26,7 @@ const object = assembler.build();
 
 ::: info
 
-For simplicity, this demo only resolves basic block (`01_block.xml`) and wedge (`02_wedge.xml`), and no meshes.
+For simplicity, this demo only resolves basic blocks, wedges, pyramids, and inverse pyramids. No meshes are resolved.
 
 :::
 

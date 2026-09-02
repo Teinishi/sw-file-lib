@@ -10,5 +10,5 @@
     "types": ["vite/client"],
     "typeRoots": ["../node_modules"]
   },
-  "include": ["./.vitepress/components/*.vue"]
+  "include": ["./.vitepress/*.ts", "./.vitepress/components/*.vue"]
 }

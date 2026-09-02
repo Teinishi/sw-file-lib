@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { ref, watch, markRaw } from "vue";
-import { createVehicleAssetResolver, VehicleBodyAssembler } from "@sw-file-lib/three";
+import { VehicleBodyAssembler, type VehicleAssetResolver } from "@sw-file-lib/three";
 import { safeParseVehicleXml } from "@sw-file-lib/xml";
+import { BASIC_BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "../basicBlocks";
 import ViewerCanvas from "./ViewerCanvas.vue";
-
-const componentDefinitionFiles = import.meta.glob("./rom/data/definitions/*.xml", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
 
 const props = defineProps<{
   defaultVehicle?: string;
@@ -18,13 +13,17 @@ const props = defineProps<{
 let defaultDisabled = false;
 let vehicleObject = ref<THREE.Group | null>(null);
 
-const assetResolver = createVehicleAssetResolver(
-  (componentId) => {
-    const file = componentDefinitionFiles[`./rom/data/definitions/${componentId}.xml`];
-    return file ? file : undefined;
+const assetResolver: VehicleAssetResolver = {
+  async resolveComponentDefinition(componentId) {
+    componentId ??= "01_block";
+    if (isBasicBlockType(componentId)) {
+      return { surfaces: BASIC_BLOCK_SURFACE_DEFINITIONS[componentId] };
+    }
   },
-  (_meshPath) => undefined,
-);
+  async resolveMesh(_meshPath) {
+    return undefined;
+  },
+};
 
 async function loadVehicle(xml: string) {
   const result = safeParseVehicleXml(xml);
