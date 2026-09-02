@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "lib": ["ES2023", "DOM"],
+    "composite": true,
+    "paths": {
+      "vite/client": ["../node_modules/vite/client.d.ts"]
+    },
+    "types": ["vite/client"],
+    "typeRoots": ["../node_modules"]
+  },
+  "include": ["./.vitepress/components/*.vue"]
+}
