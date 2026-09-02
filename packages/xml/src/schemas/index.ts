@@ -1,4 +1,4 @@
-import { parseSwXml, type XmlWriterOptions } from "..";
+import { type XmlWriterOptions } from "..";
 import type { ParseOptions } from "../types";
 import * as x from "../xml-schema";
 import {
@@ -34,35 +34,6 @@ export * as VehicleSchemas from "./Vehicle";
 
 export { SchemaError, SchemaSerializeError } from "../xml-schema";
 
-function parse(
-  schema: x.ElementSchema<any>,
-  rootTag: string,
-  input: string | Uint8Array<ArrayBuffer>,
-  options?: ParseOptions,
-) {
-  const tree = parseSwXml(input);
-  return schema.parse(tree, rootTag, options);
-}
-
-function safeParse(
-  schema: x.ElementSchema<any>,
-  rootTag: string,
-  input: string | Uint8Array<ArrayBuffer>,
-  options?: ParseOptions,
-) {
-  const tree = parseSwXml(input);
-  return schema.safeParse(tree, rootTag, options);
-}
-
-function serialize(
-  schema: x.ElementSchema<any>,
-  rootTag: string,
-  data: x.Immutable<any>,
-  options?: XmlWriterOptions,
-) {
-  return schema.serialize(data, rootTag, options).toString();
-}
-
 function safeSerialize(
   schema: x.ElementSchema<any>,
   rootTag: string,
@@ -86,7 +57,7 @@ export function parseComponentDefinitionXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): ComponentDefinition {
-  return parse(ComponentDefinitionSchema, "definition", input, options);
+  return ComponentDefinitionSchema.parse(input, "definition", options);
 }
 
 /**
@@ -96,7 +67,7 @@ export function safeParseComponentDefinitionXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): x.Result<ComponentDefinition, x.SchemaError> {
-  return safeParse(ComponentDefinitionSchema, "definition", input, options);
+  return ComponentDefinitionSchema.safeParse(input, "definition", options);
 }
 
 /**
@@ -108,7 +79,7 @@ export function serializeComponentDefinitionXml(
   data: ComponentDefinitionImmutable,
   options?: XmlWriterOptions,
 ): string {
-  return serialize(ComponentDefinitionSchema, "definition", data, options);
+  return ComponentDefinitionSchema.serialize(data, "definition", options).toString();
 }
 
 /**
@@ -130,7 +101,7 @@ export function parseMicrocontrollerXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): Microcontroller {
-  return parse(MicrocontrollerSchema, "microprocessor", input, options);
+  return MicrocontrollerSchema.parse(input, "microprocessor", options);
 }
 
 /**
@@ -140,7 +111,7 @@ export function safeParseMicrocontrollerXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): x.Result<Microcontroller, x.SchemaError> {
-  return safeParse(MicrocontrollerSchema, "microprocessor", input, options);
+  return MicrocontrollerSchema.safeParse(input, "microprocessor", options);
 }
 
 /**
@@ -152,7 +123,7 @@ export function serializeMicrocontrollerXml(
   data: MicrocontrollerImmutable,
   options?: XmlWriterOptions,
 ): string {
-  return serialize(MicrocontrollerSchema, "microprocessor", data, options);
+  return MicrocontrollerSchema.serialize(data, "microprocessor", options).toString();
 }
 
 /**
@@ -175,7 +146,7 @@ export function parseVehicleXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): Vehicle {
-  return parse(VehicleSchema, "vehicle", input, options);
+  return VehicleSchema.parse(input, "vehicle", options);
 }
 
 /**
@@ -185,7 +156,7 @@ export function safeParseVehicleXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): x.Result<Vehicle, x.SchemaError> {
-  return safeParse(VehicleSchema, "vehicle", input, options);
+  return VehicleSchema.safeParse(input, "vehicle", options);
 }
 
 /**
@@ -194,7 +165,7 @@ export function safeParseVehicleXml(
  * @throws {@link SchemaSerializeError} when the vehicle cannot be serialized.
  */
 export function serializeVehicleXml(data: VehicleImmutable, options?: XmlWriterOptions): string {
-  return serialize(VehicleSchema, "vehicle", data, options);
+  return VehicleSchema.serialize(data, "vehicle", options).toString();
 }
 
 /**
