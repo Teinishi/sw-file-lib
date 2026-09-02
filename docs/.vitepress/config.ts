@@ -30,6 +30,7 @@ export default defineConfig({
           },
         ],
       },
+      { text: "Interactive Demo", link: "/demo/vehicle-viewer" },
       {
         text: "API",
         items: [{ text: "Index", link: "/api/" }, ...typedocSidebar],

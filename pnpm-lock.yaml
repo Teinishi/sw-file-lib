@@ -15,9 +15,15 @@ importers:
       '@sw-file-lib/docs-plugins':
         specifier: workspace:*
         version: link:packages/docs-plugins
+      '@sw-file-lib/three':
+        specifier: workspace:*
+        version: link:packages/three
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
+      '@types/three':
+        specifier: ^0.185.4
+        version: 0.185.4
       bumpp:
         specifier: ^11.1.0
         version: 11.1.0
@@ -27,6 +33,9 @@ importers:
       oxlint:
         specifier: ^1.76.0
         version: 1.76.0
+      three:
+        specifier: ^0.185.1
+        version: 0.185.1
       ts-essentials:
         specifier: ^10.2.1
         version: 10.2.1(typescript@6.0.3)
@@ -51,6 +60,9 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@26.1.2)(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
+      vue:
+        specifier: ^3.5.41
+        version: 3.5.41(typescript@6.0.3)
 
   packages/core:
     devDependencies:
@@ -146,10 +158,6 @@ importers:
       three:
         specifier: ^0.185.1
         version: 0.185.1
-    devDependencies:
-      '@types/three':
-        specifier: ^0.185.4
-        version: 0.185.4
 
   packages/xml:
     dependencies:
@@ -1523,11 +1531,6 @@ packages:
   muggle-string@0.4.1:
     resolution: {integrity: sha512-VNTrAak/KhO2i8dqqnqnAHOa3cYBwXEZe9h+D5h/1ZqFSTEFHdM65lR7RoIqq3tBBYavsOXV84NoHXZ0AkPyqQ==}
 
-  nanoid@3.3.16:
-    resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
-    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
   nanoid@3.3.18:
     resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -1591,10 +1594,6 @@ packages:
   picomatch@4.0.5:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
-
-  postcss@8.5.24:
-    resolution: {integrity: sha512-8RyVklq0owXUTa4xlpzu4l9AaVKIdQvAcOHZWaMh98HgySsUtxRVf/chRe3dsSLqb6i40BzGRzEUddRaI+9TSw==}
-    engines: {node: ^10 || ^12 || >=14}
 
   postcss@8.5.26:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
@@ -2554,7 +2553,7 @@ snapshots:
       '@vue/shared': 3.5.41
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.24
+      postcss: 8.5.26
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.5.41':
@@ -2989,8 +2988,6 @@ snapshots:
 
   muggle-string@0.4.1: {}
 
-  nanoid@3.3.16: {}
-
   nanoid@3.3.18: {}
 
   obug@2.1.4: {}
@@ -3062,12 +3059,6 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.5: {}
-
-  postcss@8.5.24:
-    dependencies:
-      nanoid: 3.3.16
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
 
   postcss@8.5.26:
     dependencies:

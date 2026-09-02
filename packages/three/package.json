@@ -28,9 +28,6 @@
     "@sw-file-lib/geometry": "workspace:*",
     "@sw-file-lib/xml": "workspace:*"
   },
-  "devDependencies": {
-    "@types/three": "^0.185.4"
-  },
   "peerDependencies": {
     "three": "^0.185.1"
   }
