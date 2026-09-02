@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { parseColor, type ReadonlyColor } from "@sw-file-lib/core/color";
+import { parseColor } from "@sw-file-lib/core/color";
 import {
   addVec3,
   mulMat3,
@@ -9,8 +9,6 @@ import {
   transposeMat3,
   vec3,
   type Mat3,
-  type ReadonlyMat3,
-  type ReadonlyVec3,
 } from "@sw-file-lib/core/math";
 import {
   buildSurfacesGeometry,
@@ -19,6 +17,7 @@ import {
   isValidSurfaceOrientation,
   isValidSurfaceRotation,
   type BuildSurfaceGeometryOptions,
+  type FlattenedSurfaceData,
 } from "@sw-file-lib/geometry";
 import {
   ComponentDefinitionSchemas,
@@ -30,31 +29,6 @@ import { stormworksToThreeMatrix4 } from "../internal";
 import type { VehicleAssetResolver, createVehicleAssetResolver } from "./assetResolver"; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { assembleMicrocontroller, assemblePaintableSign } from "./specialComponents";
 import { createMaterialsForComponent } from "./utils";
-
-/**
- * A flattened Stormworks surface with its final transform applied.
- *
- * Unlike the `<surface>` element in a component definition, `SurfaceData`
- * stores the surface position and orientation after the component hierarchy
- * has been resolved. This representation is used for operations that work
- * across multiple components, such as surface culling and vehicle mesh
- * generation.
- */
-interface FlattenedSurfaceData {
-  /** Vehicle-space position of the surface. */
-  readonly position: ReadonlyVec3;
-  /** Vehicle-space orientation matrix of the surface. */
-  readonly matrix: ReadonlyMat3;
-  /**
-   * Stormworks surface shape ID.
-   *
-   * This is the same numeric value as the `shape` attribute of a
-   * `<surface>` element.
-   */
-  readonly shape: number;
-  /** Surface color. */
-  readonly color?: ReadonlyColor;
-}
 
 /** The names of the mesh reference attributes in the component definition XML. */
 export const MESH_ATTRIBUTE_NAMES = [

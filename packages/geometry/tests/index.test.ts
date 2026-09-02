@@ -8,7 +8,7 @@ import {
   getSurfaceOrientation,
   isValidSurfaceOrientation,
   isValidSurfaceRotation,
-  type SurfaceData,
+  type FlattenedSurfaceData,
 } from "../src";
 
 function arrayWithoutNegativeZero(values: ArrayLike<number>): number[] {
@@ -128,7 +128,7 @@ test("buildSurfaceGeometry supports edge and hollow options", () => {
 });
 
 test("buildSurfacesGeometry scales Stormworks positions without flipping z", () => {
-  const surfaces: SurfaceData[] = [
+  const surfaces: FlattenedSurfaceData[] = [
     {
       position: { x: 0, y: 0, z: 4 },
       matrix: Orientation.Identity.toMat3(),
@@ -143,7 +143,7 @@ test("buildSurfacesGeometry scales Stormworks positions without flipping z", () 
 });
 
 test("cullSurfaces removes fully covered adjacent faces", () => {
-  const surfaces: SurfaceData[] = [
+  const surfaces: FlattenedSurfaceData[] = [
     {
       position: { x: 0, y: 0, z: 0 },
       matrix: Orientation.Identity.toMat3(),

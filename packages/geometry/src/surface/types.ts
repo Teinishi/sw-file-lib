@@ -1,16 +1,19 @@
 import type { ReadonlyColor } from "@sw-file-lib/core/color";
 import type { ReadonlyMat3, ReadonlyVec3 } from "@sw-file-lib/core/math";
+import { cullSurfaces, buildSurfacesGeometry } from "."; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 /**
  * A flattened Stormworks surface with its final transform applied.
  *
  * Unlike the `<surface>` element in a component definition, `SurfaceData`
  * stores the surface position and orientation after the component hierarchy
- * has been resolved. This representation is used for operations that work
- * across multiple components, such as surface culling and vehicle mesh
- * generation.
+ * has been resolved.
+ *
+ * This representation is used for operations that work across multiple
+ * components, such as surface culling ({@link cullSurfaces}) and vehicle mesh
+ * generation ({@link buildSurfacesGeometry}).
  */
-export interface SurfaceData {
+export interface FlattenedSurfaceData {
   /** Vehicle-space position of the surface. */
   readonly position: ReadonlyVec3;
   /** Vehicle-space orientation matrix of the surface. */

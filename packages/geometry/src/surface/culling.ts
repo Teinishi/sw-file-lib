@@ -9,7 +9,7 @@ import {
   type ReadonlyVec3,
   type Vec3,
 } from "@sw-file-lib/core/math";
-import { type SurfaceData } from ".";
+import { type FlattenedSurfaceData } from ".";
 import {
   SURFACE_EDGE_COVERAGE,
   surfaceEdgeCoverageExists,
@@ -34,7 +34,7 @@ function cullingMapKey(pos: ReadonlyVec3, normal: ReadonlyVec3) {
  * @param surfaces - Surfaces to analyze.
  * @returns Indices of culled surfaces.
  */
-export function cullSurfaces(surfaces: readonly SurfaceData[]): Set<number> {
+export function cullSurfaces(surfaces: readonly FlattenedSurfaceData[]): Set<number> {
   const cullingMap: Map<string, Set<number>> = new Map();
 
   const culledSurfaces: Set<number> = new Set();

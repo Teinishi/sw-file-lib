@@ -8,7 +8,7 @@ import {
   type ReadonlyVec3,
   type Vec3,
 } from "@sw-file-lib/core/math";
-import { cullSurfaces, type BuildSurfaceGeometryOptions, type SurfaceData } from ".";
+import { cullSurfaces, type BuildSurfaceGeometryOptions, type FlattenedSurfaceData } from ".";
 import { GeometryBuilder } from "..";
 import { getSurfaceShape } from "./internal/shapes";
 
@@ -118,7 +118,7 @@ export function buildSurfaceGeometry(
  * @returns The combined geometry.
  */
 export function buildSurfacesGeometry(
-  surfaces: readonly SurfaceData[],
+  surfaces: readonly FlattenedSurfaceData[],
   options?: BuildSurfaceGeometryOptions,
 ): GeometryBuilder {
   let culledSurfaces: Set<number> | undefined;
