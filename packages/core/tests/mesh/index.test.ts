@@ -5,6 +5,20 @@ import { searchRom } from "@sw-file-lib/test-utils";
 import { parseMesh, serializeMesh, parseMeshOrPhys, parsePhys, serializePhys } from "../../src";
 
 describe("mesh roundtrip", () => {
+  test("test_plane.mesh", async () => {
+    const binPath = path.join(import.meta.dirname, "data/test_plane.mesh");
+    const jsonPath = path.join(import.meta.dirname, "/data/test_plane.mesh.json");
+
+    const buf = await fs.readFile(binPath);
+    const expected = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+
+    const data = parseMesh(buf);
+    expect(data).toEqual(expected);
+
+    const bytes = serializeMesh(data);
+    expect(buf.equals(bytes)).toBe(true);
+  });
+
   test("test_cube_1.mesh", async () => {
     const binPath = path.join(import.meta.dirname, "data/test_cube_1.mesh");
     const jsonPath = path.join(import.meta.dirname, "/data/test_cube_1.mesh.json");

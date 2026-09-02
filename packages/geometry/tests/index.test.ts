@@ -84,7 +84,7 @@ test("GeometryBuilder flip and mirrored transforms update left-handed winding", 
 
 test("GeometryBuilder builds polygons, extruded sides, and BufferGeometry attributes", () => {
   const builder = new GeometryBuilder();
-  builder.addPolygon([
+  builder.add2dPolygon([
     [
       { x: 0, y: 0 },
       { x: 1, y: 0 },

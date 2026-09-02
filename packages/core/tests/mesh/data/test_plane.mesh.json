@@ -1,0 +1,36 @@
+{
+  "kind": "mesh",
+  "vertices": [
+    {
+      "position": { "x": 1, "y": 0, "z": -1 },
+      "color": { "r": 153, "g": 153, "b": 153, "a": 255 },
+      "normal": { "x": 0, "y": 1, "z": 0 }
+    },
+    {
+      "position": { "x": -1, "y": 0, "z": 1 },
+      "color": { "r": 153, "g": 153, "b": 153, "a": 255 },
+      "normal": { "x": 0, "y": 1, "z": 0 }
+    },
+    {
+      "position": { "x": -1, "y": 0, "z": -1 },
+      "color": { "r": 153, "g": 153, "b": 153, "a": 255 },
+      "normal": { "x": 0, "y": 1, "z": 0 }
+    },
+    {
+      "position": { "x": 1, "y": 0, "z": 1 },
+      "color": { "r": 153, "g": 153, "b": 153, "a": 255 },
+      "normal": { "x": 0, "y": 1, "z": 0 }
+    }
+  ],
+  "indices": [0, 1, 2, 0, 3, 1],
+  "groups": [
+    {
+      "indexBufferStart": 0,
+      "indexBufferLength": 6,
+      "materialIndex": 0,
+      "boundsMin": { "x": -1, "y": 0, "z": -1 },
+      "boundsMax": { "x": 1, "y": 0, "z": 1 },
+      "name": "平面"
+    }
+  ]
+}

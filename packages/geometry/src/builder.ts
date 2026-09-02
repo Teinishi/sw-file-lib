@@ -112,9 +112,9 @@ export interface AddFaceOptions {
 }
 
 /**
- * Options for {@link GeometryBuilder.addPolygon}.
+ * Options for {@link GeometryBuilder.add2dPolygon}.
  */
-export interface AddPolygonOptions extends AddFaceOptions {
+export interface Add2dPolygonOptions extends AddFaceOptions {
   /**
    * Z coordinate of the generated polygon.
    *
@@ -276,7 +276,7 @@ export class GeometryBuilder {
    * @param polygon - Outer polygon followed by optional holes.
    * @param options - Polygon generation options.
    */
-  addPolygon(polygon: readonly VertexList2D[], options?: AddPolygonOptions) {
+  add2dPolygon(polygon: readonly VertexList2D[], options?: Add2dPolygonOptions) {
     const z = options?.z ?? 0;
 
     const data = earcut.flatten(polygon.map((ring) => vec2RingToTuple(ring, z)));
@@ -294,7 +294,7 @@ export class GeometryBuilder {
    * Use `{ close: true }` to close the path by connecting the final vertex back to the first.
    *
    * This method creates only the side walls. Top and bottom faces can be
-   * generated separately with {@link addPolygon}.
+   * generated separately with {@link add2dPolygon}.
    *
    * @param vertices - Polygon outline.
    * @param options - Extrusion options.
@@ -416,7 +416,7 @@ export class GeometryBuilder {
    *
    * The result can be serialized with `@sw-file-lib/core`.
    *
-   * @returns Mesh data compatible with `@sw-asset-kit/core`.
+   * @returns Mesh data compatible with `@sw-file-lib/core`.
    */
   toMeshData(): MeshData {
     const { positions, colors, normals, indices } = this;

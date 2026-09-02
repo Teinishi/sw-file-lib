@@ -14,8 +14,7 @@ export interface CreateSwLightsOptions {
 /**
  * Create the default Stormworks-style light objects.
  *
- * The returned array contains a hemisphere light and a directional light. Add
- * them to your scene, group, or TresJS primitive as needed.
+ * The returned array contains a hemisphere light and a directional light.
  */
 export function createSwLights(
   options: CreateSwLightsOptions = {},
