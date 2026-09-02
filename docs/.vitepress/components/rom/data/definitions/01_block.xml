@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition name="Block" category="0" type="0" mass="1.000000" value="2" flags="56" tags="basic" audio_filename_start="" audio_filename_loop="" audio_filename_end="" audio_gain="0.000000" mesh_data_name="" mesh_0_name="" mesh_1_name="" mesh_editor_only_name="" block_type="0" child_name="" extender_name="" constraint_type="0" constraint_axis="0" constraint_range_of_motion="0.000000" max_motor_force="0.000000" seat_type="0" buoy_radius="1.000000" buoy_factor="1.000000" buoy_force="100.000000" force_emitter_max_force="1000.000000" force_emitter_max_vector="0.000000" engine_max_force="1000.000000" trans_conn_type="0" trans_type="0" wheel_radius="0.000000" button_type="0" light_intensity="0.000000" light_range="0.000000" light_ies_map="" light_fov="0.000000" light_type="0" door_lower_limit="0.000000" door_upper_limit="0.000000" dynamic_min_rotation="0.000000" dynamic_max_rotation="0.000000" logic_gate_type="0" indicator_type="0" connector_type="0" magnet_force="0.000000" gyro_type="0" rudder_surface_area="0.000000">
+	<surfaces>
+		<surface orientation="4" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="5" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="2" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="3" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="1" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="0" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+	</surfaces>
+	<buoyancy_surfaces>
+		<surface orientation="5" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="1" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="4" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="2" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="0" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+		<surface orientation="3" rotation="0" shape="1" trans_type="0">
+			<position x="0" y="0" z="0"/>
+		</surface>
+	</buoyancy_surfaces>
+	<logic_nodes/>
+	<voxels>
+		<voxel flags="1">
+			<position x="0" y="0" z="0"/>
+		</voxel>
+	</voxels>
+	<voxel_min x="0" y="0" z="0"/>
+	<voxel_max x="0" y="0" z="0"/>
+	<voxel_physics_min x="0" y="0" z="0"/>
+	<voxel_physics_max x="0" y="0" z="0"/>
+	<bb_physics_min x="0.000000" y="0.000000" z="0.000000"/>
+	<bb_physics_max x="0.000000" y="0.000000" z="0.000000"/>
+	<constraint_pos_parent x="0.000000" y="0.000000" z="0.000000"/>
+	<constraint_pos_child x="0.000000" y="0.000000" z="0.000000"/>
+	<voxel_location_child x="0" y="0" z="0"/>
+	<force_dir x="0.000000" y="0.000000" z="0.000000"/>
+	<light_position x="0" y="0" z="0"/>
+	<light_color x="1.000000" y="1.000000" z="1.000000"/>
+	<door_size x="1.000000" y="1.000000" z="1.000000"/>
+	<dynamic_body_position x="0" y="0" z="0"/>
+	<dynamic_rotation_axes x="0.000000" y="1.000000" z="0.000000"/>
+	<dynamic_side_axis x="1.000000" y="0.000000" z="0.000000"/>
+	<magnet_offset x="0.000000" y="0.000000" z="0.000000"/>
+	<tooltip_properties description="The block is a quarter-metre in size. Components can be attached to all 6 faces." short_description="Basic cube-shaped building block."/>
+	<reward_properties tier="0" number_rewarded="2000"/>
+</definition>
+

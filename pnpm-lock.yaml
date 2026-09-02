@@ -18,6 +18,9 @@ importers:
       '@sw-file-lib/three':
         specifier: workspace:*
         version: link:packages/three
+      '@sw-file-lib/xml':
+        specifier: workspace:*
+        version: link:packages/xml
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2

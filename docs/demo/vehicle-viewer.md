@@ -1,6 +1,10 @@
 # Interactive Vehicle Viewer
 
-<VehicleViewerDemo />
+<script setup>
+import sampleVehicle from "./data/sample_vehicle.xml?raw";
+</script>
+
+<VehicleViewerDemo :default-vehicle="sampleVehicle" />
 
 ## How it works
 
@@ -16,3 +20,9 @@ const assembler = new VehicleBodyAssembler(resolver);
 await assembler.appendComponent(component);
 const object = assembler.build();
 ```
+
+::: details Sample vehicle XML
+
+<<< ./data/sample_vehicle.xml
+
+:::

@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@sw-file-lib/docs-plugins": "workspace:*",
+    "@sw-file-lib/xml": "workspace:*",
     "@sw-file-lib/three": "workspace:*",
     "@types/node": "^26.1.2",
     "@types/three": "^0.185.4",
