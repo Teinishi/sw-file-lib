@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      vitepress-plugin-group-icons:
+        specifier: ^1.7.6
+        version: 1.7.6(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
     devDependencies:
       '@sw-file-lib/docs-plugins':
         specifier: workspace:*
@@ -161,6 +165,9 @@ importers:
         version: link:../test-utils
 
 packages:
+
+  '@antfu/install-pkg@1.1.0':
+    resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
 
   '@babel/helper-string-parser@7.29.7':
     resolution: {integrity: sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==}
@@ -359,11 +366,20 @@ packages:
   '@gerrit0/mini-shiki@3.23.0':
     resolution: {integrity: sha512-bEMORlG0cqdjVyCEuU0cDQbORWX+kYCeo0kV1lbxF5bt4r7SID2l9bqsxJEM0zndaxpOUT7riCyIVEuqq/Ynxg==}
 
+  '@iconify-json/logos@1.2.13':
+    resolution: {integrity: sha512-Up54ZnIuiuBgGAsuzhR1nvKqwq8VE6YM3XLwVB6IgY+7NAasz6WKu9Ay5hGfAkfuOKowodfwDC8ozReEBYrWRg==}
+
   '@iconify-json/simple-icons@1.2.93':
     resolution: {integrity: sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw==}
 
+  '@iconify-json/vscode-icons@1.2.76':
+    resolution: {integrity: sha512-gSu20bZiegbMFLSPHHtmliUJoOPhovTT77RNkMfr6u9ns5uC2bVZ4K5T7wUlywRAzQk4qgG7t4AULaucSsta4w==}
+
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
+
+  '@iconify/utils@3.1.4':
+    resolution: {integrity: sha512-b1S7B1k9ohZ+iNTi2ATxbRYG9fTrJmUT0rc46bvVnNxqNRGW7dyo/vRREwyniI5IRN2RSJHDcm+s3BjWrSAjHw==}
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
@@ -1362,6 +1378,9 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
+  import-meta-resolve@4.2.0:
+    resolution: {integrity: sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg==}
+
   import-without-cache@0.4.0:
     resolution: {integrity: sha512-NkJQA7oZ4YHQhd2+H3BoRFKF3d/XNsiKpHZCQEMH9pDX27hQQLsTyOocyRgaIVtf8gHX3Nt3LPkR4e5EdtPAGQ==}
     engines: {node: ^22.18.0 || >=24.0.0}
@@ -1851,6 +1870,14 @@ packages:
       yaml:
         optional: true
 
+  vitepress-plugin-group-icons@1.7.6:
+    resolution: {integrity: sha512-fXSpQAYHpFpEsZLKWQAwbRx/+0uRSHmY58YNAQcz0AVirGsM6w22jtSmQhOGLEj8ZKyeRtTJrpx6otUI6wvoaQ==}
+    peerDependencies:
+      vite: '>=3'
+    peerDependenciesMeta:
+      vite:
+        optional: true
+
   vitepress@2.0.0-alpha.19:
     resolution: {integrity: sha512-WnBsb0Bwr43kXKyiis+lld/7ri3hnMbthS8N3hpFtjjwsdLO4IRmiAE08D7aud4q6oMDf9uwRowxzNqRFe/amw==}
     hasBin: true
@@ -1948,6 +1975,11 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@antfu/install-pkg@1.1.0':
+    dependencies:
+      package-manager-detector: 1.8.0
+      tinyexec: 1.2.4
 
   '@babel/helper-string-parser@7.29.7': {}
 
@@ -2072,11 +2104,25 @@ snapshots:
       '@shikijs/types': 3.23.0
       '@shikijs/vscode-textmate': 10.0.2
 
+  '@iconify-json/logos@1.2.13':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify-json/simple-icons@1.2.93':
     dependencies:
       '@iconify/types': 2.0.0
 
+  '@iconify-json/vscode-icons@1.2.76':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify/types@2.0.0': {}
+
+  '@iconify/utils@3.1.4':
+    dependencies:
+      '@antfu/install-pkg': 1.1.0
+      '@iconify/types': 2.0.0
+      import-meta-resolve: 4.2.0
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
@@ -2820,6 +2866,8 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
+  import-meta-resolve@4.2.0: {}
+
   import-without-cache@0.4.0: {}
 
   is-unsafe@2.0.0: {}
@@ -3279,6 +3327,14 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       yaml: 2.9.0
+
+  vitepress-plugin-group-icons@1.7.6(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0)):
+    dependencies:
+      '@iconify-json/logos': 1.2.13
+      '@iconify-json/vscode-icons': 1.2.76
+      '@iconify/utils': 3.1.4
+    optionalDependencies:
+      vite: 8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0)
 
   vitepress@2.0.0-alpha.19(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.26)(typescript@6.0.3)(yaml@2.9.0):
     dependencies:

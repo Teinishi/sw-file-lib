@@ -8,7 +8,7 @@ hero:
   tagline: TypeScript libraries for working with Stormworks files
   actions:
     - theme: brand
-      text: Getting Started
+      text: Get Started
       link: /guide/
     - theme: alt
       text: Reference

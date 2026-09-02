@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import { groupIconMdPlugin, groupIconVitePlugin } from "vitepress-plugin-group-icons";
 import tableColumnClassesPlugin from "@sw-file-lib/docs-plugins/table-column-classes";
 import typedocSidebar from "../api/typedoc-sidebar.json" with { type: "json" };
 
@@ -18,8 +19,15 @@ export default defineConfig({
       {
         text: "Guide",
         items: [
-          { text: "Getting Started", link: "/guide/" },
-          { text: "XML Schema", link: "/guide/xml-schema" },
+          { text: "Introduction", link: "/guide/" },
+          { text: "Read/Write Binary", link: "/guide/read-write-binary" },
+          { text: "Read/Write XML", link: "/guide/read-write-xml" },
+          { text: "Generating Geometry", link: "/guide/generating-geometry" },
+          { text: "Three.js Integration", link: "/guide/threejs-integration" },
+          {
+            text: "Advanced Usage",
+            items: [{ text: "XML Schema", link: "/guide/advanced/xml-schema" }],
+          },
         ],
       },
       {
@@ -29,10 +37,15 @@ export default defineConfig({
     ],
 
     socialLinks: [{ icon: "github", link: "https://github.com/Teinishi/sw-file-lib" }],
-
     search: { provider: "local" },
+    outline: [2, 3],
+  },
+  markdown: {
+    config(md) {
+      md.use(groupIconMdPlugin);
+    },
   },
   vite: {
-    plugins: [tableColumnClassesPlugin()],
+    plugins: [groupIconVitePlugin(), tableColumnClassesPlugin()],
   },
 });

@@ -1,4 +1,4 @@
-# XML Schema Guide
+# Advanced: XML Schema Guide
 
 Stormworks XML is highly structured, making it much closer to JSON than general-purpose XML. The [`@sw-file-lib/xml/xml-schema`](/api/@sw-file-lib/xml/xml-schema/) package provides a schema-based API that lets you parse XML into fully typed TypeScript objects and serialize those objects back into XML.
 
