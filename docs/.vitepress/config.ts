@@ -7,6 +7,7 @@ import typedocSidebar from "../src/api/typedoc-sidebar.json" with { type: "json"
 export default defineConfig({
   title: "sw-file-lib",
   description: "TypeScript libraries for working with Stormworks files",
+  base: "/sw-file-lib/",
   srcDir: "src",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config

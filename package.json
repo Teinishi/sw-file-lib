@@ -27,10 +27,13 @@
     "check": "pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
     "release": "bumpp",
     "prepublishOnly": "pnpm run build",
-    "predocs": "typedoc",
+    "typedoc": "typedoc",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
+  },
+  "dependencies": {
+    "vitepress-plugin-group-icons": "^1.7.6"
   },
   "devDependencies": {
     "@sw-file-lib/docs-plugins": "workspace:*",
@@ -53,8 +56,5 @@
     "vitest": "^4.1.10",
     "vue": "^3.5.41"
   },
-  "packageManager": "pnpm@11.18.0",
-  "dependencies": {
-    "vitepress-plugin-group-icons": "^1.7.6"
-  }
+  "packageManager": "pnpm@11.18.0"
 }
