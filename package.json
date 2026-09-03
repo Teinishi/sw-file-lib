@@ -1,5 +1,6 @@
 {
   "name": "sw-file-lib",
+  "version": "0.1.0",
   "private": true,
   "description": "TypeScript libraries for working with Stormworks files.",
   "homepage": "https://github.com/Teinishi/sw-file-lib#readme",
@@ -27,7 +28,7 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "check": "pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
-    "release": "bumpp",
+    "release": "bumpp --recursive",
     "prepublishOnly": "pnpm run build",
     "typedoc": "typedoc",
     "docs:dev": "vitepress dev docs",

@@ -5,6 +5,9 @@
   "keywords": [],
   "license": "MIT",
   "author": "Teinishi",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist"
   ],
@@ -12,13 +15,13 @@
   "exports": {
     ".": {
       "development": "./src/index.ts",
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
     "./xml-schema": {
       "development": "./src/xml-schema/index.ts",
-      "import": "./dist/xml-schema/index.mjs",
-      "types": "./dist/xml-schema/index.d.mts"
+      "types": "./dist/xml-schema/index.d.mts",
+      "import": "./dist/xml-schema/index.mjs"
     },
     "./package.json": "./package.json"
   },

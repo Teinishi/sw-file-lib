@@ -12,16 +12,16 @@
   "type": "module",
   "exports": {
     "./xml-schema-infer": {
-      "import": "./dist/xml-schema-infer/index.mjs",
-      "types": "./dist/xml-schema-infer/index.d.mts"
+      "types": "./dist/xml-schema-infer/index.d.mts",
+      "import": "./dist/xml-schema-infer/index.mjs"
     },
     "./markdown-codeblock": {
-      "import": "./dist/markdown-codeblock/index.mjs",
-      "types": "./dist/markdown-codeblock/index.d.mts"
+      "types": "./dist/markdown-codeblock/index.d.mts",
+      "import": "./dist/markdown-codeblock/index.mjs"
     },
     "./table-column-classes": {
-      "import": "./dist/table-column-classes/index.mjs",
-      "types": "./dist/table-column-classes/index.d.mts"
+      "types": "./dist/table-column-classes/index.d.mts",
+      "import": "./dist/table-column-classes/index.mjs"
     }
   },
   "scripts": {
