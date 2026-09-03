@@ -15,6 +15,7 @@ import ViewerCanvas from "./ViewerCanvas.vue";
 const props = defineProps<{
   defaultVehicle?: string;
   showOptions?: boolean;
+  height: string;
 }>();
 
 const assetResolver: VehicleAssetResolver = {
@@ -91,7 +92,11 @@ async function selectFile(files: File[]) {
 
 <template>
   <div class="viewer-demo">
-    <ViewerCanvas class="viewer-canvas" :objects="vehicleObject ? [vehicleObject] : []" />
+    <ViewerCanvas
+      class="viewer-canvas"
+      :style="{ height }"
+      :objects="vehicleObject ? [vehicleObject] : []"
+    />
     <FileDropZone label="Drop vehicle XML files" accept=".xml" @select="selectFile" />
     <BuildOptions v-if="props.showOptions" class="build-options" v-model="options" />
   </div>
@@ -107,7 +112,6 @@ async function selectFile(files: File[]) {
 }
 
 .viewer-canvas {
-  height: 400px;
   border-radius: 8px;
   overflow: hidden;
 }

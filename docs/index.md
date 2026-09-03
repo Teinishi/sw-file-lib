@@ -28,3 +28,5 @@ features:
     title: Browser & Node.js
     details: Works seamlessly in both modern browsers and Node.js environments.
 ---
+
+<HomeDemo />
