@@ -16,6 +16,7 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
+    "build:lib": "pnpm --filter core --filter xml --filter geometry --filter three build",
     "build:docs-plugins": "pnpm --filter docs-plugins build",
     "test": "pnpm -r test",
     "test:run": "pnpm -r test:run",
