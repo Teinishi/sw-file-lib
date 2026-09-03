@@ -4,7 +4,7 @@
  * This module provides classes and functions for defining XML schemas, which
  * help conversion between Stormworks XML and TypeScript objects.
  *
- * For tutorial-style guide, see [XML Schema Guide](/guide/xml-schema)
+ * For tutorial-style guide, see [XML Schema Guide](/guide/advanced/xml-schema)
  *
  * @packageDocumentation
  */
