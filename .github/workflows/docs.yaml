@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build plugins for docs
+        run: pnpm build:docs-plugins
+
       - name: Generate API docs
         run: pnpm typedoc
 
