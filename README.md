@@ -1,15 +1,20 @@
 # sw-file-lib
 
-TypeScript libraries for reading, writing, and rendering **Stormworks** assets.
+TypeScript libraries for reading, writing **Stormworks** assets.
 
 `sw-file-lib` is a modular monorepo that provides strongly typed APIs for working with Stormworks file formats. Each package can be used independently, and packages only depend on the functionality they need.
+
+## Documentation
+
+- [Docs](https://teinishi.github.io/sw-file-lib/)
+- [API Reference](https://teinishi.github.io/sw-file-lib/api/)
 
 ## Features
 
 - 📦 Modular packages for binary, XML, geometry, and Three.js
 - 🔒 Fully typed APIs designed for TypeScript
 - 🧩 XML schema system with type inference
-- 🎮 Three.js integration with Stormworks coordinate conversion
+- 🎮 Three.js integration with materials, lights and geometry conversion
 - 🚫 Zero dependencies in the core package
 
 ## Packages
@@ -34,8 +39,6 @@ npm install @sw-file-lib/xml
 npm install @sw-file-lib/geometry
 npm install @sw-file-lib/three
 ```
-
-## Documentation
 
 # Development
 
