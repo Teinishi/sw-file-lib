@@ -58,9 +58,14 @@ function init(container: HTMLElement) {
   });
   renderer.setSize(container.clientWidth, container.clientHeight, false);
   renderer.setPixelRatio(window.devicePixelRatio);
-  container.appendChild(renderer.domElement);
 
-  const controls = new OrbitControls(camera, renderer.domElement);
+  const canvas = renderer.domElement;
+
+  canvas.addEventListener("pointerdown", pointerPreventDefault);
+  canvas.addEventListener("auxclick", pointerPreventDefault);
+  container.appendChild(canvas);
+
+  const controls = new OrbitControls(camera, canvas);
   controls.mouseButtons.LEFT = undefined;
   controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
   controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
@@ -77,6 +82,10 @@ function animate() {
 
   context.controls.update();
   context.renderer.render(context.scene, context.camera);
+}
+
+function pointerPreventDefault(event: PointerEvent) {
+  event.preventDefault();
 }
 
 onMounted(() => {
@@ -106,6 +115,12 @@ onUnmounted(() => {
   }
 
   resizeObserver?.disconnect();
+
+  const canvas = context?.renderer.domElement;
+  if (canvas) {
+    canvas.removeEventListener("pointerdown", pointerPreventDefault);
+    canvas.removeEventListener("auxclick", pointerPreventDefault);
+  }
   context?.renderer.dispose();
 });
 

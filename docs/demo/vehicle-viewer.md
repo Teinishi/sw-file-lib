@@ -4,7 +4,7 @@
 import sampleVehicle from "./data/sample_vehicle.xml?raw";
 </script>
 
-<VehicleViewerDemo :default-vehicle="sampleVehicle" />
+<VehicleViewerDemo :default-vehicle="sampleVehicle" :show-options="true" />
 
 ## How it works
 

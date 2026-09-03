@@ -1,6 +1,7 @@
 :root {
   --vp-c-brand-1: #4091b4;
   --vp-c-brand-2: #c07856;
+  --vp-c-brand-soft: rgb(139, 192, 213, 0.14);
   --vp-button-brand-bg: #4091b4;
   --vp-button-brand-text: #ffffff;
   --vp-button-brand-border: transparent;

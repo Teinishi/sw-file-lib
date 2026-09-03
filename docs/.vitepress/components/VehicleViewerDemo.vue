@@ -9,10 +9,12 @@ import {
 import { safeParseVehicleXml, type Vehicle } from "@sw-file-lib/xml";
 import { BASIC_BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "../basicBlocks";
 import BuildOptions from "./BuildOptions.vue";
+import FileDropZone from "./FileDropZone.vue";
 import ViewerCanvas from "./ViewerCanvas.vue";
 
 const props = defineProps<{
   defaultVehicle?: string;
+  showOptions?: boolean;
 }>();
 
 const assetResolver: VehicleAssetResolver = {
@@ -27,11 +29,10 @@ const assetResolver: VehicleAssetResolver = {
   },
 };
 
-const defaultDisabled = ref<boolean>(false);
 const vehicleData = ref<Vehicle | null>(null);
 const vehicleObject = ref<THREE.Object3D | null>(null);
 const options = ref<VehicleBodyBuildOptions>({
-  edge: true,
+  edge: false,
   hollow: false,
   cull: true,
 });
@@ -63,7 +64,7 @@ watch(options, update, { deep: true });
 watch(
   () => props.defaultVehicle,
   async (xml) => {
-    if (defaultDisabled.value || !xml) return;
+    if (!xml) return;
     await loadVehicle(xml);
   },
   { immediate: true },
@@ -79,12 +80,20 @@ async function loadVehicle(xml: string) {
 
   vehicleData.value = result.data;
 }
+
+async function selectFile(files: File[]) {
+  if (files.length === 0) return;
+  const file = files[0];
+  if (!file) return;
+  await loadVehicle(await file.text());
+}
 </script>
 
 <template>
   <div class="viewer-demo">
     <ViewerCanvas class="viewer-canvas" :objects="vehicleObject ? [vehicleObject] : []" />
-    <BuildOptions class="build-options" v-model="options" />
+    <FileDropZone label="Drop vehicle XML files" accept=".xml" @select="selectFile" />
+    <BuildOptions v-if="props.showOptions" class="build-options" v-model="options" />
   </div>
 </template>
 
@@ -92,12 +101,14 @@ async function loadVehicle(xml: string) {
 .viewer-demo {
   width: 100%;
   margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .viewer-canvas {
   height: 400px;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 16px;
 }
 </style>

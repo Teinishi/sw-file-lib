@@ -1,6 +1,6 @@
+import DefaultTheme from "vitepress/theme";
 import "virtual:group-icons.css";
 import "./custom.css";
-import DefaultTheme from "vitepress/theme";
 
 const modules = import.meta.glob("../components/*.vue", {
   eager: true,
