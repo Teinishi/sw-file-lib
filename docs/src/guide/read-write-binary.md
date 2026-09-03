@@ -1,6 +1,6 @@
 # Reading and Writing Binary Files
 
-[`@sw-file-lib/core`](/api/@sw-file-lib/core) provides parsers and serializers for Stormworks binary asset formats. All parsers operate on `ArrayBuffer`, making them compatible with both browsers and Node.js.
+[`@sw-file-lib/core`](/api/@sw-file-lib/core/) provides parsers and serializers for Stormworks binary asset formats. All parsers operate on `ArrayBuffer`, making them compatible with both browsers and Node.js.
 
 This guide uses the mesh format as an example, but the workflow is the same for other binary formats.
 
@@ -95,7 +95,7 @@ The resulting `Uint8Array<ArrayBuffer>` can be saved to disk, uploaded, or used 
 
 ## Supported formats
 
-[`@sw-file-lib/core`](/api/@sw-file-lib/core) includes parsers and serializers for several Stormworks binary formats.
+[`@sw-file-lib/core`](/api/@sw-file-lib/core/) includes parsers and serializers for several Stormworks binary formats.
 
 | Format        | Parse                                                                     | Serialize                                                                         |
 | ------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |

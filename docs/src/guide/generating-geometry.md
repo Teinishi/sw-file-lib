@@ -1,6 +1,6 @@
 # Generating Geometry
 
-[`@sw-file-lib/geometry`](/api/@sw-file-lib/geometry) provides utilities for procedurally generating Stormworks mesh data. The central class is [`GeometryBuilder`](/api/@sw-file-lib/geometry/classes/GeometryBuilder), which lets you construct geometry one face at a time and export it as [`MeshData`](/api/@sw-file-lib/core/interfaces/MeshData).
+[`@sw-file-lib/geometry`](/api/@sw-file-lib/geometry/) provides utilities for procedurally generating Stormworks mesh data. The central class is [`GeometryBuilder`](/api/@sw-file-lib/geometry/classes/GeometryBuilder), which lets you construct geometry one face at a time and export it as [`MeshData`](/api/@sw-file-lib/core/interfaces/MeshData).
 
 This is designed for tools that automatically generate or modify meshes, rather than importing existing model files.
 
@@ -50,7 +50,7 @@ When the geometry is complete, convert it into [`MeshData`](/api/@sw-file-lib/co
 const meshData = builder.toMeshData();
 ```
 
-The returned object is compatible with [`serializeMesh()`](/api/@sw-file-lib/core/functions/serializeMesh.html) from [`@sw-file-lib/core`](/api/@sw-file-lib/core), allowing it to be written directly as a Stormworks mesh file.
+The returned object is compatible with [`serializeMesh()`](/api/@sw-file-lib/core/functions/serializeMesh.html) from [`@sw-file-lib/core`](/api/@sw-file-lib/core/), allowing it to be written directly as a Stormworks mesh file.
 
 ```ts
 import { serializeMesh } from "@sw-file-lib/core";

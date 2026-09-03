@@ -51,12 +51,12 @@ bun add @sw-file-lib/three
 
 ### Available packages
 
-| Package                                               | Description                                                            |
-| ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| [`@sw-file-lib/core`](/api/@sw-file-lib/core)         | Binary parsers, serializers, math utilities, and shared types.         |
-| [`@sw-file-lib/xml`](/api/@sw-file-lib/xml)           | Type-safe Stormworks XML schemas and serialization.                    |
-| [`@sw-file-lib/geometry`](/api/@sw-file-lib/geometry) | Geometry generation for component and surface processing for vehicles. |
-| [`@sw-file-lib/three`](/api/@sw-file-lib/three)       | Three.js helpers for meshes, materials, and rendering.                 |
+| Package                                                | Description                                                            |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| [`@sw-file-lib/core`](/api/@sw-file-lib/core/)         | Binary parsers, serializers, math utilities, and shared types.         |
+| [`@sw-file-lib/xml`](/api/@sw-file-lib/xml/)           | Type-safe Stormworks XML schemas and serialization.                    |
+| [`@sw-file-lib/geometry`](/api/@sw-file-lib/geometry/) | Geometry generation for component and surface processing for vehicles. |
+| [`@sw-file-lib/three`](/api/@sw-file-lib/three/)       | Three.js helpers for meshes, materials, and rendering.                 |
 
 Additional packages can be installed together:
 

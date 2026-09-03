@@ -1,6 +1,6 @@
 # Three.js Integration
 
-[`@sw-file-lib/three`](/api/@sw-file-lib/three) provides helpers for rendering Stormworks meshes and vehicles in [Three.js](https://threejs.org). Whether you're previewing a single mesh file or displaying a complete vehicle, the library converts Stormworks data into ready-to-use `THREE.Object3D` instances.
+[`@sw-file-lib/three`](/api/@sw-file-lib/three/) provides helpers for rendering Stormworks meshes and vehicles in [Three.js](https://threejs.org). Whether you're previewing a single mesh file or displaying a complete vehicle, the library converts Stormworks data into ready-to-use `THREE.Object3D` instances.
 
 ## Display a mesh file
 

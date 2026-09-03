@@ -1,6 +1,6 @@
 # Reading and Writing XML
 
-[`@sw-file-lib/xml`](/api/@sw-file-lib/xml) provides type-safe parsers and serializers for Stormworks XML files. Parsed XML is converted into plain TypeScript objects, making it easy to inspect and modify vehicle data.
+[`@sw-file-lib/xml`](/api/@sw-file-lib/xml/) provides type-safe parsers and serializers for Stormworks XML files. Parsed XML is converted into plain TypeScript objects, making it easy to inspect and modify vehicle data.
 
 ## Parse a vehicle XML
 
@@ -77,7 +77,7 @@ Use the throwing API for simple applications, and the safe API when validation e
 
 ## Supported formats
 
-[`@sw-file-lib/xml`](/api/@sw-file-lib/xml) includes parsers and serializers for several Stormworks XML formats.
+[`@sw-file-lib/xml`](/api/@sw-file-lib/xml/) includes parsers and serializers for several Stormworks XML formats.
 
 | Format               | Parse                                                                                        | Serialize                                                                                            | Type                                                                          |
 | -------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
