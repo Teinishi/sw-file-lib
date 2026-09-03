@@ -5,9 +5,6 @@
   "keywords": [],
   "license": "MIT",
   "author": "Teinishi",
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
     "dist"
   ],
@@ -19,6 +16,9 @@
       "import": "./dist/index.mjs"
     },
     "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit",
