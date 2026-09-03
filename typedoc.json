@@ -11,8 +11,8 @@
     "entryPointStrategy": "resolve"
   },
 
-  "readme": "README.md",
-  "out": "./docs/api",
+  "readme": "none",
+  "out": "./docs/src/api",
 
   "plugin": [
     "@sw-file-lib/docs-plugins/xml-schema-infer",
@@ -20,7 +20,7 @@
     "@sw-file-lib/docs-plugins/markdown-codeblock",
     "typedoc-vitepress-theme"
   ],
-  "docsRoot": "./docs",
+  "docsRoot": "./docs/src",
   "indexFormat": "table",
   "parametersFormat": "table",
   "interfacePropertiesFormat": "htmlTable",

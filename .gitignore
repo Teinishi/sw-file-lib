@@ -27,4 +27,4 @@ lerna-debug.log*
 .env.local
 *.tmp
 docs/.vitepress/cache
-docs/api
+docs/src/api

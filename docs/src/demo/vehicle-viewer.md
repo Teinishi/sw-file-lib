@@ -1,7 +1,7 @@
 # Interactive Vehicle Viewer
 
 <script setup>
-import sampleVehicle from "../data/sample_vehicle.xml?raw";
+import sampleVehicle from "../../data/sample_vehicle.xml?raw";
 </script>
 
 <VehicleViewerDemo :default-vehicle="sampleVehicle" :show-options="true" height="400px" />
@@ -32,6 +32,6 @@ For simplicity, this demo only resolves basic blocks, wedges, pyramids, and inve
 
 ::: details Sample vehicle XML
 
-<<< ../data/sample_vehicle.xml
+<<< ../../data/sample_vehicle.xml
 
 :::
