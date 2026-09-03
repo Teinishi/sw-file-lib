@@ -46,7 +46,7 @@ function syncSceneObjects() {
 
 function init(container: HTMLElement) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x20242a);
+  scene.background = new THREE.Color(0x5db2c6);
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
   camera.position.x = 1;

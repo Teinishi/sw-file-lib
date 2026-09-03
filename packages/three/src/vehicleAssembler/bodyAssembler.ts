@@ -42,6 +42,32 @@ export const MESH_ATTRIBUTE_NAMES = [
 export type MeshAttributeName = (typeof MESH_ATTRIBUTE_NAMES)[number];
 
 /**
+ * Options for {@link VehicleBodyAssembler.build}.
+ */
+export interface VehicleBodyBuildOptions {
+  /**
+   * Generates border of surfaces.
+   *
+   * @default false
+   */
+  readonly edge?: boolean;
+  /**
+   * Generates only the surface border.
+   *
+   * Implies `edge=true`.
+   *
+   * @default false
+   */
+  readonly hollow?: boolean;
+  /**
+   * Removes hidden internal surfaces before generating geometry.
+   *
+   * @default true
+   */
+  readonly cull?: boolean;
+}
+
+/**
  * Assembles a single Stormworks vehicle body into Three.js objects.
  *
  * The assembler collects component geometry and meshes, then produces one
@@ -286,7 +312,7 @@ export class VehicleBodyAssembler {
    *
    * @returns A complete Three.js group for the body.
    */
-  build(surfaceOptions?: BuildSurfaceGeometryOptions): THREE.Group {
+  build(surfaceOptions?: VehicleBodyBuildOptions): THREE.Group {
     const group = new THREE.Group();
 
     const surfaceGeometry = bufferGeometryFromBuilder(this.buildSurfaceMesh(surfaceOptions));

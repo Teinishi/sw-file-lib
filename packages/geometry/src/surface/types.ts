@@ -1,6 +1,6 @@
 import type { ReadonlyColor } from "@sw-file-lib/core/color";
 import type { ReadonlyMat3, ReadonlyVec3 } from "@sw-file-lib/core/math";
-import { cullSurfaces, buildSurfacesGeometry } from "."; // eslint-disable-line @typescript-eslint/no-unused-vars
+import { cullSurfaces, buildSurfaceGeometry, buildSurfacesGeometry } from "."; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 /**
  * A flattened Stormworks surface with its final transform applied.
@@ -30,7 +30,7 @@ export interface FlattenedSurfaceData {
 }
 
 /**
- * Options for surface geometry generation.
+ * Options for {@link buildSurfaceGeometry} and {@link buildSurfacesGeometry}.
  */
 export interface BuildSurfaceGeometryOptions {
   /**

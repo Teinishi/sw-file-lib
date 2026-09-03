@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { ref, watch, markRaw } from "vue";
-import { VehicleBodyAssembler, type VehicleAssetResolver } from "@sw-file-lib/three";
-import { safeParseVehicleXml } from "@sw-file-lib/xml";
+import {
+  VehicleBodyAssembler,
+  type VehicleAssetResolver,
+  type VehicleBodyBuildOptions,
+} from "@sw-file-lib/three";
+import { safeParseVehicleXml, type Vehicle } from "@sw-file-lib/xml";
 import { BASIC_BLOCK_SURFACE_DEFINITIONS, isBasicBlockType } from "../basicBlocks";
+import BuildOptions from "./BuildOptions.vue";
 import ViewerCanvas from "./ViewerCanvas.vue";
 
 const props = defineProps<{
   defaultVehicle?: string;
 }>();
-
-let defaultDisabled = false;
-let vehicleObject = ref<THREE.Group | null>(null);
 
 const assetResolver: VehicleAssetResolver = {
   async resolveComponentDefinition(componentId) {
@@ -25,6 +27,48 @@ const assetResolver: VehicleAssetResolver = {
   },
 };
 
+const defaultDisabled = ref<boolean>(false);
+const vehicleData = ref<Vehicle | null>(null);
+const vehicleObject = ref<THREE.Object3D | null>(null);
+const options = ref<VehicleBodyBuildOptions>({
+  edge: true,
+  hollow: false,
+  cull: true,
+});
+
+async function update() {
+  if (!vehicleData.value) {
+    vehicleObject.value = null;
+    return;
+  }
+
+  const group = new THREE.Group();
+  for (const body of vehicleData.value.bodies ?? []) {
+    const assembler = new VehicleBodyAssembler(assetResolver);
+
+    for (const component of body.components ?? []) {
+      await assembler.appendComponent(component);
+    }
+
+    const obj = assembler.build(options.value);
+    group.add(obj);
+  }
+
+  vehicleObject.value = markRaw(group);
+}
+
+watch(vehicleData, update);
+watch(options, update, { deep: true });
+
+watch(
+  () => props.defaultVehicle,
+  async (xml) => {
+    if (defaultDisabled.value || !xml) return;
+    await loadVehicle(xml);
+  },
+  { immediate: true },
+);
+
 async function loadVehicle(xml: string) {
   const result = safeParseVehicleXml(xml);
   if (!result.success) {
@@ -33,42 +77,27 @@ async function loadVehicle(xml: string) {
     return;
   }
 
-  const vehicle = result.data;
-
-  const group = new THREE.Group();
-  for (const body of vehicle.bodies ?? []) {
-    const assembler = new VehicleBodyAssembler(assetResolver);
-
-    for (const component of body.components ?? []) {
-      await assembler.appendComponent(component);
-    }
-
-    const obj = assembler.build();
-    group.add(obj);
-  }
-  vehicleObject.value = markRaw(group);
+  vehicleData.value = result.data;
 }
-
-watch(
-  () => props.defaultVehicle,
-  async (xml) => {
-    if (defaultDisabled || !xml) return;
-    await loadVehicle(xml);
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
-  <ViewerCanvas class="viewer" :objects="vehicleObject ? [vehicleObject] : []" />
+  <div class="viewer-demo">
+    <ViewerCanvas class="viewer-canvas" :objects="vehicleObject ? [vehicleObject] : []" />
+    <BuildOptions class="build-options" v-model="options" />
+  </div>
 </template>
 
 <style lang="css" scoped>
-.viewer {
+.viewer-demo {
   width: 100%;
+  margin: 16px 0;
+}
+
+.viewer-canvas {
   height: 400px;
   border-radius: 8px;
   overflow: hidden;
-  margin: 16px 0;
+  margin-bottom: 16px;
 }
 </style>
