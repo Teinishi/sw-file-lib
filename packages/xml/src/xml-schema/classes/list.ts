@@ -17,6 +17,9 @@ import {
   type SchemaParseFieldResult,
   SchemaSerializeError,
   type Immutable,
+  type ExtendObjectSchema,
+  type InferShape,
+  type OmitObjectSchema,
 } from "..";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
 import { type XmlWriter, type XmlWriterOptions } from "../../writer";
@@ -34,24 +37,34 @@ import {
 /**
  * A schema that parses XML list elements as JavaScript arrays.
  */
-export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<Infer<T>[]> {
+export class ListSchema<
+  S extends ElementSchema<any>,
+  T extends any[] = Infer<S>[],
+> implements ElementSchema<T> {
   readonly name = "list";
 
-  constructor(
+  protected constructor(
     public readonly itemTag: string,
-    public readonly itemSchema: T,
+    public readonly itemSchema: S,
   ) {}
+
+  static create<S extends ElementSchema<any>, T extends any[] = Infer<S>[]>(
+    itemTag: string,
+    itemSchema: S,
+  ) {
+    return new ListSchema<S, T>(itemTag, itemSchema);
+  }
 
   safeParseValue(
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): Result<Infer<T>[], SchemaError> {
+  ): Result<T, SchemaError> {
     const r = validateSchemaInput(input, "xml_element", this.name);
     if (!r.success) return r;
     const value = r.data;
 
-    const { items, issues } = parseList(value, this.itemTag, this.itemSchema, ctx, options);
+    const { items, issues } = parseList<S>(value, this.itemTag, this.itemSchema, ctx, options);
 
     const issues2 = checkUnknownFields(value, null, this.itemTag, ctx, options);
 
@@ -60,7 +73,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     if (issues.length === 0) {
       return {
         success: true,
-        data: items,
+        data: items as T,
       };
     } else {
       return {
@@ -70,11 +83,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     }
   }
 
-  parseValue(
-    input: SchemaInput,
-    ctx: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): Infer<T>[] {
+  parseValue(input: SchemaInput, ctx: SchemaParseContext, options?: SchemaParseOptions): T {
     return unwrapResult(this.safeParseValue(input, ctx, options));
   }
 
@@ -83,7 +92,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     key: string,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): SchemaParseFieldResult<Infer<T>[]> {
+  ): SchemaParseFieldResult<T> {
     return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
@@ -91,7 +100,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): Result<Infer<T>[], SchemaError> {
+  ): Result<T, SchemaError> {
     return safeParseTree(this, tree, rootTag, options);
   }
 
@@ -99,7 +108,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): Infer<T>[] {
+  ): T {
     return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
@@ -141,7 +150,7 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
    * Serializes an array value into an XML element without throwing.
    */
   safeSerialize(
-    data: Immutable<Infer<T>[]>,
+    data: Immutable<T>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -154,22 +163,21 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
    * @throws {@link SchemaSerializeError} when the value or any item cannot be
    * serialized.
    */
-  serialize(
-    data: Immutable<Infer<T>[]>,
-    rootTag: string,
-    writer?: XmlWriter | XmlWriterOptions,
-  ): XmlWriter {
+  serialize(data: Immutable<T>, rootTag: string, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<ListSchema<T>> {
+  /**
+   * Returns an optional version of this list schema.
+   */
+  optional(): OptionalSchema<ListSchema<S, T>> {
     return new OptionalSchema(this);
   }
 
   /**
    * Returns a new list schema with the name of item tags changed.
    */
-  renameItemTag(itemTag: string): ListSchema<T> {
+  renameItemTag(itemTag: string): ListSchema<S, T> {
     return new ListSchema(itemTag, this.itemSchema);
   }
 }
@@ -177,7 +185,12 @@ export class ListSchema<T extends ElementSchema<any>> implements ElementSchema<I
 /**
  * A list schema whose item schema is an object schema.
  */
-export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T>> {
+export class ObjectListSchema<
+  S1 extends Shape,
+  S2 extends ObjectSchema<S1, T1>,
+  T1 extends object = InferShape<S1>,
+  T2 extends any[] = Infer<S2>[],
+> extends ListSchema<S2, T2> {
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
    *
@@ -193,18 +206,20 @@ export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T
    * }));
    * ```
    */
-  extendItem<U extends Shape>(shape: U | ((s: T) => U)): ObjectListSchema<ExtendShape<T, U>> {
+  extendItem<U extends Shape>(
+    shape: U | ((s: S1) => U),
+  ): ObjectListSchema<ExtendShape<S1, U>, ExtendObjectSchema<S1, U>> {
     return new ObjectListSchema(this.itemTag, this.itemSchema.extend(shape));
   }
 
   /**
    * Returns a new list schema with specified keys are omitted from the item schema.
    */
-  omitItem<U extends keyof T>(keys: U[]): ObjectListSchema<Omit<T, U>> {
+  omitItem<U extends keyof S1>(keys: U[]): ObjectListSchema<Omit<S1, U>, OmitObjectSchema<S1, U>> {
     return new ObjectListSchema(this.itemTag, this.itemSchema.omit(keys));
   }
 
-  optional(): OptionalSchema<ObjectListSchema<T>> {
+  optional(): OptionalSchema<ObjectListSchema<S1, S2, T1, T2>> {
     return new OptionalSchema(this);
   }
 }
@@ -215,12 +230,12 @@ export class ObjectListSchema<T extends Shape> extends ListSchema<ObjectSchema<T
 export function list<T extends ElementSchema<any>>(
   itemTag: string,
   itemSchema: T,
-): T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>> : ListSchema<T> {
+): T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>, T> : ListSchema<T> {
   let s;
   if (itemSchema instanceof ObjectSchema) {
-    s = new ObjectListSchema(itemTag, itemSchema);
+    s = ObjectListSchema.create(itemTag, itemSchema);
   } else {
-    s = new ListSchema(itemTag, itemSchema);
+    s = ListSchema.create(itemTag, itemSchema);
   }
-  return s as T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>> : ListSchema<T>;
+  return s as T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>, T> : ListSchema<T>;
 }

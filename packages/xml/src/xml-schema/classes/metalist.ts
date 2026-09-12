@@ -42,25 +42,41 @@ export type InferMetalist<M extends Shape, U extends ElementSchema<any>> = {
   items: Infer<U>[];
 };
 
+export type Metalist<M, I> = {
+  meta: M;
+  items: I[];
+};
+
 /**
  * A schema that parses XML list elements that have attributes as JavaScript arrays.
  */
-export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> implements ElementSchema<
-  InferMetalist<M, I>
-> {
+export class MetalistSchema<
+  MS extends Shape,
+  IS extends ElementSchema<any>,
+  MT extends object = InferShape<MS>,
+  IT extends any[] = Infer<IS>[],
+> implements ElementSchema<Metalist<MT, IT>> {
   readonly name = "metalist";
 
-  constructor(
+  protected constructor(
     public readonly itemTag: string,
-    public readonly metaShape: M,
-    public readonly itemSchema: I,
+    public readonly metaShape: MS,
+    public readonly itemSchema: IS,
   ) {}
+
+  static create<MS extends Shape, IS extends ElementSchema<any>>(
+    itemTag: string,
+    metaShape: MS,
+    itemSchema: IS,
+  ) {
+    return new MetalistSchema<MS, IS>(itemTag, metaShape, itemSchema);
+  }
 
   safeParseValue(
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): Result<InferMetalist<M, I>, SchemaError> {
+  ): Result<Metalist<MT, IT>, SchemaError> {
     const r = validateSchemaInput(input, "xml_element", this.name);
     if (!r.success) return r;
     const value = r.data;
@@ -83,7 +99,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
     if (issues.length === 0) {
       return {
         success: true,
-        data: { meta: data, items },
+        data: { meta: data as MT, items },
       };
     } else {
       return {
@@ -97,7 +113,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): InferMetalist<M, I> {
+  ): Metalist<MT, IT> {
     return unwrapResult(this.safeParseValue(input, ctx, options));
   }
 
@@ -106,7 +122,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
     key: string,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): SchemaParseFieldResult<InferMetalist<M, I>> {
+  ): SchemaParseFieldResult<Metalist<MT, IT>> {
     return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
@@ -114,7 +130,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): Result<InferMetalist<M, I>, SchemaError> {
+  ): Result<Metalist<MT, IT>, SchemaError> {
     return safeParseTree(this, tree, rootTag, options);
   }
 
@@ -122,7 +138,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): InferMetalist<M, I> {
+  ): Metalist<MT, IT> {
     return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
@@ -195,7 +211,7 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
    * Serializes a metalist value into an XML element without throwing.
    */
   safeSerialize(
-    data: Immutable<InferMetalist<M, I>>,
+    data: Immutable<Metalist<MT, IT>>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -209,21 +225,21 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
    * serialized.
    */
   serialize(
-    data: Immutable<InferMetalist<M, I>>,
+    data: Immutable<Metalist<MT, IT>>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): XmlWriter {
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<MetalistSchema<M, I>> {
+  optional(): OptionalSchema<MetalistSchema<MS, IS, MT, IT>> {
     return new OptionalSchema(this);
   }
 
   /**
    * Returns a new metalist schema with the name of item tags changed.
    */
-  renameItemTag(itemTag: string): MetalistSchema<M, I> {
+  renameItemTag(itemTag: string): MetalistSchema<MS, IS> {
     return new MetalistSchema(itemTag, this.metaShape, this.itemSchema);
   }
 
@@ -242,10 +258,10 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
    * }));
    * ```
    */
-  extendMeta<U extends Shape>(shape: U | ((s: M) => U)): MetalistSchema<ExtendShape<M, U>, I> {
+  extendMeta<U extends Shape>(shape: U | ((s: MS) => U)): MetalistSchema<ExtendShape<MS, U>, IS> {
     return new MetalistSchema(
       this.itemTag,
-      new ObjectSchema(this.metaShape).extend(shape).shape,
+      ObjectSchema.create<MS>(this.metaShape).extend(shape).shape,
       this.itemSchema,
     );
   }
@@ -253,10 +269,10 @@ export class MetalistSchema<M extends Shape, I extends ElementSchema<any>> imple
   /**
    * Returns a new list schema with specified keys are omitted from the meta schema.
    */
-  omitMeta<U extends keyof M>(keys: U[]): MetalistSchema<Omit<M, U>, I> {
+  omitMeta<U extends keyof MS>(keys: U[]): MetalistSchema<Omit<MS, U>, IS> {
     return new MetalistSchema(
       this.itemTag,
-      new ObjectSchema(this.metaShape).omit(keys).shape,
+      ObjectSchema.create<MS>(this.metaShape).omit(keys).shape,
       this.itemSchema,
     );
   }
@@ -311,9 +327,9 @@ export function metalist<M extends Shape, I extends ElementSchema<any>>(
 ): I extends ObjectSchema<any> ? ObjectMetalistSchema<M, ObjectShape<I>> : MetalistSchema<M, I> {
   let s;
   if (itemSchema instanceof ObjectSchema) {
-    s = new ObjectMetalistSchema(itemTag, metaSchema.shape, itemSchema);
+    s = ObjectMetalistSchema.create(itemTag, metaSchema.shape, itemSchema);
   } else {
-    s = new MetalistSchema(itemTag, metaSchema.shape, itemSchema);
+    s = MetalistSchema.create(itemTag, metaSchema.shape, itemSchema);
   }
   return s as I extends ObjectSchema<any>
     ? ObjectMetalistSchema<M, ObjectShape<I>>

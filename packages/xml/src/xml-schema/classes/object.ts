@@ -17,6 +17,7 @@ import {
   type SchemaParseFieldResult,
   SchemaSerializeError,
   type Immutable,
+  type OmitObjectSchema,
 } from "..";
 import { isStringKeyRecord } from "../../internal";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
@@ -35,12 +36,19 @@ import {
 /**
  * A schema that parses XML record elements as JavaScript objects.
  */
-export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T>> {
+export class ObjectSchema<
+  S extends Shape,
+  T extends object = InferShape<S>,
+> implements ElementSchema<T> {
   readonly name = "object";
-  readonly shape: T;
+  readonly shape: S;
 
-  constructor(shape: T) {
+  private constructor(shape: S) {
     this.shape = shape;
+  }
+
+  static create<S extends Shape, T extends object = InferShape<S>>(shape: S) {
+    return new ObjectSchema<S, T>(shape);
   }
 
   /**
@@ -53,7 +61,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     input: SchemaInput,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): Result<InferShape<T>, SchemaError> {
+  ): Result<T, SchemaError> {
     const r = validateSchemaInput(input, "xml_element", this.name);
     if (!r.success) return r;
     const value = r.data;
@@ -67,7 +75,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     if (issues.length === 0) {
       return {
         success: true,
-        data,
+        data: data as T,
       };
     } else {
       return {
@@ -85,11 +93,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    *
    * @throws {@link SchemaError} when the value does not match the schema.
    */
-  parseValue(
-    input: SchemaInput,
-    ctx: SchemaParseContext,
-    options?: SchemaParseOptions,
-  ): InferShape<T> {
+  parseValue(input: SchemaInput, ctx: SchemaParseContext, options?: SchemaParseOptions): T {
     return unwrapResult(this.safeParseValue(input, ctx, options));
   }
 
@@ -98,7 +102,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     key: string,
     ctx: SchemaParseContext,
     options?: SchemaParseOptions,
-  ): SchemaParseFieldResult<InferShape<T>> {
+  ): SchemaParseFieldResult<T> {
     return safeParseChild(this, parent, key, ctx, options, [key]);
   }
 
@@ -106,7 +110,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): Result<InferShape<T>, SchemaError> {
+  ): Result<T, SchemaError> {
     return safeParseTree(this, tree, rootTag, options);
   }
 
@@ -114,7 +118,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
     tree: SwXmlNodeList | string | Uint8Array<ArrayBufferLike>,
     rootTag: string,
     options?: SchemaParseOptions,
-  ): InferShape<T> {
+  ): T {
     return unwrapResult(this.safeParse(tree, rootTag, options));
   }
 
@@ -163,7 +167,7 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    * Serializes an object value into an XML element without throwing.
    */
   safeSerialize(
-    data: Immutable<InferShape<T>>,
+    data: Immutable<T>,
     rootTag: string,
     writer?: XmlWriter | XmlWriterOptions,
   ): Result<XmlWriter, SchemaSerializeError> {
@@ -175,26 +179,22 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    *
    * @throws {@link SchemaSerializeError} when any field cannot be serialized.
    */
-  serialize(
-    data: Immutable<InferShape<T>>,
-    rootTag: string,
-    writer?: XmlWriter | XmlWriterOptions,
-  ): XmlWriter {
+  serialize(data: Immutable<T>, rootTag: string, writer?: XmlWriter | XmlWriterOptions): XmlWriter {
     return unwrapResult(serializeElement(this.serializeField(data), rootTag, writer));
   }
 
-  optional(): OptionalSchema<ObjectSchema<T>> {
+  optional(): OptionalSchema<ObjectSchema<S, T>> {
     return new OptionalSchema(this);
   }
 
   /**
    * Returns an object schema where every field is optional.
    */
-  partial(): ObjectSchema<PartialShape<T>> {
-    return object(
+  partial(): ObjectSchema<PartialShape<S>, Partial<T>> {
+    return new ObjectSchema<PartialShape<S>, Partial<T>>(
       Object.fromEntries(
         Object.entries(this.shape).map(([key, schema]) => [key, schema.optional()]),
-      ) as PartialShape<T>,
+      ) as PartialShape<S>,
     );
   }
 
@@ -213,8 +213,8 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
    * }));
    * ```
    */
-  extend<U extends Shape>(shape: U | ((s: T) => U)): ExtendObjectSchema<T, U> {
-    const newShape: ExtendShape<T, U> = {
+  extend<U extends Shape>(shape: U | ((s: S) => U)): ExtendObjectSchema<S, U> {
+    const newShape: ExtendShape<S, U> = {
       ...this.shape,
       ...(typeof shape === "function" ? shape(this.shape) : shape),
     };
@@ -224,20 +224,22 @@ export class ObjectSchema<T extends Shape> implements ElementSchema<InferShape<T
   /**
    * Returns a new object schema with specified keys are omitted.
    */
-  omit<U extends keyof T>(keys: U[]): ObjectSchema<Omit<T, U>> {
+  omit<U extends keyof S>(keys: U[]): OmitObjectSchema<S, U> {
     const newShape = { ...this.shape };
     for (const key of keys) {
       delete newShape[key];
     }
-    return new ObjectSchema<Omit<T, U>>(newShape);
+    return new ObjectSchema(newShape);
   }
 }
 
 /**
  * Creates a schema that parses XML record elements as JavaScript objects.
  */
-export function object<T extends Shape>(shape: T): ObjectSchema<T> {
-  return new ObjectSchema(shape);
+export function object<S extends Shape, T extends object = InferShape<S>>(
+  shape: S,
+): ObjectSchema<S, T> {
+  return ObjectSchema.create<S, T>(shape);
 }
 
 /**
@@ -245,6 +247,8 @@ export function object<T extends Shape>(shape: T): ObjectSchema<T> {
  *
  * This is syntax sugar for `x.object(...).partial()`.
  */
-export function partialObject<T extends Shape>(shape: T): ObjectSchema<PartialShape<T>> {
-  return object(shape).partial();
+export function partialObject<S extends Shape, T extends object = InferShape<S>>(
+  shape: S,
+): ObjectSchema<PartialShape<S>, Partial<T>> {
+  return object<S, T>(shape).partial();
 }
