@@ -12,6 +12,9 @@ importers:
         specifier: ^1.7.6
         version: 1.7.6(vite@8.2.2(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
     devDependencies:
+      '@sw-file-lib/dev-tools':
+        specifier: workspace:*
+        version: link:packages/dev-tools
       '@sw-file-lib/docs-plugins':
         specifier: workspace:*
         version: link:packages/docs-plugins
@@ -75,6 +78,19 @@ importers:
       '@sw-file-lib/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+
+  packages/dev-tools:
+    dependencies:
+      commander:
+        specifier: ^15.0.0
+        version: 15.0.0
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/dev-viewer:
     dependencies:
@@ -1280,6 +1296,14 @@ packages:
 
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
+
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
+
+  consola@3.4.2:
+    resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
+    engines: {node: ^14.18.0 || >=16.10.0}
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -2791,6 +2815,10 @@ snapshots:
   character-entities-legacy@3.0.0: {}
 
   comma-separated-tokens@2.0.3: {}
+
+  commander@15.0.0: {}
+
+  consola@3.4.2: {}
 
   convert-source-map@2.0.0: {}
 

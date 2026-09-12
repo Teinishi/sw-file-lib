@@ -27,6 +27,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
+    "codegen": "xml-schema-codegen --config xml-schema.config.ts",
     "check": "pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
     "release": "bumpp --recursive",
     "prepublishOnly": "pnpm run build",
@@ -39,6 +40,7 @@
     "vitepress-plugin-group-icons": "^1.7.6"
   },
   "devDependencies": {
+    "@sw-file-lib/dev-tools": "workspace:*",
     "@sw-file-lib/docs-plugins": "workspace:*",
     "@sw-file-lib/three": "workspace:*",
     "@sw-file-lib/xml": "workspace:*",

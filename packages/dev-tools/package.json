@@ -1,0 +1,37 @@
+{
+  "name": "@sw-file-lib/dev-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal tools for library development.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Teinishi",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    "./xml-schema-codegen": {
+      "types": "./dist/xml-schema-codegen/index.d.mts",
+      "import": "./dist/xml-schema-codegen/index.mjs"
+    }
+  },
+  "bin": {
+    "xml-schema-codegen": "./dist/xml-schema-codegen/cli.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "consola": "^3.4.2"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "6.0.3"
+  }
+}
