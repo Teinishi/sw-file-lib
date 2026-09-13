@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import fs from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
@@ -53,7 +54,17 @@ program
     try {
       consola.start("Generating XML schema code...");
 
-      await generate(generateOptions);
+      const result = generate(generateOptions);
+
+      const outDir = resolve(generateOptions.outDir);
+      await fs.rm(outDir, { recursive: true, force: true });
+      await fs.mkdir(outDir, { recursive: true });
+
+      for (const file of result) {
+        const outputPath = resolve(generateOptions.outDir, file.name);
+        await fs.writeFile(outputPath, file.content, "utf-8");
+        consola.info(`Generated ${outputPath}`);
+      }
 
       consola.success("XML Schema code generation completed successfully.");
     } catch (error) {
