@@ -8,18 +8,18 @@ export function generateCode(declaration: SchemaDeclarationInfo): string {
   }
 }
 
-function generateSchemaShape(members: ObjectSchemaMemberInfo[]): string {
+function generateSchemaShape(members: ObjectSchemaMemberInfo[], indent: string = ""): string {
   const lines = members.map((m) => {
-    let t = generateTypeSchema(m.type);
+    let t = generateTypeSchema(m.type, indent + "  ");
     if (m.optional) {
       t = `${t}.optional()`;
     }
-    return `  ${m.name}: ${t}`;
+    return `${indent}  ${m.name}: ${t}`;
   });
-  return `{\n${lines.join(",\n")}\n}`;
+  return `{\n${lines.join(",\n")}\n${indent}}`;
 }
 
-function generateTypeSchema(type: SchemaTypeInfo): string {
+function generateTypeSchema(type: SchemaTypeInfo, indent: string = ""): string {
   switch (type.kind) {
     case "boolean":
       return "x.boolean()";
@@ -28,10 +28,12 @@ function generateTypeSchema(type: SchemaTypeInfo): string {
     case "string":
       return "x.string()";
     case "union":
-      return `x.union([${type.types.map((t) => generateTypeSchema(t)).join(", ")}])`;
-    case "object":
-      return `x.object(${generateSchemaShape(type.members)})`;
+      return `x.union([${type.types.map((t) => generateTypeSchema(t, indent)).join(", ")}])`;
     case "identifier":
       return `${type.name}Schema`;
+    case "object":
+      return `x.object(${generateSchemaShape(type.members, indent)})`;
+    case "list":
+      return `x.list("${type.itemTag}", ${generateTypeSchema(type.elementType, indent)})`;
   }
 }

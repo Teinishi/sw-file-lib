@@ -1,4 +1,8 @@
-export function splitArgs(input: string): string[] {
+import * as ts from "typescript";
+
+const MARKER_PREFIX = "// @xml-schema";
+
+function splitArgs(input: string): string[] {
   const result: string[] = [];
   let current = "";
   let quote: '"' | "'" | null = null;
@@ -40,4 +44,22 @@ export function splitArgs(input: string): string[] {
   }
 
   return result;
+}
+
+export function parseXmlSchemaMarker(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+): string[] | undefined {
+  const text = sourceFile.getFullText();
+
+  const ranges = ts.getLeadingCommentRanges(text, node.pos) ?? [];
+
+  for (const r of ranges) {
+    if (r.kind !== ts.SyntaxKind.SingleLineCommentTrivia) continue;
+    const comment = text.slice(r.pos, r.end).trim();
+    if (!comment.startsWith(MARKER_PREFIX)) continue;
+    return splitArgs(comment.slice(MARKER_PREFIX.length).trim());
+  }
+
+  return undefined;
 }

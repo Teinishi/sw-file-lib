@@ -3,9 +3,7 @@ import * as ts from "typescript";
 import { analyzeInterfaceNode } from "./analyzer";
 import { analyzeComment as analyzeJSDocComment, convertJSDocComment } from "./comments";
 import { generateCode } from "./generate-code";
-import { splitArgs } from "./utils";
-
-const MARKER_PREFIX = "// @xml-schema";
+import { parseXmlSchemaMarker } from "./parse-marker";
 
 export interface Config {
   input: string | string[];
@@ -101,22 +99,4 @@ function processSchemaInterface(
   code += generateCode(info);
 
   return code;
-}
-
-function parseXmlSchemaMarker(
-  node: ts.InterfaceDeclaration,
-  sourceFile: ts.SourceFile,
-): string[] | undefined {
-  const text = sourceFile.getFullText();
-
-  const ranges = ts.getLeadingCommentRanges(text, node.pos) ?? [];
-
-  for (const r of ranges) {
-    if (r.kind !== ts.SyntaxKind.SingleLineCommentTrivia) continue;
-    const comment = text.slice(r.pos, r.end).trim();
-    if (!comment.startsWith(MARKER_PREFIX)) continue;
-    return splitArgs(comment.slice(MARKER_PREFIX.length).trim());
-  }
-
-  return undefined;
 }
