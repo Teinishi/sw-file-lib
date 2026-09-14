@@ -26,20 +26,34 @@ program
   .option("-c, --config <file>", "Config file")
   .option("--check", "Exit with error if generated output differs")
   .action(async (options) => {
-    let generateOptions: GenerateOptions;
+    let input: string | string[] = options.input;
+    let outDir: string = options.outDir;
+    let tsconfig: string = options.tsconfig;
+    let xImportStatement: string | undefined;
+    let check: boolean | undefined = options.check;
 
     if (options.config) {
       const config = await loadConfig(options.config);
-      generateOptions = { ...config, ...options };
+
+      input ??= config.input;
+      outDir ??= config.outDir;
+      tsconfig ??= config.tsconfig;
+      xImportStatement ??= config.xImportStatement;
     } else {
       if (!options.input || !options.outDir || !options.tsconfig) {
         program.error(
           "Missing required options. Please provide either a config file or input, out-dir, and tsconfig options.",
         );
       }
-
-      generateOptions = { ...options };
     }
+
+    const generateOptions: GenerateOptions = {
+      input: Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input)),
+      outDir,
+      tsconfig,
+      ...(xImportStatement ? { xImportStatement } : {}),
+      ...(check ? { check } : {}),
+    };
 
     try {
       consola.start("Generating XML schema code...");

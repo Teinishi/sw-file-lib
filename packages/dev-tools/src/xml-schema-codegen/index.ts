@@ -8,7 +8,7 @@ import { splitArgs } from "./utils";
 const MARKER_PREFIX = "// @xml-schema";
 
 export interface Config {
-  input: string;
+  input: string | string[];
   outDir: string;
   tsconfig: string;
   xImportStatement?: string;
@@ -19,11 +19,11 @@ export function defineConfig(config: Config): Config {
 }
 
 export interface GenerateOptions {
-  input: string;
+  input: string[];
   outDir: string;
   tsconfig: string;
-  check?: boolean;
   xImportStatement?: string;
+  check?: boolean;
 }
 
 export type GeneratedFile = {
@@ -37,50 +37,70 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
   const parsed = ts.parseJsonConfigFileContent(tsconfig.config, ts.sys, ".");
 
   const program = ts.createProgram({
-    rootNames: [options.input],
+    rootNames: options.input,
     options: parsed.options,
   });
 
-  const entries: string[] = [];
+  const inputStems = options.input.map((i) => ({
+    key: i,
+    value: path.basename(i, path.extname(i)),
+  }));
 
-  if (options.xImportStatement) {
-    entries.push(options.xImportStatement);
-  }
+  const fileEntriesMap: Map<string, string[]> = new Map();
 
-  function visit(node: ts.Node, sourceFile: ts.SourceFile) {
+  function visit(node: ts.Node, sourceFile: ts.SourceFile, fileKey: string) {
     if (ts.isInterfaceDeclaration(node)) {
       const args = parseXmlSchemaMarker(node, sourceFile);
       if (args) {
-        const info = analyzeInterfaceNode(node, sourceFile, args);
-        const comments = analyzeJSDocComment(node, sourceFile);
-        let code = "";
-        if (comments) {
-          code =
-            convertJSDocComment(info, comments, sourceFile, {
-              target: "schema",
-              see: ["mutable", "immutable"],
-            }) + "\n";
-        }
-        code += generateCode(info);
-        entries.push(code);
+        const code = processSchemaInterface(node, sourceFile, args);
+        fileEntriesMap.get(fileKey)!.push(code);
       }
     }
 
-    ts.forEachChild(node, (child) => visit(child, sourceFile));
+    ts.forEachChild(node, (child) => visit(child, sourceFile, fileKey));
   }
 
   for (const sourceFile of program.getSourceFiles()) {
     if (sourceFile.isDeclarationFile) continue;
 
-    visit(sourceFile, sourceFile);
+    const stem = inputStems.find(
+      ({ key }) => path.resolve(key) === path.resolve(sourceFile.fileName),
+    )?.value;
+    if (!stem) continue;
+
+    fileEntriesMap.set(stem, []);
+    if (options.xImportStatement) {
+      fileEntriesMap.get(stem)!.push(options.xImportStatement);
+    }
+
+    visit(sourceFile, sourceFile, stem);
   }
 
-  return [
-    {
-      name: `${path.basename(options.input, path.extname(options.input))}-schema.ts`,
-      content: entries.join("\n\n") + "\n",
-    },
-  ];
+  return Array.from(fileEntriesMap.entries(), ([stem, entries]) => ({
+    name: `${stem}-schema.ts`,
+    content: entries.join("\n\n") + "\n",
+  }));
+}
+
+function processSchemaInterface(
+  node: ts.InterfaceDeclaration,
+  sourceFile: ts.SourceFile,
+  args: string[],
+): string {
+  const info = analyzeInterfaceNode(node, sourceFile, args);
+  const comments = analyzeJSDocComment(node, sourceFile);
+
+  let code = "";
+  if (comments) {
+    code =
+      convertJSDocComment(info, comments, sourceFile, {
+        target: "schema",
+        see: ["mutable", "immutable"],
+      }) + "\n";
+  }
+  code += generateCode(info);
+
+  return code;
 }
 
 function parseXmlSchemaMarker(

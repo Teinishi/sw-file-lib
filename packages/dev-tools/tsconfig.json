@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "preserve",
-    "lib": ["ES2023"],
+    "lib": ["ESNext"],
     "types": ["node"],
     "strict": true,
     "isolatedModules": true,
