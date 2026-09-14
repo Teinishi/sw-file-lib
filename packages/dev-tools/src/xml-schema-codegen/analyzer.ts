@@ -7,7 +7,8 @@ export interface FileAnalyzeContext {
   checker: ts.TypeChecker;
   sourceFile: ts.SourceFile;
   typeAliasImportMap: Map<string, Set<string>>;
-  codeEntries: string[];
+  schemaCodeEntries: string[];
+  immutableInterfaceCodeEntries: string[];
 }
 
 export type IdentifierSchemaInfo = {

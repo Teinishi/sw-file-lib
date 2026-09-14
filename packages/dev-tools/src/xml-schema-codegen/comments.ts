@@ -80,31 +80,37 @@ export function convertJSDocComment(
   return jsDocInfo.map((doc) => {
     const paragraphs: string[] = [];
 
+    for (const p of doc.paragraphs) {
+      if (p.links?.some((l) => l.name?.getText(sourceFile) === immutableName)) {
+        continue;
+      }
+      paragraphs.push(p.text);
+    }
+
     switch (target) {
-      case "schema":
-        for (const p of doc.paragraphs) {
-          if (p.links?.some((l) => l.name?.getText(sourceFile) === immutableName)) {
-            continue;
-          }
-          paragraphs.push(p.text);
-        }
-        if (see) {
-          paragraphs.push(
-            see
-              .map((t) => {
-                switch (t) {
-                  case "schema":
-                    return `@see {@link ${schemaName}}`;
-                  case "mutable":
-                    return `@see {@link ${schemaInfo.name}}`;
-                  case "immutable":
-                    return `@see {@link ${immutableName}}`;
-                }
-              })
-              .join("\n"),
-          );
-        }
+      case "mutable":
+        throw new Error("Unimplemented");
+      case "immutable":
+        paragraphs.push(`This is the recommended type for function parameters when it does not need to modify the value.
+Use {@link ${schemaInfo.name}} instead if mutation is required.`);
         break;
+    }
+
+    if (see) {
+      paragraphs.push(
+        see
+          .map((t) => {
+            switch (t) {
+              case "schema":
+                return `@see {@link ${schemaName}}`;
+              case "mutable":
+                return `@see {@link ${schemaInfo.name}}`;
+              case "immutable":
+                return `@see {@link ${immutableName}}`;
+            }
+          })
+          .join("\n"),
+      );
     }
 
     const lines = paragraphs.flatMap((p) => p.split("\n").concat(""));

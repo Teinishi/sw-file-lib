@@ -2,7 +2,7 @@ import path from "node:path";
 import * as ts from "typescript";
 import { analyzeInterfaceNode, type FileAnalyzeContext } from "./analyzer";
 import { analyzeComment as analyzeJSDocComment, convertJSDocComment } from "./comments";
-import { generateCode } from "./generate-code";
+import { generateImmutableInterfaceCode, generateSchemaCode } from "./generate-code";
 import { parseXmlSchemaMarker } from "./parse-marker";
 
 export interface Config {
@@ -45,19 +45,20 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
     value: path.basename(i, path.extname(i)),
   }));
 
-  const fileEntriesMap: Map<string, string[]> = new Map();
-
   function visit(node: ts.Node, context: FileAnalyzeContext) {
     if (ts.isInterfaceDeclaration(node)) {
       const args = parseXmlSchemaMarker(node, context.sourceFile);
       if (args) {
-        const code = processSchemaInterface(node, args, context);
-        context.codeEntries.push(code);
+        const codes = processInterfaceDeclaration(node, args, context);
+        context.schemaCodeEntries.push(codes.schemaCode);
+        context.immutableInterfaceCodeEntries.push(codes.immutableInterfaceCode);
       }
     }
 
     ts.forEachChild(node, (child) => visit(child, context));
   }
+
+  const generatedFiles: GeneratedFile[] = [];
 
   for (const sourceFile of program.getSourceFiles()) {
     if (sourceFile.isDeclarationFile) continue;
@@ -71,53 +72,115 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
       checker,
       sourceFile,
       typeAliasImportMap: new Map(),
-      codeEntries: [],
+      schemaCodeEntries: [],
+      immutableInterfaceCodeEntries: [],
     };
 
     visit(sourceFile, context);
 
-    if (context.codeEntries.length === 0) continue;
-
-    const importStatements = Array.from(
-      context.typeAliasImportMap.entries(),
-      ([path, names]) =>
-        `import { ${Array.from(names)
-          .map((n) => `${n}Schema`)
-          .join(", ")} } from "${path}-schema";`,
-    );
-    if (options.xImportStatement) {
-      importStatements.unshift(options.xImportStatement);
-    }
-    if (importStatements.length > 0) {
-      context.codeEntries.unshift(importStatements.join("\n"));
-    }
-
-    fileEntriesMap.set(stem, context.codeEntries);
+    generatedFiles.push(...generateFile(stem, context, options));
   }
 
-  return Array.from(fileEntriesMap.entries(), ([stem, entries]) => ({
-    name: `${stem}-schema.ts`,
-    content: entries.join("\n\n") + "\n",
-  }));
+  return generatedFiles;
 }
 
-function processSchemaInterface(
+function processInterfaceDeclaration(
   node: ts.InterfaceDeclaration,
   args: string[],
   context: FileAnalyzeContext,
-): string {
+): { schemaCode: string; immutableInterfaceCode: string } {
   const info = analyzeInterfaceNode(node, args, context);
   const comments = analyzeJSDocComment(node, context.sourceFile);
 
-  let code = "";
+  let schemaCode = "";
+  let immutableInterfaceCode = "";
   if (comments) {
-    code =
+    schemaCode =
       convertJSDocComment(info, comments, context.sourceFile, {
         target: "schema",
         see: ["mutable", "immutable"],
       }) + "\n";
-  }
-  code += generateCode(info);
 
-  return code;
+    immutableInterfaceCode =
+      convertJSDocComment(info, comments, context.sourceFile, {
+        target: "immutable",
+        see: ["schema", "mutable"],
+      }) + "\n";
+  }
+
+  schemaCode += generateSchemaCode(info);
+  immutableInterfaceCode += generateImmutableInterfaceCode(info);
+
+  return { schemaCode, immutableInterfaceCode };
+}
+
+function generateFile(
+  stem: string,
+  context: FileAnalyzeContext,
+  options: GenerateOptions,
+): GeneratedFile[] {
+  const files: GeneratedFile[] = [];
+
+  const schemaFile = generateSchemaFile(stem, context, options);
+  if (schemaFile) {
+    files.push(schemaFile);
+  }
+
+  const immutableInterfaceFile = generateImmutableInterfaceFile(stem, context, options);
+  if (immutableInterfaceFile) {
+    files.push(immutableInterfaceFile);
+  }
+
+  return files;
+}
+
+function generateSchemaFile(
+  stem: string,
+  context: FileAnalyzeContext,
+  options: GenerateOptions,
+): GeneratedFile | undefined {
+  if (context.schemaCodeEntries.length === 0) return;
+
+  const importStatements = Array.from(
+    context.typeAliasImportMap.entries(),
+    ([path, names]) =>
+      `import { ${Array.from(names)
+        .map((n) => `${n}Schema`)
+        .join(", ")} } from "${path}-schema";`,
+  );
+  if (options.xImportStatement) {
+    importStatements.unshift(options.xImportStatement);
+  }
+  if (importStatements.length > 0) {
+    context.schemaCodeEntries.unshift(importStatements.join("\n"));
+  }
+
+  return {
+    name: `${stem}-schema.ts`,
+    content: context.schemaCodeEntries.join("\n\n") + "\n",
+  };
+}
+
+function generateImmutableInterfaceFile(
+  stem: string,
+  context: FileAnalyzeContext,
+  _options: GenerateOptions,
+): GeneratedFile | undefined {
+  if (context.immutableInterfaceCodeEntries.length === 0) return;
+
+  const importStatements = Array.from(
+    context.typeAliasImportMap.entries(),
+    ([path, names]) =>
+      `import type { ${Array.from(names)
+        .map((n) => `${n}Immutable`)
+        .join(", ")} } from "${path}-immutable";`,
+  );
+  if (importStatements.length > 0) {
+    context.immutableInterfaceCodeEntries.unshift(importStatements.join("\n"));
+  }
+
+  return {
+    name: `${stem}-immutable.ts`,
+    content: context.immutableInterfaceCodeEntries.join("\n\n") + "\n",
+  };
 }
