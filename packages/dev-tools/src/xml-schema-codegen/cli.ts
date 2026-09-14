@@ -30,12 +30,7 @@ program
 
     if (options.config) {
       const config = await loadConfig(options.config);
-      generateOptions = {
-        input: config.input,
-        outDir: config.outDir,
-        tsconfig: config.tsconfig,
-        check: options.check,
-      };
+      generateOptions = { ...config, ...options };
     } else {
       if (!options.input || !options.outDir || !options.tsconfig) {
         program.error(
@@ -43,12 +38,7 @@ program
         );
       }
 
-      generateOptions = {
-        input: options.input,
-        outDir: options.outDir,
-        tsconfig: options.tsconfig,
-        check: options.check,
-      };
+      generateOptions = { ...options };
     }
 
     try {

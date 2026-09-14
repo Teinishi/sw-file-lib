@@ -1,35 +1,38 @@
 import * as ts from "typescript";
 
-export type TypeInfo =
-  | { kind: "boolean" }
-  | { kind: "number" }
-  | { kind: "string" }
-  | { kind: "union"; types: TypeInfo[] }
-  | { kind: "array"; elementType: TypeInfo }
-  | { kind: "object"; members: ObjectMemberInfo[] }
-  | { kind: "identifier"; name: string };
-
-export interface ObjectMemberInfo {
+export interface ObjectSchemaMemberInfo {
   name: string;
-  type: TypeInfo;
+  type: SchemaTypeInfo;
   optional: boolean;
 }
 
-export interface ObjectSchemaInfo {
-  kind: "objectSchema";
-  name: string;
-  members: ObjectMemberInfo[];
-}
+export type ObjectSchemaInfo = {
+  kind: "object";
+  members: ObjectSchemaMemberInfo[];
+};
+
+export type SchemaTypeInfo =
+  | { kind: "boolean" }
+  | { kind: "number" }
+  | { kind: "string" }
+  | { kind: "union"; types: SchemaTypeInfo[] }
+  | ObjectSchemaInfo
+  | { kind: "identifier"; name: string };
 
 export type ElementSchemaInfo = ObjectSchemaInfo;
+
+export interface SchemaDeclarationInfo {
+  name: string;
+  schema: ElementSchemaInfo;
+}
 
 export function analyzeInterfaceNode(
   node: ts.InterfaceDeclaration,
   sourceFile: ts.SourceFile,
   _args: string[],
-): ElementSchemaInfo {
+): SchemaDeclarationInfo {
   const name = node.name.text;
-  const members: ObjectMemberInfo[] = [];
+  const members: ObjectSchemaMemberInfo[] = [];
 
   for (const m of node.members) {
     if (!ts.isPropertySignature(m)) continue;
@@ -42,7 +45,7 @@ export function analyzeInterfaceNode(
       throw new Error(`Property ${memberName} has no type`);
     }
 
-    const typeInfo: TypeInfo = analyzeTypeNode(typeNode, sourceFile);
+    const typeInfo: SchemaTypeInfo = analyzeTypeNode(typeNode, sourceFile);
 
     members.push({
       name: memberName,
@@ -51,10 +54,16 @@ export function analyzeInterfaceNode(
     });
   }
 
-  return { kind: "objectSchema", name, members };
+  return {
+    name,
+    schema: {
+      kind: "object",
+      members,
+    },
+  };
 }
 
-function analyzeTypeNode(node: ts.TypeNode, sourceFile: ts.SourceFile): TypeInfo {
+function analyzeTypeNode(node: ts.TypeNode, sourceFile: ts.SourceFile): SchemaTypeInfo {
   switch (node.kind) {
     case ts.SyntaxKind.BooleanKeyword:
       return { kind: "boolean" };
@@ -70,14 +79,14 @@ function analyzeTypeNode(node: ts.TypeNode, sourceFile: ts.SourceFile): TypeInfo
       types: node.types.map((t) => analyzeTypeNode(t, sourceFile)),
     };
   }
-  if (ts.isArrayTypeNode(node)) {
+  /*if (ts.isArrayTypeNode(node)) {
     return {
       kind: "array",
       elementType: analyzeTypeNode(node.elementType, sourceFile),
     };
-  }
+  }*/
   if (ts.isTypeLiteralNode(node)) {
-    const members: ObjectMemberInfo[] = [];
+    const members: ObjectSchemaMemberInfo[] = [];
     for (const m of node.members) {
       if (!ts.isPropertySignature(m)) continue;
 
@@ -89,7 +98,7 @@ function analyzeTypeNode(node: ts.TypeNode, sourceFile: ts.SourceFile): TypeInfo
         throw new Error(`Property ${memberName} has no type`);
       }
 
-      const typeInfo: TypeInfo = analyzeTypeNode(typeNode, sourceFile);
+      const typeInfo: SchemaTypeInfo = analyzeTypeNode(typeNode, sourceFile);
 
       members.push({
         name: memberName,

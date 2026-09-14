@@ -1,6 +1,7 @@
 import path from "node:path";
 import * as ts from "typescript";
 import { analyzeInterfaceNode } from "./analyzer";
+import { analyzeComment as analyzeJSDocComment, convertJSDocComment } from "./comments";
 import { generateCode } from "./generate-code";
 import { splitArgs } from "./utils";
 
@@ -10,6 +11,7 @@ export interface Config {
   input: string;
   outDir: string;
   tsconfig: string;
+  xImportStatement?: string;
 }
 
 export function defineConfig(config: Config): Config {
@@ -21,6 +23,7 @@ export interface GenerateOptions {
   outDir: string;
   tsconfig: string;
   check?: boolean;
+  xImportStatement?: string;
 }
 
 export type GeneratedFile = {
@@ -29,9 +32,9 @@ export type GeneratedFile = {
 };
 
 export function generate(options: GenerateOptions): GeneratedFile[] {
-  const config = ts.readConfigFile(options.tsconfig, ts.sys.readFile);
+  const tsconfig = ts.readConfigFile(options.tsconfig, ts.sys.readFile);
 
-  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, ".");
+  const parsed = ts.parseJsonConfigFileContent(tsconfig.config, ts.sys, ".");
 
   const program = ts.createProgram({
     rootNames: [options.input],
@@ -40,12 +43,26 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
 
   const entries: string[] = [];
 
+  if (options.xImportStatement) {
+    entries.push(options.xImportStatement);
+  }
+
   function visit(node: ts.Node, sourceFile: ts.SourceFile) {
     if (ts.isInterfaceDeclaration(node)) {
       const args = parseXmlSchemaMarker(node, sourceFile);
       if (args) {
         const info = analyzeInterfaceNode(node, sourceFile, args);
-        entries.push(generateCode(info));
+        const comments = analyzeJSDocComment(node, sourceFile);
+        let code = "";
+        if (comments) {
+          code =
+            convertJSDocComment(info, comments, sourceFile, {
+              target: "schema",
+              see: ["mutable", "immutable"],
+            }) + "\n";
+        }
+        code += generateCode(info);
+        entries.push(code);
       }
     }
 

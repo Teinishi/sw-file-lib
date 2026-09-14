@@ -1,14 +1,14 @@
-import type { ElementSchemaInfo, ObjectMemberInfo, TypeInfo } from "./analyzer";
+import type { ObjectSchemaMemberInfo, SchemaDeclarationInfo, SchemaTypeInfo } from "./analyzer";
 
-export function generateCode(info: ElementSchemaInfo): string {
-  const decl = `export const ${info.name}Schema = `;
-  switch (info.kind) {
-    case "objectSchema":
-      return `${decl}x.object(${generateSchemaShape(info.members)});`;
+export function generateCode(declaration: SchemaDeclarationInfo): string {
+  const decl = `export const ${declaration.name}Schema = `;
+  switch (declaration.schema.kind) {
+    case "object":
+      return `${decl}x.object(${generateSchemaShape(declaration.schema.members)});`;
   }
 }
 
-function generateSchemaShape(members: ObjectMemberInfo[]): string {
+function generateSchemaShape(members: ObjectSchemaMemberInfo[]): string {
   const lines = members.map((m) => {
     let t = generateTypeSchema(m.type);
     if (m.optional) {
@@ -19,7 +19,7 @@ function generateSchemaShape(members: ObjectMemberInfo[]): string {
   return `{\n${lines.join(",\n")}\n}`;
 }
 
-function generateTypeSchema(type: TypeInfo): string {
+function generateTypeSchema(type: SchemaTypeInfo): string {
   switch (type.kind) {
     case "boolean":
       return "x.boolean()";
@@ -29,8 +29,6 @@ function generateTypeSchema(type: TypeInfo): string {
       return "x.string()";
     case "union":
       return `x.union([${type.types.map((t) => generateTypeSchema(t)).join(", ")}])`;
-    case "array":
-      return `x.list("", ${generateTypeSchema(type.elementType)})`;
     case "object":
       return `x.object(${generateSchemaShape(type.members)})`;
     case "identifier":
