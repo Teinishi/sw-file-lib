@@ -1,6 +1,6 @@
 import path from "node:path";
 import * as ts from "typescript";
-import { analyzeInterfaceNode } from "./analyzer";
+import { analyzeInterfaceNode, type FileAnalyzeContext } from "./analyzer";
 import { analyzeComment as analyzeJSDocComment, convertJSDocComment } from "./comments";
 import { generateCode } from "./generate-code";
 import { parseXmlSchemaMarker } from "./parse-marker";
@@ -38,6 +38,7 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
     rootNames: options.input,
     options: parsed.options,
   });
+  const checker = program.getTypeChecker();
 
   const inputStems = options.input.map((i) => ({
     key: i,
@@ -46,16 +47,16 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
 
   const fileEntriesMap: Map<string, string[]> = new Map();
 
-  function visit(node: ts.Node, sourceFile: ts.SourceFile, fileKey: string) {
+  function visit(node: ts.Node, context: FileAnalyzeContext) {
     if (ts.isInterfaceDeclaration(node)) {
-      const args = parseXmlSchemaMarker(node, sourceFile);
+      const args = parseXmlSchemaMarker(node, context.sourceFile);
       if (args) {
-        const code = processSchemaInterface(node, sourceFile, args);
-        fileEntriesMap.get(fileKey)!.push(code);
+        const code = processSchemaInterface(node, args, context);
+        context.codeEntries.push(code);
       }
     }
 
-    ts.forEachChild(node, (child) => visit(child, sourceFile, fileKey));
+    ts.forEachChild(node, (child) => visit(child, context));
   }
 
   for (const sourceFile of program.getSourceFiles()) {
@@ -66,12 +67,32 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
     )?.value;
     if (!stem) continue;
 
-    fileEntriesMap.set(stem, []);
+    const context: FileAnalyzeContext = {
+      checker,
+      sourceFile,
+      typeAliasImportMap: new Map(),
+      codeEntries: [],
+    };
+
+    visit(sourceFile, context);
+
+    if (context.codeEntries.length === 0) continue;
+
+    const importStatements = Array.from(
+      context.typeAliasImportMap.entries(),
+      ([path, names]) =>
+        `import { ${Array.from(names)
+          .map((n) => `${n}Schema`)
+          .join(", ")} } from "${path}-schema";`,
+    );
     if (options.xImportStatement) {
-      fileEntriesMap.get(stem)!.push(options.xImportStatement);
+      importStatements.unshift(options.xImportStatement);
+    }
+    if (importStatements.length > 0) {
+      context.codeEntries.unshift(importStatements.join("\n"));
     }
 
-    visit(sourceFile, sourceFile, stem);
+    fileEntriesMap.set(stem, context.codeEntries);
   }
 
   return Array.from(fileEntriesMap.entries(), ([stem, entries]) => ({
@@ -82,16 +103,16 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
 
 function processSchemaInterface(
   node: ts.InterfaceDeclaration,
-  sourceFile: ts.SourceFile,
   args: string[],
+  context: FileAnalyzeContext,
 ): string {
-  const info = analyzeInterfaceNode(node, sourceFile, args);
-  const comments = analyzeJSDocComment(node, sourceFile);
+  const info = analyzeInterfaceNode(node, args, context);
+  const comments = analyzeJSDocComment(node, context.sourceFile);
 
   let code = "";
   if (comments) {
     code =
-      convertJSDocComment(info, comments, sourceFile, {
+      convertJSDocComment(info, comments, context.sourceFile, {
         target: "schema",
         see: ["mutable", "immutable"],
       }) + "\n";

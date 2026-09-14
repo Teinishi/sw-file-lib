@@ -1,5 +1,20 @@
+import path from "node:path";
+import consola from "consola";
 import * as ts from "typescript";
 import { parseXmlSchemaMarker } from "./parse-marker";
+
+export interface FileAnalyzeContext {
+  checker: ts.TypeChecker;
+  sourceFile: ts.SourceFile;
+  typeAliasImportMap: Map<string, Set<string>>;
+  codeEntries: string[];
+}
+
+export type IdentifierSchemaInfo = {
+  kind: "identifier";
+  name: string;
+  declaredFile?: string;
+};
 
 export interface ObjectSchemaMemberInfo {
   name: string;
@@ -23,7 +38,7 @@ export type SchemaTypeInfo =
   | { kind: "number" }
   | { kind: "string" }
   | { kind: "union"; types: SchemaTypeInfo[] }
-  | { kind: "identifier"; name: string }
+  | IdentifierSchemaInfo
   | ObjectSchemaInfo
   | ListSchemaInfo;
 
@@ -36,8 +51,8 @@ export interface SchemaDeclarationInfo {
 
 export function analyzeInterfaceNode(
   node: ts.InterfaceDeclaration,
-  sourceFile: ts.SourceFile,
   _args: string[],
+  context: FileAnalyzeContext,
 ): SchemaDeclarationInfo {
   const name = node.name.text;
   const members: ObjectSchemaMemberInfo[] = [];
@@ -45,16 +60,18 @@ export function analyzeInterfaceNode(
   for (const m of node.members) {
     if (!ts.isPropertySignature(m)) continue;
 
-    const memberName = m.name.getText(sourceFile);
+    const memberName = m.name.getText(context.sourceFile);
     const optional = !!m.questionToken;
     const typeNode = m.type;
 
     if (!typeNode) {
-      throw new Error(`Property ${memberName} has no type at ${filenameAndLine(m, sourceFile)}`);
+      throw new Error(
+        `Property ${memberName} has no type at ${filenameAndLine(m, context.sourceFile)}`,
+      );
     }
 
-    const memberArgs = parseXmlSchemaMarker(m, sourceFile);
-    const typeInfo: SchemaTypeInfo = analyzeTypeNode(typeNode, sourceFile, memberArgs);
+    const memberArgs = parseXmlSchemaMarker(m, context.sourceFile);
+    const typeInfo: SchemaTypeInfo = analyzeTypeNode(typeNode, memberArgs, context);
 
     members.push({
       name: memberName,
@@ -74,8 +91,8 @@ export function analyzeInterfaceNode(
 
 function analyzeTypeNode(
   node: ts.TypeNode,
-  sourceFile: ts.SourceFile,
   args: string[] | undefined,
+  context: FileAnalyzeContext,
 ): SchemaTypeInfo {
   if (args && args.length > 0) {
     const firstArg = args[0];
@@ -84,17 +101,19 @@ function analyzeTypeNode(
       case "list":
         if (!ts.isArrayTypeNode(node)) {
           throw new Error(
-            `Expected array type for list, got ${node.getText(sourceFile)} at ${filenameAndLine(node, sourceFile)}`,
+            `Expected array type for list, got ${node.getText(context.sourceFile)} at ${filenameAndLine(node, context.sourceFile)}`,
           );
         }
         const itemTag = args[1];
         if (!itemTag) {
-          throw new Error(`Missing item tag for list type at ${filenameAndLine(node, sourceFile)}`);
+          throw new Error(
+            `Missing item tag for list type at ${filenameAndLine(node, context.sourceFile)}`,
+          );
         }
         return {
           kind: "list",
           itemTag,
-          elementType: analyzeTypeNode(node.elementType, sourceFile, []),
+          elementType: analyzeTypeNode(node.elementType, [], context),
         };
 
       case "metalist":
@@ -102,7 +121,7 @@ function analyzeTypeNode(
 
       default:
         throw new Error(
-          `Unknown schema marker argument: ${firstArg} at ${filenameAndLine(node, sourceFile)}`,
+          `Unknown schema marker argument: ${firstArg} at ${filenameAndLine(node, context.sourceFile)}`,
         );
     }
   }
@@ -119,26 +138,54 @@ function analyzeTypeNode(
   if (ts.isUnionTypeNode(node)) {
     return {
       kind: "union",
-      types: node.types.map((t) => analyzeTypeNode(t, sourceFile, [])),
+      types: node.types.map((t) => analyzeTypeNode(t, [], context)),
     };
   }
+
+  if (ts.isTypeReferenceNode(node)) {
+    const typeName = node.typeName.getText(context.sourceFile);
+    const sourceFile = getDefinitionSourceFile(node, context.checker);
+    if (!sourceFile) {
+      consola.warn(
+        `Could not find source file for type reference ${typeName} at ${filenameAndLine(node, context.sourceFile)}`,
+      );
+    }
+    const sourceFileName = sourceFile !== context.sourceFile ? sourceFile?.fileName : undefined;
+    if (sourceFileName) {
+      const relative = relativeImportPath(
+        path.resolve(context.sourceFile.fileName),
+        path.resolve(sourceFileName),
+      );
+      if (!context.typeAliasImportMap.has(relative)) {
+        context.typeAliasImportMap.set(relative, new Set());
+      }
+      context.typeAliasImportMap.get(relative)!.add(typeName);
+    }
+
+    return {
+      kind: "identifier",
+      name: typeName,
+      ...(sourceFileName ? { declaredFile: sourceFileName } : {}),
+    };
+  }
+
   if (ts.isTypeLiteralNode(node)) {
     const members: ObjectSchemaMemberInfo[] = [];
     for (const m of node.members) {
       if (!ts.isPropertySignature(m)) continue;
 
-      const memberName = m.name.getText(sourceFile);
+      const memberName = m.name.getText(context.sourceFile);
       const optional = !!m.questionToken;
       const typeNode = m.type;
 
       if (!typeNode) {
         throw new Error(
-          `Property ${memberName} has no type at ${filenameAndLine(node, sourceFile)}`,
+          `Property ${memberName} has no type at ${filenameAndLine(node, context.sourceFile)}`,
         );
       }
 
-      const memberArgs = parseXmlSchemaMarker(m, sourceFile);
-      const typeInfo: SchemaTypeInfo = analyzeTypeNode(typeNode, sourceFile, memberArgs);
+      const memberArgs = parseXmlSchemaMarker(m, context.sourceFile);
+      const typeInfo: SchemaTypeInfo = analyzeTypeNode(typeNode, memberArgs, context);
 
       members.push({
         name: memberName,
@@ -149,18 +196,35 @@ function analyzeTypeNode(
 
     return { kind: "object", members };
   }
-  if (ts.isTypeReferenceNode(node)) {
-    const typeName = node.typeName.getText(sourceFile);
-    return { kind: "identifier", name: typeName };
-  }
 
   if (ts.isArrayTypeNode(node)) {
     throw new Error(
-      `Array types must be annotated with '// @xml-schema list "{itemTag}"' at ${filenameAndLine(node, sourceFile)}`,
+      `Array types must be annotated with '// @xml-schema list "{itemTag}"' at ${filenameAndLine(node, context.sourceFile)}`,
     );
   }
 
-  throw new Error(`Unsupported type at ${filenameAndLine(node, sourceFile)}`);
+  throw new Error(`Unsupported type at ${filenameAndLine(node, context.sourceFile)}`);
+}
+
+function getDefinitionSourceFile(
+  node: ts.TypeReferenceNode,
+  checker: ts.TypeChecker,
+): ts.SourceFile | undefined {
+  const symbol = checker.getSymbolAtLocation(node.typeName);
+  if (!symbol) return;
+
+  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  const decl = target.declarations?.[0];
+  return decl?.getSourceFile();
+}
+
+function relativeImportPath(from: string, to: string): string {
+  let rel = path.relative(path.dirname(from), to.replace(/\.ts?$/, ""));
+  rel = rel.replace(/\\/g, "/");
+  if (!rel.startsWith(".")) {
+    rel = "./" + rel;
+  }
+  return rel;
 }
 
 function filenameAndLine(node: ts.Node, sourceFile: ts.SourceFile): string {
