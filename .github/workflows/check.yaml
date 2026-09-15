@@ -22,12 +22,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build dev-tools
-        run: pnpm build:dev-tools
-
-      - name: Rebuild bin for dev-tools
-        run: pnpm rebuild @sw-file-lib/dev-tools
-
       - name: Check
         run: pnpm check
 
