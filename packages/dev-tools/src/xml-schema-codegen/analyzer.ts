@@ -1,56 +1,70 @@
 import path from "node:path";
 import consola from "consola";
-import * as ts from "typescript";
+import ts from "typescript";
+import type { GenerateOptions } from ".";
+import { analyzeJSDocComment } from "./comments";
 import { parseXmlSchemaMarker } from "./parse-marker";
+import {
+  type InputFileInfo,
+  type ObjectSchemaMemberInfo,
+  type SchemaDeclarationInfo,
+  type SchemaTypeInfo,
+} from "./types";
+import { filenameAndLine, relativeImportPath, SetMap } from "./utils";
 
-export interface FileAnalyzeContext {
+interface FileAnalyzeContext {
   checker: ts.TypeChecker;
   sourceFile: ts.SourceFile;
-  typeAliasImportMap: Map<string, Set<string>>;
-  schemaCodeEntries: string[];
-  immutableInterfaceCodeEntries: string[];
+  schemaImports: SetMap<string, string>;
 }
 
-export type IdentifierSchemaInfo = {
-  kind: "identifier";
-  name: string;
-  declaredFile?: string;
-};
+export function analyzeFile(
+  checker: ts.TypeChecker,
+  sourceFile: ts.SourceFile,
+  options: GenerateOptions,
+): InputFileInfo | undefined {
+  if (sourceFile.isDeclarationFile) return;
 
-export interface ObjectSchemaMemberInfo {
-  name: string;
-  type: SchemaTypeInfo;
-  optional: boolean;
+  const inputPath = options.input.find(
+    (i) => path.resolve(i) === path.resolve(sourceFile.fileName),
+  );
+  if (inputPath === undefined) return;
+
+  const stem = path.basename(inputPath, path.extname(inputPath));
+
+  const context: FileAnalyzeContext = {
+    checker,
+    sourceFile,
+    schemaImports: new SetMap(),
+  };
+
+  const schemas: SchemaDeclarationInfo[] = [];
+
+  function visit(node: ts.Node) {
+    if (ts.isInterfaceDeclaration(node)) {
+      const args = parseXmlSchemaMarker(node, sourceFile);
+      if (args) {
+        const info = analyzeInterfaceNode(node, args, context);
+        schemas.push(info);
+      }
+    }
+
+    ts.forEachChild(node, (child) => visit(child));
+  }
+
+  visit(sourceFile);
+
+  if (schemas.length === 0) return;
+
+  return {
+    path: inputPath,
+    name: stem,
+    schemas,
+    schemaImports: context.schemaImports,
+  };
 }
 
-export type ObjectSchemaInfo = {
-  kind: "object";
-  members: ObjectSchemaMemberInfo[];
-};
-
-export type ListSchemaInfo = {
-  kind: "list";
-  itemTag: string;
-  elementType: SchemaTypeInfo;
-};
-
-export type SchemaTypeInfo =
-  | { kind: "boolean" }
-  | { kind: "number" }
-  | { kind: "string" }
-  | { kind: "union"; types: SchemaTypeInfo[] }
-  | IdentifierSchemaInfo
-  | ObjectSchemaInfo
-  | ListSchemaInfo;
-
-export type ElementSchemaInfo = ObjectSchemaInfo;
-
-export interface SchemaDeclarationInfo {
-  name: string;
-  schema: ElementSchemaInfo;
-}
-
-export function analyzeInterfaceNode(
+function analyzeInterfaceNode(
   node: ts.InterfaceDeclaration,
   _args: string[],
   context: FileAnalyzeContext,
@@ -81,12 +95,15 @@ export function analyzeInterfaceNode(
     });
   }
 
+  const comments = analyzeJSDocComment(node, context.sourceFile);
+
   return {
     name,
     schema: {
       kind: "object",
       members,
     },
+    jsdoc: comments,
   };
 }
 
@@ -153,14 +170,11 @@ function analyzeTypeNode(
     }
     const sourceFileName = sourceFile !== context.sourceFile ? sourceFile?.fileName : undefined;
     if (sourceFileName) {
-      const relative = relativeImportPath(
+      const relativePath = relativeImportPath(
         path.resolve(context.sourceFile.fileName),
         path.resolve(sourceFileName),
       );
-      if (!context.typeAliasImportMap.has(relative)) {
-        context.typeAliasImportMap.set(relative, new Set());
-      }
-      context.typeAliasImportMap.get(relative)!.add(typeName);
+      context.schemaImports.add(relativePath, typeName);
     }
 
     return {
@@ -217,18 +231,4 @@ function getDefinitionSourceFile(
   const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
   const decl = target.declarations?.[0];
   return decl?.getSourceFile();
-}
-
-function relativeImportPath(from: string, to: string): string {
-  let rel = path.relative(path.dirname(from), to.replace(/\.ts?$/, ""));
-  rel = rel.replace(/\\/g, "/");
-  if (!rel.startsWith(".")) {
-    rel = "./" + rel;
-  }
-  return rel;
-}
-
-function filenameAndLine(node: ts.Node, sourceFile: ts.SourceFile): string {
-  const { line } = sourceFile.getLineAndCharacterOfPosition(node.pos);
-  return `${sourceFile.fileName}:${line + 1}`;
 }

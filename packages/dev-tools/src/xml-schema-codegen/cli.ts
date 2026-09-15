@@ -65,7 +65,7 @@ program
       await fs.mkdir(outDir, { recursive: true });
 
       for (const file of result) {
-        const outputPath = resolve(generateOptions.outDir, file.name);
+        const outputPath = file.path;
         await fs.writeFile(outputPath, file.content, "utf-8");
         consola.info(`Generated ${outputPath}`);
       }

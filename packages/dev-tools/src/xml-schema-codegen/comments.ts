@@ -1,20 +1,21 @@
-import * as ts from "typescript";
-import type { SchemaDeclarationInfo } from "./analyzer";
+import ts from "typescript";
+import type {
+  FileKind,
+  JSDocInfo,
+  JSDocParagraph,
+  OutputFileKind,
+  SchemaDeclarationInfo,
+} from "./types";
+import { relativeImportPath, SetMap } from "./utils";
 
 function getJSDoc(node: ts.Node): ts.JSDoc[] | undefined {
   return (node as any).jsDoc as ts.JSDoc[] | undefined;
 }
 
-export interface JSDocParagraph {
-  text: string;
-  links?: (ts.JSDocLink | ts.JSDocLinkCode | ts.JSDocLinkPlain)[];
-}
-
-export interface JSDocInfo {
-  paragraphs: JSDocParagraph[];
-}
-
-export function analyzeComment(node: ts.Node, sourceFile: ts.SourceFile): JSDocInfo[] | undefined {
+export function analyzeJSDocComment(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+): JSDocInfo[] | undefined {
   const jsDoc = getJSDoc(node);
   if (!jsDoc || jsDoc.length === 0) return;
 
@@ -33,11 +34,12 @@ export function analyzeComment(node: ts.Node, sourceFile: ts.SourceFile): JSDocI
         if (!currentParagraph) {
           currentParagraph = { text: "" };
         }
-        if (item.name) {
-          currentParagraph.text += `{@link ${item.name.getFullText(sourceFile)}}`;
-        }
         currentParagraph.links ??= [];
-        currentParagraph.links.push(item);
+        if (item.name) {
+          const text = item.name.getFullText(sourceFile);
+          currentParagraph.text += `{@link ${text}}`;
+          currentParagraph.links.push(text);
+        }
       }
 
       const textArr = item.text.split("\n\n");
@@ -60,57 +62,51 @@ export function analyzeComment(node: ts.Node, sourceFile: ts.SourceFile): JSDocI
   });
 }
 
-export type JSDocTarget = "schema" | "mutable" | "immutable";
-
 export function convertJSDocComment(
   schemaInfo: SchemaDeclarationInfo,
-  jsDocInfo: JSDocInfo[],
-  sourceFile: ts.SourceFile,
+  imports: SetMap<string, string>,
   options: {
-    target: JSDocTarget;
-    see?: JSDocTarget[];
+    outputFilePath: string;
+    target: OutputFileKind;
+    see?: [FileKind, string][];
   },
-): string[] {
+): string[] | undefined {
   const target = options.target;
   const see = options.see && options.see.length > 0 ? options.see : undefined;
 
-  const schemaName = `${schemaInfo.name}Schema`;
-  const immutableName = `${schemaInfo.name}Immutable`;
+  const identifiers = {
+    schema: `${schemaInfo.name}Schema`,
+    mutableInterface: schemaInfo.name,
+    immutableInterface: `${schemaInfo.name}Immutable`,
+  };
 
-  return jsDocInfo.map((doc) => {
+  return schemaInfo.jsdoc?.map((doc) => {
     const paragraphs: string[] = [];
 
     for (const p of doc.paragraphs) {
-      if (p.links?.some((l) => l.name?.getText(sourceFile) === immutableName)) {
+      // Immutable への @link を含む段落はスキップ
+      if (p.links?.some((l) => l === identifiers.immutableInterface)) {
         continue;
       }
       paragraphs.push(p.text);
     }
 
     switch (target) {
-      case "mutable":
-        throw new Error("Unimplemented");
-      case "immutable":
+      case "immutableInterface":
         paragraphs.push(`This is the recommended type for function parameters when it does not need to modify the value.
-Use {@link ${schemaInfo.name}} instead if mutation is required.`);
+Use {@link ${identifiers.mutableInterface}} instead if mutation is required.`);
         break;
     }
 
     if (see) {
-      paragraphs.push(
-        see
-          .map((t) => {
-            switch (t) {
-              case "schema":
-                return `@see {@link ${schemaName}}`;
-              case "mutable":
-                return `@see {@link ${schemaInfo.name}}`;
-              case "immutable":
-                return `@see {@link ${immutableName}}`;
-            }
-          })
-          .join("\n"),
-      );
+      let lines: string[] = [];
+      for (const [kind, path] of see) {
+        const symbol = identifiers[kind];
+        const relativePath = relativeImportPath(options.outputFilePath, path);
+        imports.add(relativePath, symbol);
+        lines.push(`@see {@link ${symbol}}`);
+      }
+      paragraphs.push(lines.join("\n"));
     }
 
     const lines = paragraphs.flatMap((p) => p.split("\n").concat(""));
