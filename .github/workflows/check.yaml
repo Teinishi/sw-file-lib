@@ -25,10 +25,8 @@ jobs:
       - name: Build dev-tools
         run: pnpm build:dev-tools
 
-      - name: Debug 1
-        run: pnpm exec which xml-schema-codegen
-      - name: Debug 2
-        run: ls -R packages/dev-tools/dist
+      - name: Rebuild bin for dev-tools
+        run: pnpm rebuild @sw-file-lib/dev-tools
 
       - name: Check
         run: pnpm check
