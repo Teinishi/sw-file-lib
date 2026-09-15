@@ -19,10 +19,19 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - run: pnpm i --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - run: pnpm build:dev-tools
+      - name: Build dev-tools
+        run: pnpm build:dev-tools
 
-      - run: pnpm check
+      - name: Debug 1
+        run: pnpm exec which xml-schema-codegen
+      - name: Debug 2
+        run: ls -R packages/dev-tools/dist
 
-      - run: pnpm build
+      - name: Check
+        run: pnpm check
+
+      - name: Build
+        run: pnpm build
