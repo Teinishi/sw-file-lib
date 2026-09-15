@@ -48,11 +48,8 @@ export class ListSchema<
     public readonly itemSchema: S,
   ) {}
 
-  static create<S extends ElementSchema<any>, T extends any[] = Infer<S>[]>(
-    itemTag: string,
-    itemSchema: S,
-  ) {
-    return new ListSchema<S, T>(itemTag, itemSchema);
+  static create<S extends ElementSchema<any>>(itemTag: string, itemSchema: S) {
+    return new ListSchema<S, Infer<S>[]>(itemTag, itemSchema);
   }
 
   safeParseValue(
@@ -191,6 +188,13 @@ export class ObjectListSchema<
   T1 extends object = InferShape<S1>,
   T2 extends any[] = Infer<S2>[],
 > extends ListSchema<S2, T2> {
+  static createWithObjectSchema<S1 extends Shape, S2 extends ObjectSchema<S1, InferShape<S1>>>(
+    itemTag: string,
+    itemSchema: S2,
+  ) {
+    return new ObjectListSchema<S1, S2, InferShape<S1>, Infer<S2>[]>(itemTag, itemSchema);
+  }
+
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
    *
@@ -233,7 +237,7 @@ export function list<T extends ElementSchema<any>>(
 ): T extends ObjectSchema<any> ? ObjectListSchema<ObjectShape<T>, T> : ListSchema<T> {
   let s;
   if (itemSchema instanceof ObjectSchema) {
-    s = ObjectListSchema.create(itemTag, itemSchema);
+    s = ObjectListSchema.createWithObjectSchema(itemTag, itemSchema);
   } else {
     s = ListSchema.create(itemTag, itemSchema);
   }

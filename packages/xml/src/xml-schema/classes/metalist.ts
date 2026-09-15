@@ -18,6 +18,8 @@ import {
   type SchemaParseFieldResult,
   SchemaSerializeError,
   type Immutable,
+  type OmitObjectSchema,
+  type ExtendObjectSchema,
 } from "..";
 import { isStringKeyRecord } from "../../internal";
 import { SwXmlNode, SwXmlNodeList } from "../../parser";
@@ -284,10 +286,20 @@ export class MetalistSchema<
 /**
  * A metalist schema whose item schema is an object schema.
  */
-export class ObjectMetalistSchema<M extends Shape, I extends Shape> extends MetalistSchema<
-  M,
-  ObjectSchema<I>
-> {
+export class ObjectMetalistSchema<
+  M extends Shape,
+  IS1 extends Shape,
+  IS2 extends ObjectSchema<IS1, IT>,
+  IT extends object = InferShape<IS1>,
+> extends MetalistSchema<M, IS2> {
+  static createWithObjectSchema<
+    M extends Shape,
+    IS1 extends Shape,
+    IS2 extends ObjectSchema<IS1, InferShape<IS1>>,
+  >(itemTag: string, metaShape: M, itemSchema: IS2) {
+    return new ObjectMetalistSchema<M, IS1, IS2, InferShape<IS1>>(itemTag, metaShape, itemSchema);
+  }
+
   /**
    * Returns a new list schema by adding new fields or overwriting existing fields to the item schema.
    *
@@ -304,15 +316,17 @@ export class ObjectMetalistSchema<M extends Shape, I extends Shape> extends Meta
    * ```
    */
   extendItem<U extends Shape>(
-    shape: U | ((s: I) => U),
-  ): ObjectMetalistSchema<M, ExtendShape<I, U>> {
+    shape: U | ((s: IS1) => U),
+  ): ObjectMetalistSchema<M, ExtendShape<IS1, U>, ExtendObjectSchema<IS1, U>> {
     return new ObjectMetalistSchema(this.itemTag, this.metaShape, this.itemSchema.extend(shape));
   }
 
   /**
    * Returns a new list schema with specified keys are omitted from the item schema.
    */
-  omitItem<U extends keyof I>(keys: U[]): ObjectMetalistSchema<M, Omit<I, U>> {
+  omitItem<U extends keyof IS1>(
+    keys: U[],
+  ): ObjectMetalistSchema<M, Omit<IS1, U>, OmitObjectSchema<IS1, U>> {
     return new ObjectMetalistSchema(this.itemTag, this.metaShape, this.itemSchema.omit(keys));
   }
 }
@@ -327,14 +341,14 @@ export function metalist<M extends Shape, I extends ElementSchema<any>>(
   itemTag: string,
   metaSchema: ObjectSchema<M>,
   itemSchema: I,
-): I extends ObjectSchema<any> ? ObjectMetalistSchema<M, ObjectShape<I>> : MetalistSchema<M, I> {
+): I extends ObjectSchema<any> ? ObjectMetalistSchema<M, ObjectShape<I>, I> : MetalistSchema<M, I> {
   let s;
   if (itemSchema instanceof ObjectSchema) {
-    s = ObjectMetalistSchema.create(itemTag, metaSchema.shape, itemSchema);
+    s = ObjectMetalistSchema.createWithObjectSchema(itemTag, metaSchema.shape, itemSchema);
   } else {
-    s = MetalistSchema.create(itemTag, metaSchema.shape, itemSchema);
+    s = MetalistSchema.create(itemTag, metaSchema.shape, itemSchema) satisfies MetalistSchema<M, I>;
   }
   return s as I extends ObjectSchema<any>
-    ? ObjectMetalistSchema<M, ObjectShape<I>>
+    ? ObjectMetalistSchema<M, ObjectShape<I>, I>
     : MetalistSchema<M, I>;
 }
