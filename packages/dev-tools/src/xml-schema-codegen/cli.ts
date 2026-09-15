@@ -5,8 +5,9 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { consola } from "consola";
+import { loadOxfmtConfig } from "load-oxfmt-config";
 import { version } from "../../package.json";
-import { generate, type GenerateOptions } from "./index";
+import { generateFormatted, type GenerateOptions } from "./index";
 
 async function loadConfig(path: string) {
   const url = pathToFileURL(resolve(path)).href;
@@ -56,9 +57,12 @@ program
     };
 
     try {
+      const formatConfig = await loadOxfmtConfig({ cwd: process.cwd() });
+      consola.info(`Loaded oxfmt config from ${formatConfig.filepath}`);
+
       consola.start("Generating XML schema code...");
 
-      const result = generate(generateOptions);
+      const result = await generateFormatted(generateOptions, formatConfig.config);
 
       const outDir = resolve(generateOptions.outDir);
       await fs.rm(outDir, { recursive: true, force: true });

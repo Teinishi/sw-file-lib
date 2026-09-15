@@ -87,7 +87,13 @@ importers:
       consola:
         specifier: ^3.4.2
         version: 3.4.2
+      load-oxfmt-config:
+        specifier: ^0.23.0
+        version: 0.23.0(oxfmt@0.61.0)
     devDependencies:
+      oxfmt:
+        specifier: ^0.61.0
+        version: 0.61.0
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -420,6 +426,13 @@ packages:
 
   '@nodable/entities@3.0.0':
     resolution: {integrity: sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw==}
+
+  '@ntnyq/utils@0.22.0':
+    resolution: {integrity: sha512-HI88N7b2ET1B6B73JpjR0qovRnGq1HEfZaVx2IKPeTjAuBFg5KmXHY8B95Xa8ZnHep7oMI0x5gFn2mkC6/8dVw==}
+    engines: {node: ^22.19.0 || >=24.11.0}
+
+  '@one-ini/wasm@0.2.1':
+    resolution: {integrity: sha512-TUqERXGNTifZ9y2g3wPxQrw3HpHv/02DsW3D90T9x0hhonrL1ZqpSmNrU2XkoIq0fP1N6gZfVQzy2Fw1ZvGBNg==}
 
   '@oxc-project/types@0.140.0':
     resolution: {integrity: sha512-h5LUOzGArYemnW1NMz/DuuQhBi96J6JL2Bk8zE4kvqxB5Sg3jxmCiH4uyOWHDkiKSt5vWlG4FIwCR/DbstcNRQ==}
@@ -1297,6 +1310,10 @@ packages:
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
 
+  commander@14.0.3:
+    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
+    engines: {node: '>=20'}
+
   commander@15.0.0:
     resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
     engines: {node: '>=22.12.0'}
@@ -1336,6 +1353,11 @@ packages:
 
   earcut@3.2.3:
     resolution: {integrity: sha512-vnS4AVwp1KHAF13i1vp1/2D5evWy3k5u/iW/B81QVsUZtV8cv2tU0b2VNFlqvh4kYwrFMDdjPCfAmfyJW9y14Q==}
+
+  editorconfig@3.0.2:
+    resolution: {integrity: sha512-T0ix8GhtxyKVfUFEcvdNDt3YGqlwkFHbD4/5bgFUDgFmxhI/cSRAeJ87/Sz//Cq8Eam6JX/e23RkoFO71P7aAA==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   empathic@2.0.1:
     resolution: {integrity: sha512-YGRs8knHhKHVShLkFET/rWAU8kmHbOV5LwN938RHI0pljAJ1Gf6SzXsSmRaEzcXTtOOmVqJ5+WtQPL5uigY50Q==}
@@ -1412,6 +1434,10 @@ packages:
 
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
+
+  ignore@7.0.9:
+    resolution: {integrity: sha512-brTTsvFRt5C1gGHtPst/281UjPD5t9fBqbgoMPlVWy11ZLTPfu7HxK4ZYqO9H7o/yC9rSTCI85EaQ4OoY12qYw==}
+    engines: {node: '>= 4'}
 
   import-meta-resolve@4.2.0:
     resolution: {integrity: sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg==}
@@ -1506,6 +1532,12 @@ packages:
 
   linkify-it@5.0.2:
     resolution: {integrity: sha512-ONTm2jCMAVZjgQa/Fy1kScXsuOoF5NPTsoFBdE1KVIZ2vAh/r9+Bqo+0jINCBYnavTPQZz38QzFTme79ENoN3Q==}
+
+  load-oxfmt-config@0.23.0:
+    resolution: {integrity: sha512-sszXKjJCVxswSNsN5+Wgfko3pQ3b404tzXQ2wLQEoV9NExJgnBjkrPWMAu8qjbbtdAB+2AfZzKdJuN9nCbPwPg==}
+    engines: {node: ^22.13.0 || >=24}
+    peerDependencies:
+      oxfmt: '>=0.67.0'
 
   lunr@2.3.9:
     resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
@@ -2204,6 +2236,10 @@ snapshots:
 
   '@nodable/entities@3.0.0': {}
 
+  '@ntnyq/utils@0.22.0': {}
+
+  '@one-ini/wasm@0.2.1': {}
+
   '@oxc-project/types@0.140.0': {}
 
   '@oxc-project/types@0.144.0': {}
@@ -2816,6 +2852,8 @@ snapshots:
 
   comma-separated-tokens@2.0.3: {}
 
+  commander@14.0.3: {}
+
   commander@15.0.0: {}
 
   consola@3.4.2: {}
@@ -2837,6 +2875,13 @@ snapshots:
   dts-resolver@3.0.0: {}
 
   earcut@3.2.3: {}
+
+  editorconfig@3.0.2:
+    dependencies:
+      '@one-ini/wasm': 0.2.1
+      commander: 14.0.3
+      minimatch: 10.2.6
+      semver: 7.8.5
 
   empathic@2.0.1: {}
 
@@ -2939,6 +2984,8 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
+  ignore@7.0.9: {}
+
   import-meta-resolve@4.2.0: {}
 
   import-without-cache@0.4.0: {}
@@ -3001,6 +3048,15 @@ snapshots:
   linkify-it@5.0.2:
     dependencies:
       uc.micro: 2.1.0
+
+  load-oxfmt-config@0.23.0(oxfmt@0.61.0):
+    dependencies:
+      '@ntnyq/utils': 0.22.0
+      editorconfig: 3.0.2
+      ignore: 7.0.9
+      jiti: 2.7.0
+      jsonc-parser: 3.3.1
+      oxfmt: 0.61.0
 
   lunr@2.3.9: {}
 

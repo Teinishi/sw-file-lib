@@ -1,3 +1,4 @@
+import { format, type FormatConfig } from "oxfmt";
 import ts from "typescript";
 import { analyzeFile } from "./analyzer";
 import {
@@ -68,4 +69,18 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
   }
 
   return outFiles;
+}
+
+export async function generateFormatted(
+  options: GenerateOptions,
+  formatConfig?: FormatConfig | undefined,
+): Promise<GeneratedFile[]> {
+  const outFiles = generate(options);
+
+  return Promise.all(
+    outFiles.map(async (file) => ({
+      path: file.path,
+      content: (await format(file.path, file.content, formatConfig)).code,
+    })),
+  );
 }
