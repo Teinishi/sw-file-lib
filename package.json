@@ -30,7 +30,7 @@
     "fmt:check": "oxfmt --check",
     "codegen": "xml-schema-codegen --config xml-schema.config.ts",
     "codegen:check": "pnpm codegen --check",
-    "check": "pnpm build:dev-tools && pnpm codegen:check && pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
+    "check": "pnpm codegen:check && pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
     "release": "bumpp --recursive",
     "prepublishOnly": "pnpm run build",
     "typedoc": "typedoc",
