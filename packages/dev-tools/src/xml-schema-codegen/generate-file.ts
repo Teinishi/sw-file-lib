@@ -30,12 +30,9 @@ export function generateSchemaFile(
     .map(
       (s) =>
         convertJSDocComment(s, commentImports, {
-          outputFilePath: filePaths.schema,
+          filePaths,
           target: "schema",
-          see: [
-            ["mutableInterface", filePaths.mutableInterface],
-            ["immutableInterface", filePaths.immutableInterface],
-          ],
+          see: ["mutableInterface", "immutableInterface"],
         }) +
         "\n" +
         generateSchemaCode(s) +
@@ -69,12 +66,9 @@ export function generateImmutableInterfaceFile(
     .map(
       (s) =>
         convertJSDocComment(s, commentImports, {
-          outputFilePath: filePaths.immutableInterface,
+          filePaths,
           target: "immutableInterface",
-          see: [
-            ["schema", filePaths.schema],
-            ["mutableInterface", filePaths.mutableInterface],
-          ],
+          see: ["schema", "mutableInterface"],
         }) +
         "\n" +
         generateImmutableInterfaceCode(s) +

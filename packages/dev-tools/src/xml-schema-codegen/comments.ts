@@ -1,6 +1,7 @@
 import ts from "typescript";
 import type {
   FileKind,
+  FilePaths,
   JSDocInfo,
   JSDocParagraph,
   OutputFileKind,
@@ -66,11 +67,12 @@ export function convertJSDocComment(
   schemaInfo: SchemaDeclarationInfo,
   imports: SetMap<string, string>,
   options: {
-    outputFilePath: string;
+    filePaths: FilePaths;
     target: OutputFileKind;
-    see?: [FileKind, string][];
+    see?: FileKind[];
   },
 ): string[] | undefined {
+  const outputFilePath = options.filePaths[options.target];
   const target = options.target;
   const see = options.see && options.see.length > 0 ? options.see : undefined;
 
@@ -88,6 +90,21 @@ export function convertJSDocComment(
       if (p.links?.some((l) => l === identifiers.immutableInterface)) {
         continue;
       }
+
+      // "Parent: {@link ...}" は @link を書き換え
+      if (p.text.startsWith("Parent: ")) {
+        const text = p.text.replaceAll(/\{@link ([^}]+)\}/g, (_, symbol: string) => {
+          switch (target) {
+            case "schema":
+              return `{@link ${symbol}Schema}`;
+            case "immutableInterface":
+              return `{@link ${symbol}Immutable}`;
+          }
+        });
+        paragraphs.push(text);
+        continue;
+      }
+
       paragraphs.push(p.text);
     }
 
@@ -100,9 +117,9 @@ Use {@link ${identifiers.mutableInterface}} instead if mutation is required.`);
 
     if (see) {
       let lines: string[] = [];
-      for (const [kind, path] of see) {
+      for (const kind of see) {
         const symbol = identifiers[kind];
-        const relativePath = relativeImportPath(options.outputFilePath, path);
+        const relativePath = relativeImportPath(outputFilePath, options.filePaths[kind]);
         imports.add(relativePath, symbol);
         lines.push(`@see {@link ${symbol}}`);
       }
