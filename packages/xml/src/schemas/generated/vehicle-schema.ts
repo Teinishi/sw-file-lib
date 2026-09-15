@@ -87,7 +87,7 @@ export const ColExtraSchema = x.metalist(
     size: x.number().optional(),
   }),
   x.object({
-    value: XmlRgbSchema,
+    value: XmlRgbSchema.optional(),
   }),
 );
 

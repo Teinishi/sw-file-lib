@@ -89,7 +89,7 @@ export interface ColExtraImmutable {
     readonly size?: number;
   };
   readonly items: readonly {
-    readonly value: XmlRgbImmutable;
+    readonly value?: XmlRgbImmutable;
   }[];
 }
 

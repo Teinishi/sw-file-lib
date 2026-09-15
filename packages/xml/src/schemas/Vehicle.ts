@@ -67,7 +67,7 @@ export interface ColExtra {
     size?: number;
   };
   items: {
-    value: XmlRgb;
+    value?: XmlRgb;
   }[];
 }
 
