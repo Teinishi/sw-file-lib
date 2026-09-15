@@ -6,6 +6,9 @@
   "keywords": [],
   "license": "MIT",
   "author": "Teinishi",
+  "bin": {
+    "xml-schema-codegen": "./dist/xml-schema-codegen/cli.mjs"
+  },
   "files": [
     "dist"
   ],
@@ -15,9 +18,6 @@
       "types": "./dist/xml-schema-codegen/index.d.mts",
       "import": "./dist/xml-schema-codegen/index.mjs"
     }
-  },
-  "bin": {
-    "xml-schema-codegen": "./dist/xml-schema-codegen/cli.mjs"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

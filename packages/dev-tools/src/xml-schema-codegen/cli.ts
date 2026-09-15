@@ -7,7 +7,7 @@ import { Command } from "commander";
 import { consola } from "consola";
 import { loadOxfmtConfig } from "load-oxfmt-config";
 import { version } from "../../package.json";
-import { generateFormatted, type GenerateOptions } from "./index";
+import { generateFormatted, type GeneratedFile, type GenerateOptions } from "./index";
 
 async function loadConfig(path: string) {
   const url = pathToFileURL(resolve(path)).href;
@@ -53,8 +53,9 @@ program
       outDir,
       tsconfig,
       ...(xImportStatement ? { xImportStatement } : {}),
-      ...(check ? { check } : {}),
     };
+
+    let result: GeneratedFile[];
 
     try {
       const formatConfig = await loadOxfmtConfig({ cwd: process.cwd() });
@@ -62,11 +63,45 @@ program
 
       consola.start("Generating XML schema code...");
 
-      const result = await generateFormatted(generateOptions, formatConfig.config);
+      result = await generateFormatted(generateOptions, formatConfig.config);
+    } catch (error) {
+      consola.error("XML Schema code generation failed.");
+      console.error(error);
+      process.exit(1);
+    }
 
-      const outDir = resolve(generateOptions.outDir);
-      await fs.rm(outDir, { recursive: true, force: true });
-      await fs.mkdir(outDir, { recursive: true });
+    const resolvedOutDir = resolve(generateOptions.outDir);
+
+    if (check) {
+      const errors: string[] = [];
+
+      for (const file of result) {
+        const outputPath = file.path;
+        let existingContent: string | null = null;
+
+        try {
+          existingContent = await fs.readFile(outputPath, "utf-8");
+        } catch (err) {
+          errors.push(`Error reading file: ${outputPath} - ${(err as Error).message}`);
+          continue;
+        }
+
+        if (existingContent !== file.content) {
+          errors.push(`File differs: ${outputPath}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        for (const error of errors) {
+          consola.error(error);
+        }
+        process.exit(1);
+      } else {
+        consola.success("All generated files are up to date.");
+      }
+    } else {
+      await fs.rm(resolvedOutDir, { recursive: true, force: true });
+      await fs.mkdir(resolvedOutDir, { recursive: true });
 
       for (const file of result) {
         const outputPath = file.path;
@@ -75,10 +110,6 @@ program
       }
 
       consola.success("XML Schema code generation completed successfully.");
-    } catch (error) {
-      consola.error("XML Schema code generation failed.");
-      console.error(error);
-      process.exit(1);
     }
   });
 

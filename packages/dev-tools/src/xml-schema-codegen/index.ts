@@ -24,7 +24,6 @@ export interface GenerateOptions {
   outDir: string;
   tsconfig: string;
   xImportStatement?: string;
-  check?: boolean;
 }
 
 export type GeneratedFile = {
