@@ -1,12 +1,12 @@
 import type { StrictOmit } from "ts-essentials";
 import { maxVec3, minVec3, vec3 } from "@sw-file-lib/core/math";
-import type { SwVec3 } from "../../src";
-import type { ComponentDefinition, Surface, Voxel } from "../../src/schemas/ComponentDefinition";
+import type { XmlVec3 } from "../../src";
+import type { ComponentDefinition, Surface, Voxel } from "../../src/schemas/component-definition";
 
 function forVoxels(
-  from: Readonly<SwVec3>,
-  to: Readonly<SwVec3>,
-  callback: (position: Readonly<SwVec3>) => void,
+  from: Readonly<XmlVec3>,
+  to: Readonly<XmlVec3>,
+  callback: (position: Readonly<XmlVec3>) => void,
 ) {
   const a = vec3(from);
   const b = vec3(to);
@@ -24,9 +24,9 @@ function forVoxels(
 }
 
 function forCuboidSurfaces(
-  from: Readonly<SwVec3>,
-  to: Readonly<SwVec3>,
-  callback: (from: Readonly<SwVec3>, to: Readonly<SwVec3>, orientation: number) => void,
+  from: Readonly<XmlVec3>,
+  to: Readonly<XmlVec3>,
+  callback: (from: Readonly<XmlVec3>, to: Readonly<XmlVec3>, orientation: number) => void,
 ) {
   const a = vec3(from);
   const b = vec3(to);
@@ -41,8 +41,8 @@ function forCuboidSurfaces(
 }
 
 export function createCuboidSurfaces(
-  from: Readonly<SwVec3>,
-  to: Readonly<SwVec3>,
+  from: Readonly<XmlVec3>,
+  to: Readonly<XmlVec3>,
   orientations: number[],
   options?: Readonly<StrictOmit<Surface, "position" | "orientation">>,
 ): Surface[] {
@@ -59,8 +59,8 @@ export function createCuboidSurfaces(
 }
 
 export function createVoxels(
-  from: Readonly<SwVec3>,
-  to: Readonly<SwVec3>,
+  from: Readonly<XmlVec3>,
+  to: Readonly<XmlVec3>,
   options?: Readonly<StrictOmit<Voxel, "position">>,
 ): Voxel[] {
   const voxels: Voxel[] = [];

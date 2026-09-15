@@ -5,32 +5,30 @@ import {
   ComponentDefinitionSchema,
   type ComponentDefinition,
   type ComponentDefinitionImmutable,
-} from "./ComponentDefinition";
+} from "./component-definition";
 import {
   MicrocontrollerSchema,
   type Microcontroller,
   type MicrocontrollerImmutable,
-} from "./Microcontroller";
-import { VehicleSchema, type Vehicle, type VehicleImmutable } from "./Vehicle";
+} from "./microcontroller";
+import { VehicleSchema, type Vehicle, type VehicleImmutable } from "./vehicle";
 
 export * from "./common";
+export * as ComponentDefinitionSchemas from "./component-definition";
+export * as MicrocontrollerSchemas from "./microcontroller";
+export * as VehicleSchemas from "./vehicle";
 
 export {
   ComponentDefinitionSchema,
   type ComponentDefinition,
   type ComponentDefinitionImmutable,
-} from "./ComponentDefinition";
-export * as ComponentDefinitionSchemas from "./ComponentDefinition";
-
-export {
   MicrocontrollerSchema,
   type Microcontroller,
   type MicrocontrollerImmutable,
-} from "./Microcontroller";
-export * as MicrocontrollerSchemas from "./Microcontroller";
-
-export { VehicleSchema, type Vehicle, type VehicleImmutable } from "./Vehicle";
-export * as VehicleSchemas from "./Vehicle";
+  VehicleSchema,
+  type Vehicle,
+  type VehicleImmutable,
+};
 
 export { SchemaError, SchemaSerializeError } from "../xml-schema";
 

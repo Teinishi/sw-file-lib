@@ -1,30 +1,10 @@
-/**
- * Schemas and types for Stormworks vehicle XML data.
- *
- * The schema and types for root `<vehicle>` element are re-exported at `'@sw-file-lib/xml'`, see {@link VehicleSchema}, {@link Vehicle}, and {@link VehicleImmutable}.
- *
- * @packageDocumentation
- */
+import type { XmlRgb, XmlVec3 } from "./common";
+import type { Microcontroller, TextValuePair } from "./microcontroller";
 
-import * as x from "../xml-schema";
-import { SwRgbSchema, SwVec3Schema } from "./common";
-import { MicrocontrollerSchema, TextValuePairSchema } from "./Microcontroller";
+export * from "./generated/vehicle-schema";
+export * from "./generated/vehicle-immutable";
 
-/**
- * Represents `<author>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <authors> / <author>`
- *
- * Parent: {@link VehicleSchema}
- *
- * @see {@link Author}
- * @see {@link AuthorImmutable}
- */
-export const AuthorSchema = x.partialObject({
-  steam_id: x.number(),
-  username: x.string(),
-});
-
+// @xml-schema
 /**
  * Represents `<author>` element in Stormworks vehicle data.
  *
@@ -40,41 +20,12 @@ export const AuthorSchema = x.partialObject({
  * @see {@link AuthorSchema}
  * @see {@link AuthorImmutable}
  */
-export interface Author extends x.Infer<typeof AuthorSchema> {}
+export interface Author {
+  steam_id?: number;
+  username?: string;
+}
 
-/**
- * Represents `<author>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <authors> / <author>`
- *
- * Parent: {@link VehicleImmutable}
- *
- * Inferred from {@link AuthorSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link Author} instead
- * if mutation is required.
- *
- * @see {@link AuthorSchema}
- * @see {@link Author}
- */
-export interface AuthorImmutable extends x.InferImmutable<typeof AuthorSchema> {}
-
-/**
- * Represents `<slot>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <logic_slots> / <slot>`
- *
- * Parent: {@link ComponentOSchema}
- *
- * @see {@link LogicSlot}
- * @see {@link LogicSlotImmutable}
- */
-export const LogicSlotSchema = x.partialObject({
-  editor_connected: x.number(),
-  value: x.union([x.boolean(), x.number(), x.object({})]),
-});
-
+// @xml-schema
 /**
  * Represents `<slot>` element in Stormworks vehicle data.
  *
@@ -90,46 +41,12 @@ export const LogicSlotSchema = x.partialObject({
  * @see {@link LogicSlotSchema}
  * @see {@link LogicSlotImmutable}
  */
-export interface LogicSlot extends x.Infer<typeof LogicSlotSchema> {}
+export interface LogicSlot {
+  editor_connected?: number;
+  value?: boolean | number | {};
+}
 
-/**
- * Represents `<slot>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <logic_slots> / <slot>`
- *
- * Parent: {@link ComponentOImmutable}
- *
- * Inferred from {@link LogicSlotSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link LogicSlot} instead
- * if mutation is required.
- *
- * @see {@link LogicSlotSchema}
- * @see {@link LogicSlot}
- */
-export interface LogicSlotImmutable extends x.InferImmutable<typeof LogicSlotSchema> {}
-
-/**
- * Represents `<col_extra>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
- *
- * Parent: {@link DisplaySchema}
- *
- * @see {@link ColExtra}
- * @see {@link ColExtraImmutable}
- */
-export const ColExtraSchema = x.metalist(
-  "c",
-  x.partialObject({
-    size: x.number(),
-  }),
-  x.partialObject({
-    value: SwRgbSchema,
-  }),
-);
-
+// @xml-schema metalist "c"
 /**
  * Represents `<col_extra>` element in Stormworks vehicle data.
  *
@@ -145,49 +62,16 @@ export const ColExtraSchema = x.metalist(
  * @see {@link ColExtraSchema}
  * @see {@link ColExtraImmutable}
  */
-export interface ColExtra extends x.Infer<typeof ColExtraSchema> {}
+export interface ColExtra {
+  meta: {
+    size?: number;
+  };
+  items: {
+    value: XmlRgb;
+  }[];
+}
 
-/**
- * Represents `<col_extra>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
- *
- * Parent: {@link DisplayImmutable}
- *
- * Inferred from {@link ColExtraSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link ColExtra} instead
- * if mutation is required.
- *
- * @see {@link ColExtraSchema}
- * @see {@link ColExtra}
- */
-export interface ColExtraImmutable extends x.InferImmutable<typeof ColExtraSchema> {}
-
-/**
- * Represents `<display_1>`, `<display_2>`, `<display_3>`, or `<display_4>` in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
- *
- * Parent: {@link ComponentOSchema}
- *
- * @see {@link Display}
- * @see {@link DisplayImmutable}
- */
-export const DisplaySchema = x.partialObject({
-  type: x.number(),
-  name: x.string(),
-  channel: x.number(),
-  mode: x.number(),
-  mode2: x.number(),
-  rot: x.number(),
-  col: SwRgbSchema,
-  min: TextValuePairSchema,
-  max: TextValuePairSchema,
-  col_extra: ColExtraSchema,
-});
-
+// @xml-schema
 /**
  * Represents `<display_1>`, `<display_2>`, `<display_3>`, or `<display_4>` element in Stormworks vehicle data.
  *
@@ -203,43 +87,20 @@ export const DisplaySchema = x.partialObject({
  * @see {@link DisplaySchema}
  * @see {@link DisplayImmutable}
  */
-export interface Display extends x.Infer<typeof DisplaySchema> {}
+export interface Display {
+  type?: number;
+  name?: string;
+  channel?: number;
+  mode?: number;
+  mode2?: number;
+  rot?: number;
+  col?: XmlRgb;
+  min?: TextValuePair;
+  max?: TextValuePair;
+  col_extra?: ColExtra;
+}
 
-/**
- * Represents `<display_1>`, `<display_2>`, `<display_3>`, or `<display_4>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
- *
- * Parent: {@link ComponentOImmutable}
- *
- * Inferred from {@link DisplaySchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link Display} instead
- * if mutation is required.
- *
- * @see {@link DisplaySchema}
- * @see {@link Display}
- */
-export interface DisplayImmutable extends x.InferImmutable<typeof DisplaySchema> {}
-
-/**
- * Represents `<axis_sensitivity>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <axis_sensitivity>`
- *
- * Parent: {@link ComponentOSchema}
- *
- * @see {@link AxisSensitivity}
- * @see {@link AxisSensitivityImmutable}
- */
-export const AxisSensitivitySchema = x.partialObject({
-  x: x.number(),
-  y: x.number(),
-  z: x.number(),
-  w: x.number(),
-});
-
+// @xml-schema
 /**
  * Represents `<axis_sensitivity>` element in Stormworks vehicle data.
  *
@@ -255,162 +116,14 @@ export const AxisSensitivitySchema = x.partialObject({
  * @see {@link AxisSensitivitySchema}
  * @see {@link AxisSensitivityImmutable}
  */
-export interface AxisSensitivity extends x.Infer<typeof AxisSensitivitySchema> {}
+export interface AxisSensitivity {
+  x?: number;
+  y?: number;
+  z?: number;
+  w?: number;
+}
 
-/**
- * Represents `<axis_sensitivity>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <axis_sensitivity>`
- *
- * Parent: {@link ComponentOImmutable}
- *
- * Inferred from {@link AxisSensitivitySchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link AxisSensitivity} instead
- * if mutation is required.
- *
- * @see {@link AxisSensitivitySchema}
- * @see {@link AxisSensitivity}
- */
-export interface AxisSensitivityImmutable extends x.InferImmutable<typeof AxisSensitivitySchema> {}
-
-/**
- * Represents `<o>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
- *
- * Parent: {@link ComponentSchema}
- *
- * @see {@link ComponentO}
- * @see {@link ComponentOImmutable}
- */
-export const ComponentOSchema = x.partialObject({
-  r: x.string(),
-  bc: x.string(),
-  bc2: x.string(),
-  bc3: x.string(),
-  ac: x.string(),
-  sc: x.string(),
-  scale: x.number(),
-  spawn_rod: x.boolean(),
-  spring_factor: x.number(),
-  ai_type: x.number(),
-  blade_count: x.number(),
-  blade_pitch: x.number(),
-  blade_length: x.number(),
-  coal_fill: x.number(),
-  current_tick: x.number(),
-  custom_name: x.string(),
-  control_mode_0: x.number(),
-  decimal_point_pos: x.number(),
-  audio_data: x.string(),
-  flare_type: x.number(),
-  flare_color: x.number(),
-  fluid_type: x.number(),
-  fuel_factor: x.number(),
-  gc: x.string(),
-  gca: x.string(),
-  gear_ratio_1: x.number(),
-  gear_ratio_2: x.number(),
-  grip_factor: x.number(),
-  hold_duration: x.number(),
-  default_state: x.boolean(),
-  input_ch_1: x.number(),
-  input_ch_2: x.number(),
-  input_ch_3: x.number(),
-  interactive_default_state: x.boolean(),
-  fluid_filter: x.number(),
-  fluid_fill: x.number(),
-  m_fov_x: x.number(),
-  m_fov_y: x.number(),
-  m_pitch_angle: x.number(),
-  m_sweep_mode: x.number(),
-  max_force_scalar: x.number(),
-  max_force_scale: x.number(),
-  muzzle_velocity: x.number(),
-  gear_ratio: x.number(),
-  input_velocity: x.number(),
-  ordinance_type: x.number(),
-  property_ammo_damage: x.number(),
-  property_ammo_type: x.number(),
-  rps_limit: x.number(),
-  sensitivity: x.number(),
-  spawn_charge: x.number(),
-  stiffness_factor: x.number(),
-  damping_factor: x.number(),
-  throttle_min: x.number(),
-  throttle_max: x.number(),
-  timer_scalar_1: x.number(),
-  timer_scalar_2: x.number(),
-  tire_type: x.number(),
-  trigger: x.number(),
-  trigger_label: x.string(),
-  func_type: x.number(),
-  hotkey_0: x.number(),
-  hotkey_0_label: x.string(),
-  hotkey_1: x.number(),
-  hotkey_1_label: x.string(),
-  hotkey_2: x.number(),
-  hotkey_2_label: x.string(),
-  hotkey_3: x.number(),
-  hotkey_3_label: x.string(),
-  hotkey_4: x.number(),
-  hotkey_4_label: x.string(),
-  hotkey_5: x.number(),
-  hotkey_5_label: x.string(),
-  control_mode_0_label: x.string(),
-  control_mode_1: x.number(),
-  control_mode_1_label: x.string(),
-  control_mode_2: x.number(),
-  control_mode_2_label: x.string(),
-  control_mode_3: x.number(),
-  control_mode_3_label: x.string(),
-  is_infrared: x.boolean(),
-  lss_mode: x.number(),
-  property_text: x.string(),
-  radar_fov: x.number(),
-  sensor_radius: x.number(),
-  sensor_type: x.number(),
-  sensor_mode: x.number(),
-  val_1_name: x.string(),
-  val_2_name: x.string(),
-  volume: x.number(),
-  pitch: x.number(),
-  wheel_size: x.number(),
-  double_wheel: x.boolean(),
-  tyre_pressure: x.number(),
-  microprocessor_definition: MicrocontrollerSchema,
-  vp: SwVec3Schema,
-  logic_slots: x.list("slot", LogicSlotSchema),
-  delta_damping: SwVec3Schema,
-  display_1: DisplaySchema,
-  display_2: DisplaySchema,
-  display_3: DisplaySchema,
-  display_4: DisplaySchema,
-  impact_sensor_threshold: TextValuePairSchema,
-  m_sweep_limit: TextValuePairSchema,
-  m_sweep_speed: TextValuePairSchema,
-  min_value: TextValuePairSchema,
-  max_value: TextValuePairSchema,
-  property_output_float_val: TextValuePairSchema,
-  min_threshold: TextValuePairSchema,
-  max_threshold: TextValuePairSchema,
-  pid_controller_ki: TextValuePairSchema,
-  pid_controller_kp: TextValuePairSchema,
-  pid_controller_kd: TextValuePairSchema,
-  pid_controller_max_error: TextValuePairSchema,
-  exp: TextValuePairSchema,
-  min_lever_value: TextValuePairSchema,
-  max_lever_value: TextValuePairSchema,
-  starting_lever_value: TextValuePairSchema,
-  trim_x_display: TextValuePairSchema,
-  trim_y_display: TextValuePairSchema,
-  trim_z_display: TextValuePairSchema,
-  trim_w_display: TextValuePairSchema,
-  axis_sensitivity: AxisSensitivitySchema,
-});
-
+// @xml-schema
 /**
  * Represents `<o>` element in Stormworks vehicle data.
  *
@@ -426,42 +139,134 @@ export const ComponentOSchema = x.partialObject({
  * @see {@link ComponentOSchema}
  * @see {@link ComponentOImmutable}
  */
-export interface ComponentO extends x.Infer<typeof ComponentOSchema> {}
+export interface ComponentO {
+  r?: string;
+  bc?: string;
+  bc2?: string;
+  bc3?: string;
+  ac?: string;
+  sc?: string;
+  scale?: number;
+  spawn_rod?: boolean;
+  spring_factor?: number;
+  ai_type?: number;
+  blade_count?: number;
+  blade_pitch?: number;
+  blade_length?: number;
+  coal_fill?: number;
+  current_tick?: number;
+  custom_name?: string;
+  control_mode_0?: number;
+  decimal_point_pos?: number;
+  audio_data?: string;
+  flare_type?: number;
+  flare_color?: number;
+  fluid_type?: number;
+  fuel_factor?: number;
+  gc?: string;
+  gca?: string;
+  gear_ratio_1?: number;
+  gear_ratio_2?: number;
+  grip_factor?: number;
+  hold_duration?: number;
+  default_state?: boolean;
+  input_ch_1?: number;
+  input_ch_2?: number;
+  input_ch_3?: number;
+  interactive_default_state?: boolean;
+  fluid_filter?: number;
+  fluid_fill?: number;
+  m_fov_x?: number;
+  m_fov_y?: number;
+  m_pitch_angle?: number;
+  m_sweep_mode?: number;
+  max_force_scalar?: number;
+  max_force_scale?: number;
+  muzzle_velocity?: number;
+  gear_ratio?: number;
+  input_velocity?: number;
+  ordinance_type?: number;
+  property_ammo_damage?: number;
+  property_ammo_type?: number;
+  rps_limit?: number;
+  sensitivity?: number;
+  spawn_charge?: number;
+  stiffness_factor?: number;
+  damping_factor?: number;
+  throttle_min?: number;
+  throttle_max?: number;
+  timer_scalar_1?: number;
+  timer_scalar_2?: number;
+  tire_type?: number;
+  trigger?: number;
+  trigger_label?: string;
+  func_type?: number;
+  hotkey_0?: number;
+  hotkey_0_label?: string;
+  hotkey_1?: number;
+  hotkey_1_label?: string;
+  hotkey_2?: number;
+  hotkey_2_label?: string;
+  hotkey_3?: number;
+  hotkey_3_label?: string;
+  hotkey_4?: number;
+  hotkey_4_label?: string;
+  hotkey_5?: number;
+  hotkey_5_label?: string;
+  control_mode_0_label?: string;
+  control_mode_1?: number;
+  control_mode_1_label?: string;
+  control_mode_2?: number;
+  control_mode_2_label?: string;
+  control_mode_3?: number;
+  control_mode_3_label?: string;
+  is_infrared?: boolean;
+  lss_mode?: number;
+  property_text?: string;
+  radar_fov?: number;
+  sensor_radius?: number;
+  sensor_type?: number;
+  sensor_mode?: number;
+  val_1_name?: string;
+  val_2_name?: string;
+  volume?: number;
+  pitch?: number;
+  wheel_size?: number;
+  double_wheel?: boolean;
+  tyre_pressure?: number;
+  microprocessor_definition?: Microcontroller;
+  vp?: XmlVec3;
+  // @xml-schema list "slot"
+  logic_slots?: LogicSlot[];
+  delta_damping?: XmlVec3;
+  display_1?: Display;
+  display_2?: Display;
+  display_3?: Display;
+  display_4?: Display;
+  impact_sensor_threshold?: TextValuePair;
+  m_sweep_limit?: TextValuePair;
+  m_sweep_speed?: TextValuePair;
+  min_value?: TextValuePair;
+  max_value?: TextValuePair;
+  property_output_float_val?: TextValuePair;
+  min_threshold?: TextValuePair;
+  max_threshold?: TextValuePair;
+  pid_controller_ki?: TextValuePair;
+  pid_controller_kp?: TextValuePair;
+  pid_controller_kd?: TextValuePair;
+  pid_controller_max_error?: TextValuePair;
+  exp?: TextValuePair;
+  min_lever_value?: TextValuePair;
+  max_lever_value?: TextValuePair;
+  starting_lever_value?: TextValuePair;
+  trim_x_display?: TextValuePair;
+  trim_y_display?: TextValuePair;
+  trim_z_display?: TextValuePair;
+  trim_w_display?: TextValuePair;
+  axis_sensitivity?: AxisSensitivity;
+}
 
-/**
- * Represents `<o>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
- *
- * Parent: {@link ComponentImmutable}
- *
- * Inferred from {@link ComponentOSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link ComponentO} instead
- * if mutation is required.
- *
- * @see {@link ComponentOSchema}
- * @see {@link ComponentO}
- */
-export interface ComponentOImmutable extends x.InferImmutable<typeof ComponentOSchema> {}
-
-/**
- * Represents `<c>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c>`
- *
- * Parent: {@link BodySchema}
- *
- * @see {@link Component}
- * @see {@link ComponentImmutable}
- */
-export const ComponentSchema = x.partialObject({
-  d: x.string(),
-  t: x.number(),
-  o: ComponentOSchema,
-});
-
+// @xml-schema
 /**
  * Represents `<c>` element in Stormworks vehicle data.
  *
@@ -477,41 +282,13 @@ export const ComponentSchema = x.partialObject({
  * @see {@link ComponentSchema}
  * @see {@link ComponentImmutable}
  */
-export interface Component extends x.Infer<typeof ComponentSchema> {}
+export interface Component {
+  d?: string;
+  t?: number;
+  o?: ComponentO;
+}
 
-/**
- * Represents `<c>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c>`
- *
- * Parent: {@link BodyImmutable}
- *
- * Inferred from {@link ComponentSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link Component} instead
- * if mutation is required.
- *
- * @see {@link ComponentSchema}
- * @see {@link Component}
- */
-export interface ComponentImmutable extends x.InferImmutable<typeof ComponentSchema> {}
-
-/**
- * Represents `<body>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body>`
- *
- * Parent: {@link VehicleSchema}
- *
- * @see {@link Body}
- * @see {@link BodyImmutable}
- */
-export const BodySchema = x.partialObject({
-  unique_id: x.number(),
-  components: x.list("c", ComponentSchema),
-});
-
+// @xml-schema
 /**
  * Represents `<body>` element in Stormworks vehicle data.
  *
@@ -527,42 +304,13 @@ export const BodySchema = x.partialObject({
  * @see {@link BodySchema}
  * @see {@link BodyImmutable}
  */
-export interface Body extends x.Infer<typeof BodySchema> {}
+export interface Body {
+  unique_id?: number;
+  // @xml-schema list "c"
+  components?: Component[];
+}
 
-/**
- * Represents `<body>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body>`
- *
- * Parent: {@link VehicleImmutable}
- *
- * Inferred from {@link BodySchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link Body} instead
- * if mutation is required.
- *
- * @see {@link BodySchema}
- * @see {@link Body}
- */
-export interface BodyImmutable extends x.InferImmutable<typeof BodySchema> {}
-
-/**
- * Represents `<logic_node_link>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
- *
- * Parent: {@link VehicleSchema}
- *
- * @see {@link LogicNodeLink}
- * @see {@link LogicNodeLinkImmutable}
- */
-export const LogicNodeLinkSchema = x.partialObject({
-  type: x.number(),
-  voxel_pos_0: SwVec3Schema,
-  voxel_pos_1: SwVec3Schema,
-});
-
+// @xml-schema
 /**
  * Represents `<logic_node_link>` element in Stormworks vehicle data.
  *
@@ -578,43 +326,13 @@ export const LogicNodeLinkSchema = x.partialObject({
  * @see {@link LogicNodeLinkSchema}
  * @see {@link LogicNodeLinkImmutable}
  */
-export interface LogicNodeLink extends x.Infer<typeof LogicNodeLinkSchema> {}
+export interface LogicNodeLink {
+  type?: number;
+  voxel_pos_0?: XmlVec3;
+  voxel_pos_1?: XmlVec3;
+}
 
-/**
- * Represents `<logic_node_link>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
- *
- * Parent: {@link VehicleImmutable}
- *
- * Inferred from {@link LogicNodeLinkSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link LogicNodeLink} instead
- * if mutation is required.
- *
- * @see {@link LogicNodeLinkSchema}
- * @see {@link LogicNodeLink}
- */
-export interface LogicNodeLinkImmutable extends x.InferImmutable<typeof LogicNodeLinkSchema> {}
-
-/**
- * Represents root `<vehicle>` element in Stormworks vehicle data.
- *
- * @see {@link Vehicle}
- * @see {@link VehicleImmutable}
- */
-export const VehicleSchema = x.partialObject({
-  data_version: x.number(),
-  is_modded: x.boolean(),
-  is_static: x.boolean(),
-  bodies_id: x.number(),
-  editor_placement_offset: SwVec3Schema,
-  authors: x.list("author", AuthorSchema),
-  bodies: x.list("body", BodySchema),
-  logic_node_links: x.list("logic_node_link", LogicNodeLinkSchema),
-});
-
+// @xml-schema
 /**
  * Represents root `<vehicle>` element in Stormworks vehicle data.
  *
@@ -627,18 +345,16 @@ export const VehicleSchema = x.partialObject({
  * @see {@link VehicleSchema}
  * @see {@link VehicleImmutable}
  */
-export interface Vehicle extends x.Infer<typeof VehicleSchema> {}
-
-/**
- * Represents root `<vehicle>` element in Stormworks vehicle data.
- *
- * Inferred from {@link VehicleSchema} and made deeply immutable.
- *
- * This is the recommended type for function parameters when the implementation
- * only reads the object and does not modify it. Use {@link Vehicle} instead
- * if mutation is required.
- *
- * @see {@link VehicleSchema}
- * @see {@link Vehicle}
- */
-export interface VehicleImmutable extends x.InferImmutable<typeof VehicleSchema> {}
+export interface Vehicle {
+  data_version?: number;
+  is_modded?: boolean;
+  is_static?: boolean;
+  bodies_id?: number;
+  editor_placement_offset?: XmlVec3;
+  // @xml-schema list "author"
+  authors?: Author[];
+  // @xml-schema list "body"
+  bodies?: Body[];
+  // @xml-schema list "logic_node_link"
+  logic_node_links?: LogicNodeLink[];
+}
