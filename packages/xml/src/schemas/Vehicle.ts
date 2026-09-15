@@ -12,9 +12,7 @@ export * from "./generated/vehicle-immutable";
  *
  * Parent: {@link Vehicle}
  *
- * Inferred from {@link AuthorSchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link AuthorImmutable} for its parameter type.
  *
  * @see {@link AuthorSchema}
@@ -33,9 +31,7 @@ export interface Author {
  *
  * Parent: {@link ComponentO}
  *
- * Inferred from {@link LogicSlotSchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link LogicSlotImmutable} for its parameter type.
  *
  * @see {@link LogicSlotSchema}
@@ -54,9 +50,7 @@ export interface LogicSlot {
  *
  * Parent: {@link Display}
  *
- * Inferred from {@link ColExtraSchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link ColExtraImmutable} for its parameter type.
  *
  * @see {@link ColExtraSchema}
@@ -79,9 +73,7 @@ export interface ColExtra {
  *
  * Parent: {@link ComponentO}
  *
- * Inferred from {@link DisplaySchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link DisplayImmutable} for its parameter type.
  *
  * @see {@link DisplaySchema}
@@ -108,9 +100,7 @@ export interface Display {
  *
  * Parent: {@link ComponentO}
  *
- * Inferred from {@link AxisSensitivitySchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link AxisSensitivityImmutable} for its parameter type.
  *
  * @see {@link AxisSensitivitySchema}
@@ -131,9 +121,7 @@ export interface AxisSensitivity {
  *
  * Parent: {@link ComponentSchema}
  *
- * Inferred from {@link ComponentOSchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link ComponentOImmutable} for its parameter type.
  *
  * @see {@link ComponentOSchema}
@@ -274,9 +262,7 @@ export interface ComponentO {
  *
  * Parent: {@link Body}
  *
- * Inferred from {@link ComponentSchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link ComponentImmutable} for its parameter type.
  *
  * @see {@link ComponentSchema}
@@ -296,9 +282,7 @@ export interface Component {
  *
  * Parent: {@link Vehicle}
  *
- * Inferred from {@link BodySchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link BodyImmutable} for its parameter type.
  *
  * @see {@link BodySchema}
@@ -318,9 +302,7 @@ export interface Body {
  *
  * Parent: {@link Vehicle}
  *
- * Inferred from {@link LogicNodeLinkSchema}.
- *
- * If your function only reads the value and does not mutate it, prefer
+ *  If your function only reads the value and does not mutate it, prefer
  * {@link LogicNodeLinkImmutable} for its parameter type.
  *
  * @see {@link LogicNodeLinkSchema}

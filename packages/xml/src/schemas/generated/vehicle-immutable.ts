@@ -36,8 +36,6 @@ import type {
  *
  * Parent: {@link VehicleImmutable}
  *
- * Inferred from {@link AuthorSchema}.
- *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link Author} instead if mutation is required.
  *
@@ -56,8 +54,6 @@ export interface AuthorImmutable {
  *
  * Parent: {@link ComponentOImmutable}
  *
- * Inferred from {@link LogicSlotSchema}.
- *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link LogicSlot} instead if mutation is required.
  *
@@ -75,8 +71,6 @@ export interface LogicSlotImmutable {
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
  *
  * Parent: {@link DisplayImmutable}
- *
- * Inferred from {@link ColExtraSchema}.
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link ColExtra} instead if mutation is required.
@@ -99,8 +93,6 @@ export interface ColExtraImmutable {
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
  *
  * Parent: {@link ComponentOImmutable}
- *
- * Inferred from {@link DisplaySchema}.
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link Display} instead if mutation is required.
@@ -128,8 +120,6 @@ export interface DisplayImmutable {
  *
  * Parent: {@link ComponentOImmutable}
  *
- * Inferred from {@link AxisSensitivitySchema}.
- *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link AxisSensitivity} instead if mutation is required.
  *
@@ -149,8 +139,6 @@ export interface AxisSensitivityImmutable {
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
  *
  * Parent: {@link ComponentSchemaImmutable}
- *
- * Inferred from {@link ComponentOSchema}.
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link ComponentO} instead if mutation is required.
@@ -291,8 +279,6 @@ export interface ComponentOImmutable {
  *
  * Parent: {@link BodyImmutable}
  *
- * Inferred from {@link ComponentSchema}.
- *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link Component} instead if mutation is required.
  *
@@ -312,8 +298,6 @@ export interface ComponentImmutable {
  *
  * Parent: {@link VehicleImmutable}
  *
- * Inferred from {@link BodySchema}.
- *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link Body} instead if mutation is required.
  *
@@ -331,8 +315,6 @@ export interface BodyImmutable {
  * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
  *
  * Parent: {@link VehicleImmutable}
- *
- * Inferred from {@link LogicNodeLinkSchema}.
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link LogicNodeLink} instead if mutation is required.

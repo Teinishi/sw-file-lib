@@ -42,8 +42,6 @@ const AuthorShape = {
  *
  * Parent: {@link VehicleSchema}
  *
- * Inferred from {@link AuthorSchema}.
- *
  * @see {@link Author}
  * @see {@link AuthorImmutable}
  */
@@ -61,8 +59,6 @@ const LogicSlotShape = {
  *
  * Parent: {@link ComponentOSchema}
  *
- * Inferred from {@link LogicSlotSchema}.
- *
  * @see {@link LogicSlot}
  * @see {@link LogicSlotImmutable}
  */
@@ -75,8 +71,6 @@ export const LogicSlotSchema: x.ObjectSchema<typeof LogicSlotShape, LogicSlot> =
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
  *
  * Parent: {@link DisplaySchema}
- *
- * Inferred from {@link ColExtraSchema}.
  *
  * @see {@link ColExtra}
  * @see {@link ColExtraImmutable}
@@ -111,8 +105,6 @@ const DisplayShape = {
  *
  * Parent: {@link ComponentOSchema}
  *
- * Inferred from {@link DisplaySchema}.
- *
  * @see {@link Display}
  * @see {@link DisplayImmutable}
  */
@@ -131,8 +123,6 @@ const AxisSensitivityShape = {
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <axis_sensitivity>`
  *
  * Parent: {@link ComponentOSchema}
- *
- * Inferred from {@link AxisSensitivitySchema}.
  *
  * @see {@link AxisSensitivity}
  * @see {@link AxisSensitivityImmutable}
@@ -273,8 +263,6 @@ const ComponentOShape = {
  *
  * Parent: {@link ComponentSchemaSchema}
  *
- * Inferred from {@link ComponentOSchema}.
- *
  * @see {@link ComponentO}
  * @see {@link ComponentOImmutable}
  */
@@ -294,8 +282,6 @@ const ComponentShape = {
  *
  * Parent: {@link BodySchema}
  *
- * Inferred from {@link ComponentSchema}.
- *
  * @see {@link Component}
  * @see {@link ComponentImmutable}
  */
@@ -314,8 +300,6 @@ const BodyShape = {
  *
  * Parent: {@link VehicleSchema}
  *
- * Inferred from {@link BodySchema}.
- *
  * @see {@link Body}
  * @see {@link BodyImmutable}
  */
@@ -333,8 +317,6 @@ const LogicNodeLinkShape = {
  * XML location: `<vehicle> / <logic_node_links> / <logic_node_link>`
  *
  * Parent: {@link VehicleSchema}
- *
- * Inferred from {@link LogicNodeLinkSchema}.
  *
  * @see {@link LogicNodeLink}
  * @see {@link LogicNodeLinkImmutable}
