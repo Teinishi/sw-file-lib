@@ -74,11 +74,23 @@ export function generateSchemaCode(declaration: SchemaDeclarationInfo): string {
   const decl = `export const ${declaration.name}Schema = `;
   switch (declaration.schema.kind) {
     case "object":
-      return `${decl}x.object(${generateSchemaShape(declaration.schema.members)});`;
+      const objectShape = generateSchemaShape(declaration.schema.members);
+      return `${decl}x.object(${objectShape});`;
+    case "list":
+      const listItemType = generateTypeSchema(declaration.schema.itemType);
+      return `${decl}x.list("${declaration.schema.itemTag}", ${listItemType});`;
+    case "metalist":
+      const metalistShape = generateSchemaShape(declaration.schema.metaMembers, "  ");
+      const metalistItemType = generateTypeSchema(declaration.schema.itemType, "  ");
+      return `${decl}x.metalist(\n  "${declaration.schema.itemTag}",\n  x.object(${metalistShape}),\n  ${metalistItemType},\n);`;
   }
 }
 
 function generateSchemaShape(members: ObjectSchemaMemberInfo[], indent: string = ""): string {
+  if (members.length === 0) {
+    return "{}";
+  }
+
   const lines = members.map((m) => {
     let t = generateTypeSchema(m.type, indent + "  ");
     if (m.optional) {
@@ -102,19 +114,52 @@ function generateTypeSchema(type: SchemaTypeInfo, indent: string = ""): string {
     case "identifier":
       return `${type.name}Schema`;
     case "object":
-      return `x.object(${generateSchemaShape(type.members, indent)})`;
+      const objectShape = generateSchemaShape(type.members, indent);
+      return `x.object(${objectShape})`;
     case "list":
-      return `x.list("${type.itemTag}", ${generateTypeSchema(type.elementType, indent)})`;
+      const listItemType = generateTypeSchema(type.itemType, indent);
+      return `x.list("${type.itemTag}", ${listItemType})`;
+    case "metalist":
+      const metalistShape = generateSchemaShape(type.metaMembers, indent + "  ");
+      const metalistItemType = generateTypeSchema(type.itemType, indent + "  ");
+      return `x.metalist(\n${indent}  "${type.itemTag}",\n${indent}  x.object(${metalistShape}),\n${indent}  ${metalistItemType},\n)`;
   }
 }
 
 export function generateImmutableInterfaceCode(declaration: SchemaDeclarationInfo): string {
+  const { schema } = declaration;
+
   let body: string;
 
-  switch (declaration.schema.kind) {
+  switch (schema.kind) {
     case "object":
-      body = generateImmutableInterfaceShape(declaration.schema.members);
+      body = generateImmutableInterfaceShape(schema.members);
       break;
+    case "metalist":
+      body = generateImmutableInterfaceShape([
+        {
+          name: "meta",
+          type: {
+            kind: "object",
+            members: schema.metaMembers,
+          },
+          optional: false,
+        },
+        {
+          name: "items",
+          type: {
+            kind: "list",
+            itemTag: schema.itemTag,
+            itemType: schema.itemType,
+          },
+          optional: false,
+        },
+      ]);
+      break;
+    default:
+      throw new Error(
+        `Unsupported schema kind for immutable interface: ${declaration.schema.kind}`,
+      );
   }
 
   return `export interface ${declaration.name}Immutable ${body}`;
@@ -124,6 +169,10 @@ function generateImmutableInterfaceShape(
   members: ObjectSchemaMemberInfo[],
   indent: string = "",
 ): string {
+  if (members.length === 0) {
+    return "{}";
+  }
+
   const lines = members.map((m) => {
     return `${indent}  readonly ${m.name}${m.optional ? "?" : ""}: ${generateImmutableInterfaceType(
       m.type,
@@ -148,6 +197,8 @@ function generateImmutableInterfaceType(type: SchemaTypeInfo, indent: string = "
     case "object":
       return generateImmutableInterfaceShape(type.members, indent);
     case "list":
-      return `readonly ${generateImmutableInterfaceType(type.elementType, indent)}[]`;
+      return `readonly ${generateImmutableInterfaceType(type.itemType, indent)}[]`;
+    case "metalist":
+      return `readonly ${generateImmutableInterfaceType(type.itemType, indent)}[]`;
   }
 }

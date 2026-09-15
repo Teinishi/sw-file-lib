@@ -71,7 +71,14 @@ export type ObjectSchemaInfo = {
 export type ListSchemaInfo = {
   kind: "list";
   itemTag: string;
-  elementType: SchemaTypeInfo;
+  itemType: ElementSchemaInfo | IdentifierSchemaInfo;
+};
+
+export type MetalistSchemaInfo = {
+  kind: "metalist";
+  itemTag: string;
+  metaMembers: ObjectSchemaMemberInfo[];
+  itemType: ElementSchemaInfo | IdentifierSchemaInfo;
 };
 
 export type SchemaTypeInfo =
@@ -81,9 +88,10 @@ export type SchemaTypeInfo =
   | { kind: "union"; types: SchemaTypeInfo[] }
   | IdentifierSchemaInfo
   | ObjectSchemaInfo
-  | ListSchemaInfo;
+  | ListSchemaInfo
+  | MetalistSchemaInfo;
 
-export type ElementSchemaInfo = ObjectSchemaInfo;
+export type ElementSchemaInfo = ObjectSchemaInfo | ListSchemaInfo | MetalistSchemaInfo;
 
 export interface JSDocParagraph {
   text: string;
