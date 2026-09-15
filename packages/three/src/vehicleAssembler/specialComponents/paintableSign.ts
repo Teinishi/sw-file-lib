@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { parseColor, type Color } from "@sw-file-lib/core/color";
-import type { ComponentDefinitionImmutable, VehicleSchemas } from "@sw-file-lib/xml";
+import type {
+  ComponentDefinitionImmutable,
+  ComponentDefinitionSchemas,
+  VehicleSchemas,
+} from "@sw-file-lib/xml";
 import {
   createAdditiveMaterial,
   createAdditiveUniforms,
@@ -12,7 +16,10 @@ import { ADDITIVE_LUT } from "../utils";
 export async function assemblePaintableSign(
   componentInstance: VehicleSchemas.ComponentImmutable,
   definition: ComponentDefinitionImmutable,
-) {
+): Promise<{
+  surfaces?: ComponentDefinitionSchemas.SurfaceImmutable[];
+  objects?: THREE.Mesh[];
+}> {
   const isNoAdditive = (((definition.flags ?? 0) >> 22) & 1) !== 0;
 
   let paintableSurface = false;
@@ -54,7 +61,10 @@ export async function assemblePaintableSign(
     objects.push(new THREE.Mesh(geom2, additiveMaterial));
   }
 
-  return { surfaces, objects };
+  return {
+    ...(surfaces ? { surfaces } : {}),
+    objects,
+  };
 }
 
 function createPixelGeometry(
