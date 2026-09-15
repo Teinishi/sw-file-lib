@@ -70,19 +70,36 @@ function generateImportStatements(
   }).filter((code): code is string => code !== null);
 }
 
-export function generateSchemaCode(declaration: SchemaDeclarationInfo): string {
-  const decl = `export const ${declaration.name}Schema = `;
+export function generateSchemaCode(
+  declaration: SchemaDeclarationInfo,
+  leadingComment?: string | undefined,
+): string {
+  let code = leadingComment ? leadingComment + "\n" : "";
+
+  code += `export const ${declaration.name}Schema`;
+
   switch (declaration.schema.kind) {
     case "object":
+      // TS7056 の対策に、shape を先に定義して schema の型を明示的に指定する
       const objectShape = generateSchemaShape(declaration.schema.members);
-      return `${decl}x.object(${objectShape});`;
+      code = `const ${declaration.name}Shape = ${objectShape};\n\n` + code;
+      code += `: x.ObjectSchema<typeof ${declaration.name}Shape, ${declaration.name}> = x.object(${declaration.name}Shape);`;
+      return code;
+
     case "list":
       const listItemType = generateTypeSchema(declaration.schema.itemType);
-      return `${decl}x.list("${declaration.schema.itemTag}", ${listItemType});`;
+      code += ` = x.list("${declaration.schema.itemTag}", ${listItemType});`;
+      return code;
+
     case "metalist":
       const metalistShape = generateSchemaShape(declaration.schema.metaMembers, "  ");
       const metalistItemType = generateTypeSchema(declaration.schema.itemType, "  ");
-      return `${decl}x.metalist(\n  "${declaration.schema.itemTag}",\n  x.object(${metalistShape}),\n  ${metalistItemType},\n);`;
+      code += ` = x.metalist(\n`;
+      code += `  "${declaration.schema.itemTag}",\n`;
+      code += `  x.object(${metalistShape}),\n`;
+      code += `  ${metalistItemType},\n`;
+      code += `);`;
+      return code;
   }
 }
 

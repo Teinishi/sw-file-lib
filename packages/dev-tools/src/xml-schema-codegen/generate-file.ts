@@ -27,17 +27,14 @@ export function generateSchemaFile(
   const commentImports = new SetMap<string, string>();
 
   const body = inputFile.schemas
-    .map(
-      (s) =>
-        convertJSDocComment(s, commentImports, {
-          filePaths,
-          target: "schema",
-          see: ["mutableInterface", "immutableInterface"],
-        }) +
-        "\n" +
-        generateSchemaCode(s) +
-        "\n",
-    )
+    .map((s) => {
+      const jsdoc = convertJSDocComment(s, commentImports, {
+        filePaths,
+        target: "schema",
+        see: ["mutableInterface", "immutableInterface"],
+      });
+      return generateSchemaCode(s, jsdoc?.join("\n") ?? "") + "\n";
+    })
     .join("\n");
 
   const schemaImports = new SetMap<string, string>();
