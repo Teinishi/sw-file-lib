@@ -42,9 +42,9 @@ export type InferMetalist<M extends Shape, U extends ElementSchema<any>> = {
   items: Infer<U>[];
 };
 
-export type Metalist<M, I> = {
+export type Metalist<M, I extends any[]> = {
   meta: M;
-  items: I[];
+  items: I;
 };
 
 /**
@@ -99,7 +99,10 @@ export class MetalistSchema<
     if (issues.length === 0) {
       return {
         success: true,
-        data: { meta: data as MT, items },
+        data: {
+          meta: data as MT,
+          items: items as IT,
+        },
       };
     } else {
       return {

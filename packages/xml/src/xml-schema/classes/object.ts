@@ -236,10 +236,8 @@ export class ObjectSchema<
 /**
  * Creates a schema that parses XML record elements as JavaScript objects.
  */
-export function object<S extends Shape, T extends object = InferShape<S>>(
-  shape: S,
-): ObjectSchema<S, T> {
-  return ObjectSchema.create<S, T>(shape);
+export function object<S extends Shape>(shape: S): ObjectSchema<S, InferShape<S>> {
+  return ObjectSchema.create<S, InferShape<S>>(shape);
 }
 
 /**
@@ -247,8 +245,8 @@ export function object<S extends Shape, T extends object = InferShape<S>>(
  *
  * This is syntax sugar for `x.object(...).partial()`.
  */
-export function partialObject<S extends Shape, T extends object = InferShape<S>>(
+export function partialObject<S extends Shape>(
   shape: S,
-): ObjectSchema<PartialShape<S>, Partial<T>> {
-  return object<S, T>(shape).partial();
+): ObjectSchema<PartialShape<S>, Partial<InferShape<S>>> {
+  return object<S>(shape).partial();
 }
