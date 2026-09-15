@@ -14,7 +14,7 @@ import {
   type SchemaDeclarationInfo,
   type SchemaTypeInfo,
 } from "./types";
-import { filenameAndLine, relativeImportPath, SetMap } from "./utils";
+import { loc, relativeImportPath, SetMap } from "./utils";
 
 interface FileAnalyzeContext {
   checker: ts.TypeChecker;
@@ -84,9 +84,7 @@ function analyzeInterfaceNode(
     case "metalist":
       const itemTag = args[1];
       if (!itemTag) {
-        throw new Error(
-          `Missing item tag for metalist type at ${filenameAndLine(node, context.sourceFile)}`,
-        );
+        throw new Error(`Missing item tag for metalist type at ${loc(node, context.sourceFile)}`);
       }
       schema = analyzeMetalistInterfaceNode(node, itemTag, context);
       break;
@@ -98,7 +96,7 @@ function analyzeInterfaceNode(
 
     default:
       throw new Error(
-        `Unknown schema marker argument: ${firstArg} at ${filenameAndLine(node, context.sourceFile)}`,
+        `Unknown schema marker argument: ${firstArg} at ${loc(node, context.sourceFile)}`,
       );
   }
 
@@ -125,9 +123,7 @@ function analyzeObjectInterfaceNode(
     const typeNode = m.type;
 
     if (!typeNode) {
-      throw new Error(
-        `Property ${memberName} has no type at ${filenameAndLine(m, context.sourceFile)}`,
-      );
+      throw new Error(`Property ${memberName} has no type at ${loc(m, context.sourceFile)}`);
     }
 
     const memberArgs = parseXmlSchemaMarker(m, context.sourceFile);
@@ -166,34 +162,34 @@ function analyzeMetalistInterfaceNode(
         break;
       default:
         throw new Error(
-          `Unexpected member ${memberName} in metalist interface at ${filenameAndLine(m, context.sourceFile)}`,
+          `Unexpected member ${memberName} in metalist interface at ${loc(m, context.sourceFile)}`,
         );
     }
   }
 
   if (!metaField) {
     throw new Error(
-      `Missing 'meta' member in metalist interface at ${filenameAndLine(node, context.sourceFile)}`,
+      `Missing 'meta' member in metalist interface at ${loc(node, context.sourceFile)}`,
     );
   }
   if (!itemsField) {
     throw new Error(
-      `Missing 'items' member in metalist interface at ${filenameAndLine(node, context.sourceFile)}`,
+      `Missing 'items' member in metalist interface at ${loc(node, context.sourceFile)}`,
     );
   }
   if (metaField.questionToken) {
     throw new Error(
-      `'meta' member in metalist interface cannot be optional at ${filenameAndLine(metaField, context.sourceFile)}`,
+      `'meta' member in metalist interface cannot be optional at ${loc(metaField, context.sourceFile)}`,
     );
   }
   if (itemsField.questionToken) {
     throw new Error(
-      `'items' member in metalist interface cannot be optional at ${filenameAndLine(itemsField, context.sourceFile)}`,
+      `'items' member in metalist interface cannot be optional at ${loc(itemsField, context.sourceFile)}`,
     );
   }
   if (!ts.isPropertySignature(metaField) || !ts.isPropertySignature(itemsField)) {
     throw new Error(
-      `Members 'meta' and 'items' in metalist interface must be property signatures at ${filenameAndLine(
+      `Members 'meta' and 'items' in metalist interface must be property signatures at ${loc(
         node,
         context.sourceFile,
       )}`,
@@ -205,23 +201,23 @@ function analyzeMetalistInterfaceNode(
 
   if (!metaTypeNode) {
     throw new Error(
-      `'meta' member in metalist interface has no type at ${filenameAndLine(metaField, context.sourceFile)}`,
+      `'meta' member in metalist interface has no type at ${loc(metaField, context.sourceFile)}`,
     );
   }
   if (!itemsTypeNode) {
     throw new Error(
-      `'items' member in metalist interface has no type at ${filenameAndLine(itemsField, context.sourceFile)}`,
+      `'items' member in metalist interface has no type at ${loc(itemsField, context.sourceFile)}`,
     );
   }
 
   if (!ts.isTypeLiteralNode(metaTypeNode)) {
     throw new Error(
-      `'meta' member in metalist interface must be a type literal at ${filenameAndLine(metaField, context.sourceFile)}`,
+      `'meta' member in metalist interface must be a type literal at ${loc(metaField, context.sourceFile)}`,
     );
   }
   if (!ts.isArrayTypeNode(itemsTypeNode)) {
     throw new Error(
-      `'items' member in metalist interface must be an array type at ${filenameAndLine(itemsField, context.sourceFile)}`,
+      `'items' member in metalist interface must be an array type at ${loc(itemsField, context.sourceFile)}`,
     );
   }
 
@@ -229,7 +225,7 @@ function analyzeMetalistInterfaceNode(
   const itemType = analyzeElementTypeNode(itemsTypeNode.elementType, [], context, true);
   if (!itemType) {
     throw new Error(
-      `Could not analyze element type for 'items' member in metalist interface at ${filenameAndLine(itemsField, context.sourceFile)}`,
+      `Could not analyze element type for 'items' member in metalist interface at ${loc(itemsField, context.sourceFile)}`,
     );
   }
 
@@ -251,14 +247,12 @@ function analyzeElementTypeNode<F extends boolean>(
     case "list":
       if (!ts.isArrayTypeNode(node)) {
         throw new Error(
-          `Expected array type for list, got ${node.getText(context.sourceFile)} at ${filenameAndLine(node, context.sourceFile)}`,
+          `Expected array type for list, got ${node.getText(context.sourceFile)} at ${loc(node, context.sourceFile)}`,
         );
       }
       const itemTag = args[1];
       if (!itemTag) {
-        throw new Error(
-          `Missing item tag for list type at ${filenameAndLine(node, context.sourceFile)}`,
-        );
+        throw new Error(`Missing item tag for list type at ${loc(node, context.sourceFile)}`);
       }
       let itemType: ElementSchemaInfo | IdentifierSchemaInfo | undefined;
       if (ts.isTypeReferenceNode(node.elementType)) {
@@ -268,7 +262,7 @@ function analyzeElementTypeNode<F extends boolean>(
       }
       if (!itemType) {
         throw new Error(
-          `Could not analyze element type for list at ${filenameAndLine(node, context.sourceFile)}`,
+          `Could not analyze element type for list at ${loc(node, context.sourceFile)}`,
         );
       }
       return {
@@ -286,7 +280,7 @@ function analyzeElementTypeNode<F extends boolean>(
         if (!force)
           return undefined as F extends true ? ElementSchemaInfo : ElementSchemaInfo | undefined;
         throw new Error(
-          `Expected type literal for object, got ${node.getText(context.sourceFile)} at ${filenameAndLine(node, context.sourceFile)}`,
+          `Expected type literal for object, got ${node.getText(context.sourceFile)} at ${loc(node, context.sourceFile)}`,
         );
       }
       return {
@@ -298,7 +292,7 @@ function analyzeElementTypeNode<F extends boolean>(
       if (!force)
         return undefined as F extends true ? ElementSchemaInfo : ElementSchemaInfo | undefined;
       throw new Error(
-        `Unknown schema marker argument: ${args?.[0]} at ${filenameAndLine(node, context.sourceFile)}`,
+        `Unknown schema marker argument: ${args?.[0]} at ${loc(node, context.sourceFile)}`,
       );
   }
 }
@@ -335,11 +329,11 @@ function analyzeTypeNode(
 
   if (ts.isArrayTypeNode(node)) {
     throw new Error(
-      `Array types must be annotated with '// @xml-schema list "{itemTag}"' at ${filenameAndLine(node, context.sourceFile)}`,
+      `Array types must be annotated with '// @xml-schema list "{itemTag}"' at ${loc(node, context.sourceFile)}`,
     );
   }
 
-  throw new Error(`Unsupported type at ${filenameAndLine(node, context.sourceFile)}`);
+  throw new Error(`Unsupported type at ${loc(node, context.sourceFile)}`);
 }
 
 function analyzeTypeReferenceNode(
@@ -350,7 +344,7 @@ function analyzeTypeReferenceNode(
   const sourceFile = getDefinitionSourceFile(node, context.checker);
   if (!sourceFile) {
     consola.warn(
-      `Could not find source file for type reference ${typeName} at ${filenameAndLine(node, context.sourceFile)}`,
+      `Could not find source file for type reference ${typeName} at ${loc(node, context.sourceFile)}`,
     );
   }
   const sourceFileName = sourceFile !== context.sourceFile ? sourceFile?.fileName : undefined;
@@ -382,9 +376,7 @@ function analyzeTypeLiteralNode(
     const typeNode = m.type;
 
     if (!typeNode) {
-      throw new Error(
-        `Property ${memberName} has no type at ${filenameAndLine(node, context.sourceFile)}`,
-      );
+      throw new Error(`Property ${memberName} has no type at ${loc(node, context.sourceFile)}`);
     }
 
     const memberArgs = parseXmlSchemaMarker(m, context.sourceFile);

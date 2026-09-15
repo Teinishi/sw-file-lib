@@ -7,7 +7,7 @@ import type {
   OutputFileKind,
   SchemaDeclarationInfo,
 } from "./types";
-import { relativeImportPath, SetMap } from "./utils";
+import { loc, relativeImportPath, SetMap } from "./utils";
 
 function getJSDoc(node: ts.Node): ts.JSDoc[] | undefined {
   return (node as any).jsDoc as ts.JSDoc[] | undefined;
@@ -28,36 +28,48 @@ export function analyzeJSDocComment(
     }
 
     const paragraphs: JSDocParagraph[] = [];
-    let currentParagraph: JSDocParagraph | undefined;
+    let pLines: string[] = [""];
+    let pLinks: string[] = [];
+    const nextParagraph = () => {
+      const text = pLines.join("\n").trim();
+      if (text !== "") {
+        paragraphs.push({
+          text,
+          ...(pLinks.length > 0 ? { links: pLinks } : {}),
+        });
+      }
+      pLines = [""];
+      pLinks = [];
+    };
 
     for (const item of doc.comment) {
       if (ts.isJSDocLinkLike(item)) {
-        if (!currentParagraph) {
-          currentParagraph = { text: "" };
+        if (!item.name) {
+          throw new Error(`Name not found in @link at ${loc(item, sourceFile)}`);
         }
-        currentParagraph.links ??= [];
-        if (item.name) {
-          const text = item.name.getFullText(sourceFile);
-          currentParagraph.text += `{@link ${text}}`;
-          currentParagraph.links.push(text);
-        }
+        pLines[pLines.length - 1] += item.getFullText(sourceFile);
+        pLinks.push(item.name.getFullText(sourceFile).trim());
+        continue;
       }
 
-      const textArr = item.text.split("\n\n");
-      if (textArr.length === 0) continue;
+      const lines = item.text.split("\n");
+      const tail = lines.pop()!;
 
-      currentParagraph ??= { text: "" };
-      currentParagraph.text += textArr.shift();
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed === "" && pLines[pLines.length - 1] === "") {
+          nextParagraph();
+          continue;
+        }
 
-      while (textArr.length > 0) {
-        paragraphs.push(currentParagraph);
-        currentParagraph = { text: textArr.shift()! };
+        pLines[pLines.length - 1] += line;
+        pLines.push("");
       }
+
+      pLines[pLines.length - 1] += tail;
     }
 
-    if (currentParagraph && currentParagraph.text.trim() !== "") {
-      paragraphs.push(currentParagraph);
-    }
+    nextParagraph();
 
     return { paragraphs };
   });

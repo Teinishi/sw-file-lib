@@ -10,9 +10,9 @@ export function relativeImportPath(from: string, to: string): string {
   return rel;
 }
 
-export function filenameAndLine(node: ts.Node, sourceFile: ts.SourceFile): string {
-  const { line } = sourceFile.getLineAndCharacterOfPosition(node.pos);
-  return `${sourceFile.fileName}:${line + 1}`;
+export function loc(node: ts.Node, sourceFile: ts.SourceFile): string {
+  const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.pos);
+  return `${sourceFile.fileName}(${line + 1},${character + 1})`;
 }
 
 export class SetMap<K, V> {
