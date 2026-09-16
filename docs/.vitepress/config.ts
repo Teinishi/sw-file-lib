@@ -1,6 +1,6 @@
 import { defineConfig } from "vitepress";
 import { groupIconMdPlugin, groupIconVitePlugin } from "vitepress-plugin-group-icons";
-import tableColumnClassesPlugin from "@sw-file-lib/docs-plugins/table-column-classes";
+import tableColumnClassesPlugin from "@sw-file-lib/dev-tools/vitepress-table-column-classes";
 import typedocSidebar from "../src/api/typedoc-sidebar.json" with { type: "json" };
 
 // https://vitepress.dev/reference/site-config
