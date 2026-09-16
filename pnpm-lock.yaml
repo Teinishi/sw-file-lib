@@ -81,6 +81,12 @@ importers:
 
   packages/dev-tools:
     dependencies:
+      '@sw-file-lib/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
+      '@sw-file-lib/xml':
+        specifier: workspace:*
+        version: link:../xml
       commander:
         specifier: ^15.0.0
         version: 15.0.0

@@ -8,5 +8,5 @@
     "isolatedModules": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["*.ts", "src/**/*.ts"]
 }
