@@ -261,7 +261,7 @@ const ComponentOShape = {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
  *
- * Parent: {@link ComponentSchemaSchema}
+ * Parent: {@link ComponentSchema}
  *
  * @see {@link ComponentO}
  * @see {@link ComponentOImmutable}

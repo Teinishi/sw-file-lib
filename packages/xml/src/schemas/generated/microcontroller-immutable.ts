@@ -255,8 +255,6 @@ export interface GroupImmutable {
  *
  * XML location in vehicle data: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition>`
  *
- * Parent in vehicle data: {@link ComponentO}
- *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link Microcontroller} instead if mutation is required.
  *

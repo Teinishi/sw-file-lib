@@ -1,3 +1,6 @@
+export * from "./generated/common-schema";
+export * from "./generated/common-immutable";
+
 // @xml-schema
 /**
  * Represents elements with `x` and `y` attributes in Stormworks XML data.
@@ -6,7 +9,7 @@
  * {@link XmlVec2Immutable} for its parameter type.
  *
  * @see {@link XmlVec2Schema}
- * @see {@link XmlVec2}
+ * @see {@link XmlVec2Immutable}
  */
 export interface XmlVec2 {
   x?: number;
@@ -21,7 +24,7 @@ export interface XmlVec2 {
  * {@link XmlVec3Immutable} for its parameter type.
  *
  * @see {@link XmlVec3Schema}
- * @see {@link XmlVec3}
+ * @see {@link XmlVec3Immutable}
  */
 export interface XmlVec3 {
   x?: number;
@@ -37,7 +40,7 @@ export interface XmlVec3 {
  * {@link XmlRgbImmutable} for its parameter type.
  *
  * @see {@link XmlRgbSchema}
- * @see {@link XmlRgb}
+ * @see {@link XmlRgbImmutable}
  */
 export interface XmlRgb {
   r?: number;
@@ -53,7 +56,7 @@ export interface XmlRgb {
  * {@link XmlMat3Immutable} for its parameter type.
  *
  * @see {@link XmlMat3Schema}
- * @see {@link XmlMat3}
+ * @see {@link XmlMat3Immutable}
  */
 export interface XmlMat3 {
   "00"?: number;

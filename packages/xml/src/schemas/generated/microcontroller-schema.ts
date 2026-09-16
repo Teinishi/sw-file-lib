@@ -295,8 +295,6 @@ const MicrocontrollerShape = {
  *
  * XML location in vehicle data: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition>`
  *
- * Parent in vehicle data: {@link ComponentO}
- *
  * @see {@link Microcontroller}
  * @see {@link MicrocontrollerImmutable}
  */

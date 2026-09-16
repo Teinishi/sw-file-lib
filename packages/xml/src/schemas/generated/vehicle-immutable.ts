@@ -138,7 +138,7 @@ export interface AxisSensitivityImmutable {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
  *
- * Parent: {@link ComponentSchemaImmutable}
+ * Parent: {@link ComponentImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link ComponentO} instead if mutation is required.

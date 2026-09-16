@@ -119,7 +119,7 @@ export interface AxisSensitivity {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o>`
  *
- * Parent: {@link ComponentSchema}
+ * Parent: {@link Component}
  *
  *  If your function only reads the value and does not mutate it, prefer
  * {@link ComponentOImmutable} for its parameter type.

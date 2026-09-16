@@ -244,8 +244,6 @@ export interface Group {
  *
  * XML location in vehicle data: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition>`
  *
- * Parent in vehicle data: {@link ComponentO}
- *
  * If your function only reads the value and does not mutate it, prefer
  * {@link MicrocontrollerImmutable} for its parameter type.
  *
