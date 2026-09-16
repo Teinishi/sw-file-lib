@@ -11,10 +11,6 @@
   ],
   "type": "module",
   "exports": {
-    "./xml-schema-infer": {
-      "types": "./dist/xml-schema-infer/index.d.mts",
-      "import": "./dist/xml-schema-infer/index.mjs"
-    },
     "./markdown-codeblock": {
       "types": "./dist/markdown-codeblock/index.d.mts",
       "import": "./dist/markdown-codeblock/index.mjs"
