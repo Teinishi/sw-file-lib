@@ -31,7 +31,13 @@ export type GeneratedFile = {
   content: string;
 };
 
-export function generate(options: GenerateOptions): GeneratedFile[] {
+export type GenerateResult = {
+  files: GeneratedFile[];
+  typedocJson: string;
+  shapeSymbols: Set<string>;
+};
+
+export function generate(options: GenerateOptions): GenerateResult {
   const tsconfig = ts.readConfigFile(options.tsconfig, ts.sys.readFile);
 
   const parsed = ts.parseJsonConfigFileContent(tsconfig.config, ts.sys, ".");
@@ -52,13 +58,16 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
   }
 
   const outFiles: GeneratedFile[] = [];
+  let shapeSymbols: Set<string> = new Set();
 
   for (const inputFile of inputFiles) {
     const filePaths = createFilePaths(inputFile, options.outDir);
 
+    const schemaFile = generateSchemaFile(inputFile, filePaths, options);
+    shapeSymbols = shapeSymbols.union(schemaFile.shapeSymbols);
     outFiles.push({
       path: filePaths.schema,
-      content: generateSchemaFile(inputFile, filePaths, options),
+      content: schemaFile.content,
     });
 
     outFiles.push({
@@ -67,19 +76,35 @@ export function generate(options: GenerateOptions): GeneratedFile[] {
     });
   }
 
-  return outFiles;
+  const typedocJson = JSON.stringify(
+    {
+      intentionallyNotExported: Array.from(shapeSymbols),
+    },
+    null,
+    2,
+  );
+
+  return {
+    files: outFiles,
+    typedocJson,
+    shapeSymbols,
+  };
 }
 
 export async function generateFormatted(
   options: GenerateOptions,
   formatConfig?: FormatConfig | undefined,
-): Promise<GeneratedFile[]> {
-  const outFiles = generate(options);
+): Promise<GenerateResult> {
+  const result = generate(options);
 
-  return Promise.all(
-    outFiles.map(async (file) => ({
-      path: file.path,
-      content: (await format(file.path, file.content, formatConfig)).code,
-    })),
-  );
+  return {
+    files: await Promise.all(
+      result.files.map(async (file) => ({
+        path: file.path,
+        content: (await format(file.path, file.content, formatConfig)).code,
+      })),
+    ),
+    typedocJson: (await format("typedoc.json", result.typedocJson, formatConfig)).code,
+    shapeSymbols: result.shapeSymbols,
+  };
 }

@@ -23,8 +23,9 @@ export function generateSchemaFile(
   inputFile: InputFileInfo,
   filePaths: FilePaths,
   options: { xImportStatement?: string },
-): string {
+): { content: string; shapeSymbols: Set<string> } {
   const commentImports = new SetMap<string, string>();
+  const shapeSymbols = new Set<string>();
 
   const body = inputFile.schemas
     .map((s) => {
@@ -33,7 +34,11 @@ export function generateSchemaFile(
         target: "schema",
         see: ["mutableInterface", "immutableInterface"],
       });
-      return generateSchemaCode(s, jsdoc?.join("\n") ?? "") + "\n";
+      const { code, shapeSymbol } = generateSchemaCode(s, jsdoc?.join("\n") ?? "");
+      if (shapeSymbol) {
+        shapeSymbols.add(shapeSymbol);
+      }
+      return code + "\n";
     })
     .join("\n");
 
@@ -50,7 +55,10 @@ export function generateSchemaFile(
     importStatements: options.xImportStatement ? [options.xImportStatement] : undefined,
   });
 
-  return GENERATED_FILE_HEADER + "\n\n" + importBlock + "\n\n" + body;
+  return {
+    content: GENERATED_FILE_HEADER + "\n\n" + importBlock + "\n\n" + body,
+    shapeSymbols,
+  };
 }
 
 export function generateImmutableInterfaceFile(

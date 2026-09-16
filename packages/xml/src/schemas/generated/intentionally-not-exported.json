@@ -1,0 +1,33 @@
+{
+  "intentionallyNotExported": [
+    "XmlVec2Shape",
+    "XmlVec3Shape",
+    "XmlRgbShape",
+    "XmlMat3Shape",
+    "SfxLayerShape",
+    "SfxDataShape",
+    "SurfaceShape",
+    "LogicNodeShape",
+    "CouplingShape",
+    "VoxelShape",
+    "JetEngineConnectionShape",
+    "ComponentDefinitionShape",
+    "TextValuePairShape",
+    "NodeShape",
+    "ObjectInShape",
+    "ComponentObjectShape",
+    "ComponentShape",
+    "BridgeComponentObjectShape",
+    "BridgeComponentShape",
+    "GroupShape",
+    "MicrocontrollerShape",
+    "AuthorShape",
+    "LogicSlotShape",
+    "DisplayShape",
+    "AxisSensitivityShape",
+    "ComponentOShape",
+    "BodyShape",
+    "LogicNodeLinkShape",
+    "VehicleShape"
+  ]
+}

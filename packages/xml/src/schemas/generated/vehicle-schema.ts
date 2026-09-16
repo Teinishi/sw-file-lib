@@ -338,8 +338,7 @@ const VehicleShape = {
 /**
  * Represents root `<vehicle>` element in Stormworks vehicle data.
  *
- * Inferred from {@link VehicleSchema} and used as the return type of
- * {@link parseVehicleXml} and {@link safeParseVehicleXml} function.
+ * Used as the return type of {@link parseVehicleXml} and {@link safeParseVehicleXml} function.
  *
  * @see {@link Vehicle}
  * @see {@link VehicleImmutable}

@@ -73,8 +73,9 @@ function generateImportStatements(
 export function generateSchemaCode(
   declaration: SchemaDeclarationInfo,
   leadingComment?: string | undefined,
-): string {
+): { code: string; shapeSymbol: string | undefined } {
   let code = leadingComment ? leadingComment + "\n" : "";
+  let shapeSymbol: string | undefined;
 
   code += `export const ${declaration.name}Schema`;
 
@@ -82,14 +83,15 @@ export function generateSchemaCode(
     case "object":
       // TS7056 の対策に、shape を先に定義して schema の型を明示的に指定する
       const objectShape = generateSchemaShape(declaration.schema.members);
-      code = `const ${declaration.name}Shape = ${objectShape};\n\n` + code;
-      code += `: x.ObjectSchema<typeof ${declaration.name}Shape, ${declaration.name}> = x.object(${declaration.name}Shape);`;
-      return code;
+      shapeSymbol = `${declaration.name}Shape`;
+      code = `const ${shapeSymbol} = ${objectShape};\n\n` + code;
+      code += `: x.ObjectSchema<typeof ${shapeSymbol}, ${declaration.name}> = x.object(${shapeSymbol});`;
+      break;
 
     case "list":
       const listItemType = generateTypeSchema(declaration.schema.itemType);
       code += ` = x.list("${declaration.schema.itemTag}", ${listItemType});`;
-      return code;
+      break;
 
     case "metalist":
       const metalistShape = generateSchemaShape(declaration.schema.metaMembers, "  ");
@@ -99,8 +101,10 @@ export function generateSchemaCode(
       code += `  x.object(${metalistShape}),\n`;
       code += `  ${metalistItemType},\n`;
       code += `);`;
-      return code;
+      break;
   }
+
+  return { code, shapeSymbol };
 }
 
 function generateSchemaShape(members: ObjectSchemaMemberInfo[], indent: string = ""): string {

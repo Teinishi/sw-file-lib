@@ -318,8 +318,7 @@ export interface LogicNodeLink {
 /**
  * Represents root `<vehicle>` element in Stormworks vehicle data.
  *
- * Inferred from {@link VehicleSchema} and used as the return type of
- * {@link parseVehicleXml} and {@link safeParseVehicleXml} function.
+ * Used as the return type of {@link parseVehicleXml} and {@link safeParseVehicleXml} function.
  *
  * If your function only reads the value and does not mutate it, prefer
  * {@link VehicleImmutable} for its parameter type.

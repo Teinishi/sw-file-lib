@@ -1,16 +1,16 @@
 #!/usr/bin/env tsx
 
 import fs from "node:fs/promises";
-import { resolve } from "node:path";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { consola } from "consola";
 import { loadOxfmtConfig } from "load-oxfmt-config";
 import { version } from "../../package.json";
-import { generateFormatted, type GeneratedFile, type GenerateOptions } from "./index";
+import { generateFormatted, type GenerateOptions, type GenerateResult } from "./index";
 
-async function loadConfig(path: string) {
-  const url = pathToFileURL(resolve(path)).href;
+async function loadConfig(configPath: string) {
+  const url = pathToFileURL(path.resolve(configPath)).href;
   const mod = await import(url);
   return mod.default;
 }
@@ -55,7 +55,7 @@ program
       ...(xImportStatement ? { xImportStatement } : {}),
     };
 
-    let result: GeneratedFile[];
+    let result: GenerateResult;
 
     try {
       const formatConfig = await loadOxfmtConfig({ cwd: process.cwd() });
@@ -70,12 +70,17 @@ program
       process.exit(1);
     }
 
-    const resolvedOutDir = resolve(generateOptions.outDir);
+    const files = result.files.concat({
+      path: path.join(outDir, "intentionally-not-exported.json"),
+      content: result.typedocJson,
+    });
+
+    const resolvedOutDir = path.resolve(generateOptions.outDir);
 
     if (check) {
       const errors: string[] = [];
 
-      for (const file of result) {
+      for (const file of files) {
         const outputPath = file.path;
         let existingContent: string | null = null;
 
@@ -103,7 +108,7 @@ program
       await fs.rm(resolvedOutDir, { recursive: true, force: true });
       await fs.mkdir(resolvedOutDir, { recursive: true });
 
-      for (const file of result) {
+      for (const file of files) {
         const outputPath = file.path;
         await fs.writeFile(outputPath, file.content, "utf-8");
         consola.info(`Generated ${outputPath}`);
