@@ -37,8 +37,8 @@
     "analyze:component": "pnpm run analyze --config component-definition.analyzer-config.ts"
   },
   "dependencies": {
-    "@sw-file-lib/xml": "workspace:*",
     "@sw-file-lib/test-utils": "workspace:*",
+    "@sw-file-lib/xml": "workspace:*",
     "commander": "^15.0.0",
     "consola": "^3.4.2",
     "load-oxfmt-config": "^0.23.0"
