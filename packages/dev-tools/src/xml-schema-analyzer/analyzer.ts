@@ -258,6 +258,7 @@ function unifyAttributes(attributes: AnalyzedAttribute[]): AttributeSchemaType {
 function createObjectSchema(
   nodes: AnalyzedNode[],
   xmlLocations: XmlLocation[],
+  options: AnalyzeOptions | undefined,
   excludeChild?: string,
 ): ObjectSchemaType {
   const attrOrder = new OrderGraph<string>();
@@ -281,8 +282,8 @@ function createObjectSchema(
 
     return {
       key,
-      isOptional: data.length < nodes.length,
-      type: unifyToSchemaType(data, appendXmlLocations(xmlLocations, key)),
+      isOptional: options?.forceOptional || data.length < nodes.length,
+      type: unifyToSchemaType(data, appendXmlLocations(xmlLocations, key), options),
     };
   });
 
@@ -297,9 +298,10 @@ function createListSchema(
   nodes: AnalyzedNode[],
   xmlLocations: XmlLocation[],
   itemTag: string,
+  options: AnalyzeOptions | undefined,
 ): ListSchemaType {
   const itemNodes = nodes.flatMap((n) => n.children.filter((c) => c.tag === itemTag));
-  const itemSchema = unifyNodes(itemNodes, appendXmlLocations(xmlLocations, itemTag));
+  const itemSchema = unifyNodes(itemNodes, appendXmlLocations(xmlLocations, itemTag), options);
   return {
     kind: "list",
     xmlLocations: [],
@@ -312,9 +314,10 @@ function createMetalistSchema(
   nodes: AnalyzedNode[],
   xmlLocations: XmlLocation[],
   itemTag: string,
+  options: AnalyzeOptions | undefined,
 ): MetalistSchemaType {
-  const objectSchema = createObjectSchema(nodes, xmlLocations, itemTag);
-  const listSchema = createListSchema(nodes, xmlLocations, itemTag);
+  const objectSchema = createObjectSchema(nodes, xmlLocations, options, itemTag);
+  const listSchema = createListSchema(nodes, xmlLocations, itemTag, options);
 
   return {
     kind: "metalist",
@@ -325,7 +328,11 @@ function createMetalistSchema(
   };
 }
 
-function unifyNodes(nodes: AnalyzedNode[], xmlLocations: XmlLocation[]): ElementSchemaType {
+function unifyNodes(
+  nodes: AnalyzedNode[],
+  xmlLocations: XmlLocation[],
+  options: AnalyzeOptions | undefined,
+): ElementSchemaType {
   const maxChildCountMap = new Map<string, number>();
   for (const node of nodes) {
     for (const [tag, count] of node.childCountMap) {
@@ -335,11 +342,11 @@ function unifyNodes(nodes: AnalyzedNode[], xmlLocations: XmlLocation[]): Element
 
   if (nodes.every((n) => n.couldBeList) && maxChildCountMap.size === 1) {
     const itemTag = maxChildCountMap.keys().next().value!;
-    return createListSchema(nodes, xmlLocations, itemTag);
+    return createListSchema(nodes, xmlLocations, itemTag, options);
   }
 
   if (nodes.every((n) => n.couldBeRecord)) {
-    return createObjectSchema(nodes, xmlLocations);
+    return createObjectSchema(nodes, xmlLocations, options);
   }
 
   if (nodes.every((n) => n.couldBeMetalist)) {
@@ -353,7 +360,7 @@ function unifyNodes(nodes: AnalyzedNode[], xmlLocations: XmlLocation[]): Element
       );
     }
     const itemTag = possibleItemTags[0]!;
-    return createMetalistSchema(nodes, xmlLocations, itemTag);
+    return createMetalistSchema(nodes, xmlLocations, itemTag, options);
   }
 
   throw new Error(
@@ -367,6 +374,7 @@ function unifyNodes(nodes: AnalyzedNode[], xmlLocations: XmlLocation[]): Element
 function unifyToSchemaType(
   data: (AnalyzedAttribute | AnalyzedNode)[],
   xmlLocations: XmlLocation[],
+  options: AnalyzeOptions | undefined,
 ): SchemaType {
   const attributes = data.filter((d): d is AnalyzedAttribute => d.kind === "attribute");
   const nodes = data.filter((d): d is AnalyzedNode => d.kind === "node");
@@ -374,16 +382,22 @@ function unifyToSchemaType(
   if (nodes.length === 0) {
     return unifyAttributes(attributes);
   } else if (attributes.length === 0) {
-    return unifyNodes(nodes, xmlLocations);
+    return unifyNodes(nodes, xmlLocations, options);
   } else {
     return {
       kind: "union",
-      types: [unifyNodes(nodes, xmlLocations), unifyToSchemaType(attributes, xmlLocations)],
+      types: [
+        unifyNodes(nodes, xmlLocations, options),
+        unifyToSchemaType(attributes, xmlLocations, options),
+      ],
     };
   }
 }
 
-function unifyNodeLists(nodeLists: AnalyzedNode[][]): ElementSchemaType[] {
+function unifyNodeLists(
+  nodeLists: AnalyzedNode[][],
+  options?: AnalyzeOptions | undefined,
+): ElementSchemaType[] {
   const nodeOrder = new OrderGraph<string>();
 
   for (const nodeList of nodeLists) {
@@ -398,11 +412,12 @@ function unifyNodeLists(nodeLists: AnalyzedNode[][]): ElementSchemaType[] {
     )
     .map((nodes) => {
       const xmlLocations = jsonUnique(nodes.map((n) => n.xmlLocation));
-      return unifyNodes(nodes, xmlLocations);
+      return unifyNodes(nodes, xmlLocations, options);
     });
 }
 
 export interface AnalyzeOptions {
+  forceOptional?: boolean;
   forceKind?: Record<string, "object" | "list" | "metalist">;
 }
 
@@ -418,5 +433,5 @@ export async function analyzeFiles(
     ),
   );
 
-  return unifyNodeLists(analyzedFiles);
+  return unifyNodeLists(analyzedFiles, options);
 }

@@ -28,6 +28,7 @@ program
   .action(async (options) => {
     let input: string | string[] = options.input;
     let outDir: string = options.outDir;
+    let forceOptional: boolean | undefined = undefined;
     let predefinedSchemas:
       | { importPath?: string; schemas: Record<string, PredefinedSchema> }[]
       | undefined = undefined;
@@ -38,6 +39,7 @@ program
 
       input ??= config.input;
       outDir ??= config.outDir;
+      forceOptional ??= config.forceOptional;
       predefinedSchemas ??= config.predefinedSchemas;
       forceKind ??= config.forceKind;
     } else {
@@ -48,21 +50,25 @@ program
       }
     }
 
-    const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
-
-    consola.info(`Analyzing ${inputFiles.length} XML files...`);
-    const result = await analyzeFiles(inputFiles, forceKind ? { forceKind } : {});
-    consola.info(`Analysis complete. Generating TypeScript code and JSON schema...`);
-    const code = generateInterfaceCode(result, predefinedSchemas);
-    consola.info(`Code generation complete. Writing output to ${outDir}...`);
-
     const jsonPath = path.join(outDir, "schema.json");
     const tsPath = path.join(outDir, "schema.ts");
 
+    const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
+
+    consola.info(`Analyzing ${inputFiles.length} XML files...`);
+    const originalSchemas = await analyzeFiles(inputFiles, {
+      forceOptional: forceOptional ?? false,
+      ...(forceKind ? { forceKind } : {}),
+    });
+    consola.info(`Analysis complete.`);
+
     await fs.rm(outDir, { recursive: true, force: true });
     await fs.mkdir(outDir, { recursive: true });
-    await fs.writeFile(jsonPath, JSON.stringify(result, null, 2), "utf-8");
+    await fs.writeFile(jsonPath, JSON.stringify(originalSchemas, null, 2), "utf-8");
     consola.success(`Schema JSON written to ${jsonPath}`);
+
+    const code = generateInterfaceCode(originalSchemas, predefinedSchemas);
+
     await fs.writeFile(tsPath, code, "utf-8");
     consola.success(`Schema TypeScript written to ${tsPath}`);
   });

@@ -38,6 +38,7 @@ export interface PredefinedSchemaFile {
 export interface Config {
   input: string | string[];
   outDir: string;
+  forceOptional?: boolean;
   predefinedSchemas?: PredefinedSchemaFile[];
   forceKind?: Record<string, "object" | "list" | "metalist">;
 }

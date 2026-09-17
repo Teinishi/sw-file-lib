@@ -9,6 +9,7 @@ export default defineConfig(async () => {
   return {
     input,
     outDir: "./.tmp/component-definition",
+    forceOptional: true,
     predefinedSchemas: [
       {
         importPath: "./common",
