@@ -8,24 +8,37 @@ export type PredefinedSchemaType =
   | PredefinedSchema
   | PredefinedSchemaType[];
 
-export type PredefinedSchema = {
-  kind: "object";
-  properties: Record<
-    string,
-    {
-      type: PredefinedSchemaType;
-      optional: boolean;
+export interface PredefinedSchemaProperty {
+  type: PredefinedSchemaType;
+  optional: boolean;
+}
+
+export type PredefinedSchema =
+  | {
+      kind: "object";
+      properties: Record<string, PredefinedSchemaProperty>;
     }
-  >;
-};
+  | {
+      kind: "list";
+      itemTag: string;
+      itemType: PredefinedSchemaType;
+    }
+  | {
+      kind: "metalist";
+      metaProperties: Record<string, PredefinedSchemaProperty>;
+      itemTag: string;
+      itemType: PredefinedSchemaType;
+    };
+
+export interface PredefinedSchemaFile {
+  importPath?: string;
+  schemas: Record<string, PredefinedSchema>;
+}
 
 export interface Config {
   input: string | string[];
   outDir: string;
-  predefinedSchemas?: {
-    importPath?: string;
-    schemas: Record<string, PredefinedSchema>;
-  }[];
+  predefinedSchemas?: PredefinedSchemaFile[];
   forceKind?: Record<string, "object" | "list" | "metalist">;
 }
 

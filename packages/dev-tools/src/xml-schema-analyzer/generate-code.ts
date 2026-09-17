@@ -1,3 +1,4 @@
+import type { PredefinedSchema, PredefinedSchemaFile, PredefinedSchemaType } from ".";
 import {
   schemaTypeEquals,
   type ElementSchemaType,
@@ -129,6 +130,110 @@ function propertyMemberCode(
   return lines.map((l) => indent + l).join("\n");
 }
 
+function parsePredefinedSchemaType(type: PredefinedSchemaType): SchemaType {
+  if (type === "string") {
+    return { kind: "string" };
+  } else if (type === "number") {
+    return { kind: "number", numberKind: "float" };
+  } else if (type === "boolean") {
+    return { kind: "boolean" };
+  } else if (Array.isArray(type)) {
+    return { kind: "union", types: type.map(parsePredefinedSchemaType) };
+  } else {
+    return parsePredefinedSchema(type);
+  }
+}
+
+function parsePredefinedSchema(schema: PredefinedSchema): ElementSchemaType {
+  switch (schema.kind) {
+    case "object":
+      return {
+        kind: "object",
+        xmlLocations: [],
+        properties: Object.entries(schema.properties).map(([key, prop]) => ({
+          key,
+          isOptional: prop.optional,
+          type: parsePredefinedSchemaType(prop.type),
+        })),
+      };
+    case "list":
+      return {
+        kind: "list",
+        xmlLocations: [],
+        itemTag: schema.itemTag,
+        itemType: parsePredefinedSchemaType(schema.itemType),
+      };
+    case "metalist":
+      return {
+        kind: "metalist",
+        xmlLocations: [],
+        metaProperties: Object.entries(schema.metaProperties).map(([key, prop]) => ({
+          key,
+          isOptional: prop.optional,
+          type: parsePredefinedSchemaType(prop.type),
+        })),
+        itemTag: schema.itemTag,
+        itemType: parsePredefinedSchemaType(schema.itemType),
+      };
+  }
+}
+
+function reducePredefinedSchema(
+  schemas: ElementSchemaType[],
+  predefinedSchemas: PredefinedSchemaFile[],
+): {
+  imports: Map<string, string[]>;
+  identifierMap: Map<ElementSchemaType, string>;
+  reduced: ElementSchemaType[];
+} {
+  const flatPredefinedSchemas = predefinedSchemas.flatMap((f) =>
+    Object.entries(f.schemas).map(([name, p]) => ({
+      importPath: f.importPath,
+      name,
+      schema: parsePredefinedSchema(p),
+    })),
+  );
+
+  const importTable = new Map<string, Map<string, boolean>>();
+  for (const pFile of predefinedSchemas) {
+    if (pFile.importPath !== undefined) {
+      importTable.set(pFile.importPath, new Map(Object.keys(pFile.schemas).map((k) => [k, false])));
+    }
+  }
+
+  const identifierMap = new Map<ElementSchemaType, string>();
+  const reduced: ElementSchemaType[] = [];
+
+  for (const schema of schemas) {
+    let found = false;
+    for (const predefined of flatPredefinedSchemas) {
+      if (schemaTypeEquals(schema, predefined.schema, { ignoreNumberKind: true })) {
+        identifierMap.set(schema, predefined.name);
+        if (predefined.importPath !== undefined) {
+          importTable.get(predefined.importPath)!.set(predefined.name, true);
+        }
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      reduced.push(schema);
+    }
+  }
+
+  const imports = new Map<string, string[]>();
+  for (const [importPath, names] of importTable) {
+    const usedNames = Array.from(names.entries())
+      .filter(([_, used]) => used)
+      .map(([name, _]) => name);
+    if (usedNames.length > 0) {
+      imports.set(importPath, usedNames);
+    }
+  }
+
+  return { imports, identifierMap, reduced };
+}
+
 function mergeIdenticalSchemas(schemas: ElementSchemaType[]): {
   merged: ElementSchemaType[];
   map: Map<ElementSchemaType, ElementSchemaType>;
@@ -149,7 +254,10 @@ function mergeIdenticalSchemas(schemas: ElementSchemaType[]): {
   return { merged, map };
 }
 
-export function generateInterfaceCode(rootSchemas: ElementSchemaType[]): string {
+export function generateInterfaceCode(
+  rootSchemas: ElementSchemaType[],
+  predefinedSchemas?: PredefinedSchemaFile[] | undefined,
+): string {
   const flatEntries: ElementSchemaType[] = [];
 
   function visit(schema: ElementSchemaType) {
@@ -186,7 +294,8 @@ export function generateInterfaceCode(rootSchemas: ElementSchemaType[]): string 
     visit(schema);
   }
 
-  const { merged: entries, map: schemaMergeMap } = mergeIdenticalSchemas(flatEntries);
+  const pResult = reducePredefinedSchema(flatEntries, predefinedSchemas ?? []);
+  const { merged: entries, map: schemaMergeMap } = mergeIdenticalSchemas(pResult.reduced);
 
   const identifiers = makeUniqueIdentifiers(entries.map((e) => e.xmlLocations[0]!)).map(
     toPascalCase,
@@ -199,8 +308,19 @@ export function generateInterfaceCode(rootSchemas: ElementSchemaType[]): string 
   for (const [original, merged] of schemaMergeMap) {
     identifierMap.set(original, identifierMap.get(merged)!);
   }
+  for (const [original, predefined] of pResult.identifierMap) {
+    identifierMap.set(original, predefined);
+  }
 
   const codeEntries: string[] = [];
+
+  if (pResult.imports.size > 0) {
+    const lines: string[] = [];
+    for (const [importPath, names] of pResult.imports) {
+      lines.push(`import { ${names.join(", ")} } from "${importPath}";`);
+    }
+    codeEntries.push(lines.join("\n") + "\n");
+  }
 
   for (const schema of entries) {
     if (!identifierMap.has(schema)) {

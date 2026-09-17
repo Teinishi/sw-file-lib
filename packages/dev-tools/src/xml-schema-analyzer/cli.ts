@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
+import consola from "consola";
 import { version } from "../../package.json";
 import { analyzeFiles } from "./analyzer";
 import { generateInterfaceCode } from "./generate-code";
@@ -49,17 +50,21 @@ program
 
     const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
 
-    const analyzeOptions = {
-      ...(predefinedSchemas ? predefinedSchemas : {}),
-      ...(forceKind ? { forceKind } : {}),
-    };
-    const result = await analyzeFiles(inputFiles, analyzeOptions);
-    const code = generateInterfaceCode(result);
+    consola.info(`Analyzing ${inputFiles.length} XML files...`);
+    const result = await analyzeFiles(inputFiles, forceKind ? { forceKind } : {});
+    consola.info(`Analysis complete. Generating TypeScript code and JSON schema...`);
+    const code = generateInterfaceCode(result, predefinedSchemas);
+    consola.info(`Code generation complete. Writing output to ${outDir}...`);
+
+    const jsonPath = path.join(outDir, "schema.json");
+    const tsPath = path.join(outDir, "schema.ts");
 
     await fs.rm(outDir, { recursive: true, force: true });
     await fs.mkdir(outDir, { recursive: true });
-    await fs.writeFile(path.join(outDir, "schema.json"), JSON.stringify(result, null, 2), "utf-8");
-    await fs.writeFile(path.join(outDir, "schema.ts"), code, "utf-8");
+    await fs.writeFile(jsonPath, JSON.stringify(result, null, 2), "utf-8");
+    consola.success(`Schema JSON written to ${jsonPath}`);
+    await fs.writeFile(tsPath, code, "utf-8");
+    consola.success(`Schema TypeScript written to ${tsPath}`);
   });
 
 program.parseAsync();

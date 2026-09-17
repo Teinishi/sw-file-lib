@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import consola from "consola";
 import { parseSwXml, SwXmlNode } from "@sw-file-lib/xml";
-import type { PredefinedSchema } from ".";
 import { OrderGraph, prefixPriority } from "./order-graph";
 
 function jsonUnique<T>(rows: T[]): T[] {
@@ -404,10 +403,6 @@ function unifyNodeLists(nodeLists: AnalyzedNode[][]): ElementSchemaType[] {
 }
 
 export interface AnalyzeOptions {
-  predefinedSchemas?: {
-    importPath?: string;
-    schemas: Record<string, PredefinedSchema>;
-  }[];
   forceKind?: Record<string, "object" | "list" | "metalist">;
 }
 
