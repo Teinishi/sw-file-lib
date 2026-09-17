@@ -31,16 +31,16 @@ export type PredefinedSchema =
     };
 
 export interface PredefinedSchemaFile {
-  importPath?: string;
-  schemas: Record<string, PredefinedSchema>;
+  readonly importPath?: string;
+  readonly schemas: Record<string, PredefinedSchema>;
 }
 
 export interface Config {
-  input: string | string[];
-  outDir: string;
-  forceOptional?: boolean;
-  predefinedSchemas?: PredefinedSchemaFile[];
-  forceKind?: Record<string, "object" | "list" | "metalist">;
+  readonly input: string | readonly string[];
+  readonly out: string;
+  readonly forceOptional?: boolean;
+  readonly predefinedSchemas?: readonly PredefinedSchemaFile[];
+  readonly forceKind?: Record<string, "object" | "list" | "metalist">;
 }
 
 export type AcceptableConfig = (() => Promise<Config>) | Promise<Config> | (() => Config) | Config;

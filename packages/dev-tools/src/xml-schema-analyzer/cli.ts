@@ -8,7 +8,7 @@ import consola from "consola";
 import { version } from "../../package.json";
 import { analyzeFiles } from "./analyzer";
 import { generateInterfaceCode } from "./generate-code";
-import type { Config, PredefinedSchema } from "./index";
+import type { Config, ElementSchemaType, PredefinedSchema } from "./index";
 
 async function loadConfig(configPath: string): Promise<Config> {
   const url = pathToFileURL(path.resolve(configPath)).href;
@@ -23,14 +23,16 @@ program
   .description("Analyze XML schema from XML files")
   .version(version)
   .option("-i, --input <glob>", "Input XML files (glob)")
-  .option("-o, --out-dir <directory>", "Output directory")
+  .option("-o, --out <output>", "Output file path for schema TypeScript")
+  .option("-r, --refresh", "Refresh cache and re-analyze XML files")
   .option("-c, --config <file>", "Config file")
   .action(async (options) => {
-    let input: string | string[] = options.input;
-    let outDir: string = options.outDir;
+    let input: string | readonly string[] = options.input;
+    let out: string = options.out;
+    const refresh: boolean = options.refresh ?? false;
     let forceOptional: boolean | undefined = undefined;
     let predefinedSchemas:
-      | { importPath?: string; schemas: Record<string, PredefinedSchema> }[]
+      | readonly { importPath?: string; schemas: Record<string, PredefinedSchema> }[]
       | undefined = undefined;
     let forceKind: Record<string, "object" | "list" | "metalist"> | undefined = undefined;
 
@@ -38,39 +40,46 @@ program
       const config = await loadConfig(options.config);
 
       input ??= config.input;
-      outDir ??= config.outDir;
+      out ??= config.out;
       forceOptional ??= config.forceOptional;
       predefinedSchemas ??= config.predefinedSchemas;
       forceKind ??= config.forceKind;
     } else {
-      if (!options.input || !options.outDir) {
+      if (!options.input || !options.out) {
         program.error(
-          "Missing required options. Please provide either a config file or input and out-dir options.",
+          "Missing required options. Please provide either a config file or input and out options.",
         );
       }
     }
 
-    const jsonPath = path.join(outDir, "schema.json");
-    const tsPath = path.join(outDir, "schema.ts");
+    const outPath = path.parse(out);
+    const jsonPath = path.join(outPath.dir, outPath.name + ".cache.json");
 
-    const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
+    let originalSchemas: ElementSchemaType[] = [];
 
-    consola.info(`Analyzing ${inputFiles.length} XML files...`);
-    const originalSchemas = await analyzeFiles(inputFiles, {
-      forceOptional: forceOptional ?? false,
-      ...(forceKind ? { forceKind } : {}),
-    });
-    consola.info(`Analysis complete.`);
+    const jsonHandle = refresh ? undefined : await fs.open(jsonPath, "r").catch(() => undefined);
+    if (jsonHandle) {
+      const json = await fs.readFile(jsonPath, "utf-8");
+      originalSchemas = JSON.parse(json);
+      consola.info(`Using cached data from ${jsonPath}`);
+      jsonHandle.close();
+    } else {
+      const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
 
-    await fs.rm(outDir, { recursive: true, force: true });
-    await fs.mkdir(outDir, { recursive: true });
-    await fs.writeFile(jsonPath, JSON.stringify(originalSchemas, null, 2), "utf-8");
-    consola.success(`Schema JSON written to ${jsonPath}`);
+      consola.info(`Analyzing ${inputFiles.length} XML files...`);
+      originalSchemas = await analyzeFiles(inputFiles, {
+        forceOptional: forceOptional ?? false,
+        ...(forceKind ? { forceKind } : {}),
+      });
+      consola.info(`Analysis complete.`);
+
+      await fs.writeFile(jsonPath, JSON.stringify(originalSchemas, null, 2), "utf-8");
+    }
 
     const code = generateInterfaceCode(originalSchemas, predefinedSchemas);
 
-    await fs.writeFile(tsPath, code, "utf-8");
-    consola.success(`Schema TypeScript written to ${tsPath}`);
+    await fs.writeFile(out, code, "utf-8");
+    consola.success(`Schema TypeScript written to ${out}`);
   });
 
 program.parseAsync();

@@ -180,7 +180,7 @@ function parsePredefinedSchema(schema: PredefinedSchema): ElementSchemaType {
 
 function reducePredefinedSchema(
   schemas: ElementSchemaType[],
-  predefinedSchemas: PredefinedSchemaFile[],
+  predefinedSchemas: readonly PredefinedSchemaFile[],
 ): {
   imports: Map<string, string[]>;
   identifierMap: Map<ElementSchemaType, string>;
@@ -256,7 +256,7 @@ function mergeIdenticalSchemas(schemas: ElementSchemaType[]): {
 
 export function generateInterfaceCode(
   rootSchemas: ElementSchemaType[],
-  predefinedSchemas?: PredefinedSchemaFile[] | undefined,
+  predefinedSchemas?: readonly PredefinedSchemaFile[] | undefined,
 ): string {
   const flatEntries: ElementSchemaType[] = [];
 
