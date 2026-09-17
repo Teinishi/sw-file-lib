@@ -1,13 +1,16 @@
 import fs from "node:fs/promises";
 import consola from "consola";
 import { parseSwXml, SwXmlNode } from "@sw-file-lib/xml";
+import type { PredefinedSchema } from ".";
 import { OrderGraph, prefixPriority } from "./order-graph";
 
 function jsonUnique<T>(rows: T[]): T[] {
   return [...new Map(rows.map((row) => [JSON.stringify(row), row])).values()];
 }
 
-function appendXmlLocations(xmlLocations: string[][], suffix: string): string[][] {
+export type XmlLocation = readonly string[];
+
+function appendXmlLocations(xmlLocations: XmlLocation[], suffix: string): XmlLocation[] {
   return xmlLocations.map((loc) => [...loc, suffix]);
 }
 
@@ -23,7 +26,7 @@ interface AnalyzedAttribute {
 interface AnalyzedNode {
   kind: "node";
   tag: string;
-  xmlLocation: string[];
+  xmlLocation: XmlLocation;
   couldBeRecord: boolean;
   couldBeList: boolean;
   couldBeMetalist: boolean;
@@ -38,7 +41,7 @@ interface AnalyzeNodeOptions extends AnalyzeOptions {
 
 function analyzeNode(
   node: SwXmlNode,
-  parentXmlLocation: readonly string[],
+  parentXmlLocation: XmlLocation,
   options?: AnalyzeNodeOptions,
 ): AnalyzedNode {
   const xmlLocation = [...parentXmlLocation, node.tag];
@@ -58,7 +61,7 @@ function analyzeNode(
   if (options?.forceKind) {
     const k = options.forceKind[xmlLocation.join("/")];
     switch (k) {
-      case "record":
+      case "object":
         couldBeRecord = true;
         couldBeList = false;
         couldBeMetalist = false;
@@ -134,20 +137,20 @@ export type AttributeSchemaType =
 
 export type ObjectSchemaType = {
   kind: "object";
-  xmlLocations: string[][];
+  xmlLocations: XmlLocation[];
   properties: SchemaProperty[];
 };
 
 export type ListSchemaType = {
   kind: "list";
-  xmlLocations: string[][];
+  xmlLocations: XmlLocation[];
   itemTag: string;
   itemType: SchemaType;
 };
 
 export type MetalistSchemaType = {
   kind: "metalist";
-  xmlLocations: string[][];
+  xmlLocations: XmlLocation[];
   metaProperties: SchemaProperty[];
   itemTag: string;
   itemType: SchemaType;
@@ -255,7 +258,7 @@ function unifyAttributes(attributes: AnalyzedAttribute[]): AttributeSchemaType {
 
 function createObjectSchema(
   nodes: AnalyzedNode[],
-  xmlLocations: string[][],
+  xmlLocations: XmlLocation[],
   excludeChild?: string,
 ): ObjectSchemaType {
   const attrOrder = new OrderGraph<string>();
@@ -293,7 +296,7 @@ function createObjectSchema(
 
 function createListSchema(
   nodes: AnalyzedNode[],
-  xmlLocations: string[][],
+  xmlLocations: XmlLocation[],
   itemTag: string,
 ): ListSchemaType {
   const itemNodes = nodes.flatMap((n) => n.children.filter((c) => c.tag === itemTag));
@@ -308,7 +311,7 @@ function createListSchema(
 
 function createMetalistSchema(
   nodes: AnalyzedNode[],
-  xmlLocations: string[][],
+  xmlLocations: XmlLocation[],
   itemTag: string,
 ): MetalistSchemaType {
   const objectSchema = createObjectSchema(nodes, xmlLocations, itemTag);
@@ -323,7 +326,7 @@ function createMetalistSchema(
   };
 }
 
-function unifyNodes(nodes: AnalyzedNode[], xmlLocations: string[][]): ElementSchemaType {
+function unifyNodes(nodes: AnalyzedNode[], xmlLocations: XmlLocation[]): ElementSchemaType {
   const maxChildCountMap = new Map<string, number>();
   for (const node of nodes) {
     for (const [tag, count] of node.childCountMap) {
@@ -364,7 +367,7 @@ function unifyNodes(nodes: AnalyzedNode[], xmlLocations: string[][]): ElementSch
 
 function unifyToSchemaType(
   data: (AnalyzedAttribute | AnalyzedNode)[],
-  xmlLocations: string[][],
+  xmlLocations: XmlLocation[],
 ): SchemaType {
   const attributes = data.filter((d): d is AnalyzedAttribute => d.kind === "attribute");
   const nodes = data.filter((d): d is AnalyzedNode => d.kind === "node");
@@ -401,7 +404,11 @@ function unifyNodeLists(nodeLists: AnalyzedNode[][]): ElementSchemaType[] {
 }
 
 export interface AnalyzeOptions {
-  forceKind?: Record<string, "record" | "list" | "metalist">;
+  predefinedSchemas?: {
+    importPath?: string;
+    schemas: Record<string, PredefinedSchema>;
+  }[];
+  forceKind?: Record<string, "object" | "list" | "metalist">;
 }
 
 export async function analyzeFiles(

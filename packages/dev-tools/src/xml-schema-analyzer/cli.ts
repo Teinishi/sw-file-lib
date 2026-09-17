@@ -7,15 +7,12 @@ import { Command } from "commander";
 import { version } from "../../package.json";
 import { analyzeFiles } from "./analyzer";
 import { generateInterfaceCode } from "./generate-code";
+import type { Config, PredefinedSchema } from "./index";
 
-async function loadConfig(configPath: string) {
+async function loadConfig(configPath: string): Promise<Config> {
   const url = pathToFileURL(path.resolve(configPath)).href;
   const mod = await import(url);
-  if (typeof mod.default === "function") {
-    return await mod.default();
-  } else {
-    return await mod.default;
-  }
+  return await mod.default;
 }
 
 const program = new Command();
@@ -30,13 +27,17 @@ program
   .action(async (options) => {
     let input: string | string[] = options.input;
     let outDir: string = options.outDir;
-    let forceKind: Record<string, "record" | "list" | "metalist"> | undefined = undefined;
+    let predefinedSchemas:
+      | { importPath?: string; schemas: Record<string, PredefinedSchema> }[]
+      | undefined = undefined;
+    let forceKind: Record<string, "object" | "list" | "metalist"> | undefined = undefined;
 
     if (options.config) {
       const config = await loadConfig(options.config);
 
       input ??= config.input;
       outDir ??= config.outDir;
+      predefinedSchemas ??= config.predefinedSchemas;
       forceKind ??= config.forceKind;
     } else {
       if (!options.input || !options.outDir) {
@@ -48,7 +49,11 @@ program
 
     const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
 
-    const result = await analyzeFiles(inputFiles, forceKind ? { forceKind } : {});
+    const analyzeOptions = {
+      ...(predefinedSchemas ? predefinedSchemas : {}),
+      ...(forceKind ? { forceKind } : {}),
+    };
+    const result = await analyzeFiles(inputFiles, analyzeOptions);
     const code = generateInterfaceCode(result);
 
     await fs.rm(outDir, { recursive: true, force: true });

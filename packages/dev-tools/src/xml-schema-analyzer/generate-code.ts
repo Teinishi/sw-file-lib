@@ -5,7 +5,7 @@ import {
   type SchemaType,
 } from "./analyzer";
 
-function makeUniqueIdentifiers(paths: string[][]): string[][] {
+function makeUniqueIdentifiers(paths: readonly (readonly string[])[]): string[][] {
   const result: string[][] = [];
 
   // 同じ末尾を持つグループ内で、末尾を除いた識別子を作る

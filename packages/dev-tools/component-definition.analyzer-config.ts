@@ -10,7 +10,7 @@ export default defineConfig(async () => {
     input,
     outDir: "./.tmp/component-definition",
     forceKind: {
-      definition: "record",
+      definition: "object",
     },
   };
 });
