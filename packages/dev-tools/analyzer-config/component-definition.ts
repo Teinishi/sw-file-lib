@@ -10,10 +10,10 @@ export default defineConfig(async () => {
   return {
     input,
     out: "./.tmp/component-definition.ts",
-    forceOptional: true,
     predefinedSchemas,
     forceKind: {
       definition: "object",
+      "definition/jet_engine_connections_prev": "list",
     },
   };
 });

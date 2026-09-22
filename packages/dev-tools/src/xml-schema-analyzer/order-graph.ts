@@ -4,6 +4,37 @@ export class OrderGraph<K> {
   private edges = new Map<K, Map<K, number>>();
   private nodes = new Set<K>();
 
+  toObject(): { edges: Record<string, Record<string, number>>; nodes: string[] } {
+    const edges: Record<string, Record<string, number>> = {};
+    for (const [a, map] of this.edges) {
+      const edgesA: Record<string, number> = {};
+      for (const [b, w] of map) {
+        edgesA[String(b)] = w;
+      }
+      edges[String(a)] = edgesA;
+    }
+    return {
+      edges,
+      nodes: Array.from(this.nodes).map(String),
+    };
+  }
+
+  static fromObject(obj: {
+    edges: Record<string, Record<string, number>>;
+    nodes: string[];
+  }): OrderGraph<string> {
+    const graph = new OrderGraph<string>();
+    for (const node of obj.nodes) {
+      graph.nodes.add(node);
+    }
+    for (const [a, edgesA] of Object.entries(obj.edges)) {
+      for (const [b, w] of Object.entries(edgesA)) {
+        graph.addEdge(a, b, w);
+      }
+    }
+    return graph;
+  }
+
   addEdge(a: K, b: K, weight = 1): void {
     let map = this.edges.get(a);
     if (!map) {

@@ -9,8 +9,22 @@ export default defineConfig(async () => {
 
   return {
     input,
-    out: "./.tmp/vehicle",
-    forceOptional: true,
+    out: "./.tmp/vehicle.ts",
     predefinedSchemas,
+    forceKind: {
+      "vehicle/authors": "list",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data/inputs": "object",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data/outputs": "object",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/out1":
+        "object",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components_bridge/c/object/out1":
+        "object",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/groups": "object",
+      "vehicle/bodies/body/components/c/o/logic_slots/slot/value": "object",
+      "vehicle/bodies/body/components/c/o/display_1/col_extra/c": "object",
+      "vehicle/bodies/body/components/c/o/display_2/col_extra/c": "object",
+      "vehicle/bodies/body/components/c/o/display_3/col_extra/c": "object",
+      "vehicle/bodies/body/components/c/o/display_4/col_extra/c": "object",
+    },
   };
 });
