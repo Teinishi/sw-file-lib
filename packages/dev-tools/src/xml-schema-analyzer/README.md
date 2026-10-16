@@ -45,3 +45,47 @@ const code = generateCode(schemaEntries, {
 
 Naming happens after XML analysis, so changes to `interfaceNames` also apply when
 the CLI reuses its analysis cache; `--refresh` is unnecessary for naming changes.
+
+## Supplementing and overriding inferred properties
+
+Use `schemaOverrides` to add missing primitive properties or override their inferred
+types and optionality:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  schemaOverrides: {
+    "vehicle/some_element": {
+      properties: {
+        x: { type: "string", optional: true },
+        y: { type: "number", optional: true },
+      },
+    },
+  },
+});
+```
+
+For example, an inferred `{ x: number }` becomes `{ x?: string; y?: number }`.
+Supported property types are `string`, `number`, and `boolean`; `optional` is
+required and controls whether the property is optional, even if it was always
+present or sometimes missing in the samples.
+
+For existing primitive properties, the configured type and optionality take
+priority over inference. When the type changes, observed possible values and
+numeric ranges are cleared; when it stays the same, that metadata is preserved.
+Object, list, union, and empty-object properties cannot be replaced with primitive
+types and cause an error.
+
+Paths follow the same exact matching rules as `interfaceNames` and must identify
+existing object elements. Missing paths and list/metalist container paths are
+errors; target the item element to supplement a list. Empty elements can be
+supplemented when selected as objects with `forceKind`.
+
+Supplementation happens before predefined schema matching and schema merging.
+Unrelated paths keep their inferred properties, subject to the existing merging
+rules (including `mergeNumberSuffix` when enabled). Newly added properties appear
+after observed attributes, in config order, and before child elements. Cached
+analysis is preserved, so changing overrides does not require `--refresh`.
+
+The same option is available through `generateSchema(documentData, options)`.

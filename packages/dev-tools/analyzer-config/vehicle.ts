@@ -1,11 +1,56 @@
 import path from "node:path";
 import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
-import { defineConfig } from "../src/xml-schema-analyzer";
+import { defineConfig, type Config } from "../src/xml-schema-analyzer";
 import { predefinedSchemas } from "./predefined-schemas";
+
+const DISPLAY_TEXT_VALUE_PAIRS = ["min", "max"] as const;
+
+const C_TEXT_VALUE_PAIRS = [
+  "impact_sensor_threshold",
+  "m_sweep_limit",
+  "m_sweep_speed",
+  "min_value",
+  "max_value",
+  "property_output_float_val",
+  "min_threshold",
+  "max_threshold",
+  "pid_controller_ki",
+  "pid_controller_kp",
+  "pid_controller_kd",
+  "pid_controller_max_error",
+  "exp",
+  "min_lever_value",
+  "max_lever_value",
+  "starting_lever_value",
+  "trim_x_display",
+  "trim_y_display",
+  "trim_z_display",
+  "trim_w_display",
+] as const;
+
+const TEXT_VALUE_PAIR_OVERRIDES = {
+  properties: {
+    text: { type: "string", optional: true },
+    value: { type: "number", optional: true },
+  },
+} as const;
 
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_VEHICLES_PATH"]!, "*.xml");
+
+  const schemaOverrides: Exclude<Config["schemaOverrides"], undefined> = Object.fromEntries([
+    ...C_TEXT_VALUE_PAIRS.map((k) => [
+      `vehicle/bodies/body/components/c/o/${k}`,
+      TEXT_VALUE_PAIR_OVERRIDES,
+    ]),
+    ...DISPLAY_TEXT_VALUE_PAIRS.flatMap((k) =>
+      [1, 2, 3, 4].map((i) => [
+        `vehicle/bodies/body/components/c/o/display_${i}/${k}`,
+        TEXT_VALUE_PAIR_OVERRIDES,
+      ]),
+    ),
+  ]);
 
   return {
     input,
@@ -36,10 +81,10 @@ export default defineConfig(async () => {
         "MicroprocessorNode",
       "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node/position":
         "MicroprocessorNodePosition",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/groups/group":
-        "MicroprocessorGroup",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/groups/group/data":
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group": "MicroprocessorGroup",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data":
         "MicroprocessorGroupData",
     },
+    schemaOverrides,
   };
 });

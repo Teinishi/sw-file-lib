@@ -57,6 +57,7 @@ program
     let forceKind: Config["forceKind"] | undefined = undefined;
     let mergeNumberSuffix: boolean | undefined = undefined;
     let interfaceNames: Config["interfaceNames"];
+    let schemaOverrides: Config["schemaOverrides"];
 
     if (options.config) {
       const config = await loadConfig(options.config);
@@ -67,6 +68,7 @@ program
       forceKind ??= config.forceKind;
       mergeNumberSuffix ??= config.mergeNumberSuffix;
       interfaceNames = config.interfaceNames;
+      schemaOverrides = config.schemaOverrides;
     } else {
       if (!options.input || !options.out) {
         program.error(
@@ -105,6 +107,7 @@ program
       predefinedSchemas,
       forceKind,
       mergeNumberSuffix,
+      schemaOverrides,
     });
 
     const code = generateCode(schemaEntries, { interfaceNames });

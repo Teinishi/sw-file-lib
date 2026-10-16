@@ -1,4 +1,4 @@
-import type { PredefinedSchema } from ".";
+import type { PredefinedSchema, PredefinedSchemaProperty } from ".";
 import {
   unionRanges,
   type DocumentData,
@@ -12,6 +12,11 @@ function jsonUnique<T>(rows: T[]): T[] {
   return [...new Map(rows.map((row) => [JSON.stringify(row), row])).values()];
 }
 
+export interface SchemaOverride {
+  /** Add or override primitive properties, including their optionality. */
+  readonly properties: Readonly<Record<string, Readonly<PredefinedSchemaProperty>>>;
+}
+
 export interface GenerateSchemaOptions {
   predefinedSchemas?: Record<string, Record<string, PredefinedSchema>> | undefined;
   forceKind?:
@@ -19,6 +24,8 @@ export interface GenerateSchemaOptions {
     | ((xmlLocation: XmlLocation) => "object" | "list" | "metalist" | undefined)
     | undefined;
   mergeNumberSuffix?: boolean | undefined;
+  /** Exact XML object paths (root/child) to supplement before schema merging. */
+  schemaOverrides?: Readonly<Record<string, SchemaOverride>> | undefined;
 }
 
 export type SchemaReference =
@@ -209,7 +216,11 @@ function generateObjectSchema(
   registerEntry: RegisterEntryFn,
   options: GenerateSchemaOptions,
 ): { dependencies: SchemaReference[]; data: SchemaTypeData } {
-  if (nodeData.attributes.size === 0 && nodeData.children.size === 0) {
+  if (
+    nodeData.attributes.size === 0 &&
+    nodeData.children.size === 0 &&
+    !Object.hasOwn(options.schemaOverrides ?? {}, xmlLocation.join("/"))
+  ) {
     return {
       dependencies: [],
       data: { kind: "inline", type: "{}" },
@@ -463,10 +474,64 @@ export function generateSchema(
   options?: GenerateSchemaOptions,
 ): SchemaEntry[] {
   const predefined = flattenPredefinedSchemas(options?.predefinedSchemas ?? {});
+  const overrides = new Map(Object.entries(options?.schemaOverrides ?? {}));
+  const unmatchedOverrides = new Set(overrides.keys());
 
   const entries: SchemaEntry[] = [];
 
   function registerEntry(entry: SchemaEntry): SchemaReference {
+    const xmlPath = entry.xmlLocations[0]!.join("/");
+    const override = overrides.get(xmlPath);
+    if (override) {
+      unmatchedOverrides.delete(xmlPath);
+      const properties = { ...entry.properties };
+      const added: string[] = [];
+      for (const [key, property] of Object.entries(override.properties)) {
+        if (
+          !["string", "number", "boolean"].includes(property.type) ||
+          typeof property.optional !== "boolean"
+        ) {
+          throw new Error(
+            `Invalid schema override property at ${xmlPath}/${key}: expected a primitive type and boolean optional.`,
+          );
+        }
+        const existing = Object.hasOwn(properties, key) ? properties[key]! : undefined;
+        if (existing) {
+          if (existing.type.kind !== "inline" || existing.type.type === "{}") {
+            throw new Error(
+              `Cannot override non-primitive property at ${xmlPath}/${key}: inferred ${JSON.stringify(existing.type)}.`,
+            );
+          }
+          const sameType = existing.type.type === property.type;
+          properties[key] = {
+            ...existing,
+            type: { kind: "inline", type: property.type },
+            isOptional: property.optional,
+            possibleValues: sameType ? existing.possibleValues : null,
+            numberRange: sameType ? existing.numberRange : null,
+          };
+          continue;
+        }
+        Object.defineProperty(properties, key, {
+          value: {
+            key,
+            isOptional: property.optional,
+            type: { kind: "inline", type: property.type },
+            possibleValues: null,
+            numberRange: null,
+          },
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
+        added.push(key);
+      }
+      const attributeOrder = new OrderGraph<string>();
+      attributeOrder.merge(entry.attributeOrder);
+      attributeOrder.addSequence([...entry.attributeOrder.topoSort(prefixPriority), ...added]);
+      entry = { ...entry, properties, attributeOrder };
+    }
+
     for (const { importPath, name, entry: predefinedEntry } of predefined) {
       if (!entryPropertiesCompatible(entry.properties, predefinedEntry.properties, "loose")) {
         continue;
@@ -497,6 +562,12 @@ export function generateSchema(
 
   for (const [tag, nodeData] of documentData.elements) {
     generateNodeSchema([tag], nodeData, registerEntry, options ?? {});
+  }
+
+  if (unmatchedOverrides.size > 0) {
+    throw new Error(
+      `No object schema for schemaOverrides XML paths: ${[...unmatchedOverrides].join(", ")}`,
+    );
   }
 
   return entries;
