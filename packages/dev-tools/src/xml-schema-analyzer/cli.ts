@@ -8,39 +8,15 @@ import { Command } from "commander";
 import consola from "consola";
 import { version } from "../../package.json";
 import { analyzeFiles } from "./analyzer";
+import { readAnalysisCache, resolveAnalysisInputs, writeAnalysisCache } from "./cache";
 import { generateCode } from "./generate-code";
 import type { Config, DocumentData } from "./index";
-import { OrderGraph } from "./order-graph";
 import { generateSchema } from "./schema";
 
 async function loadConfig(configPath: string): Promise<Config> {
   const url = pathToFileURL(path.resolve(configPath)).href;
   const mod = await import(url);
   return await mod.default;
-}
-
-function jsonReplacer(_key: string, value: unknown): unknown {
-  if (value instanceof OrderGraph) {
-    return { __type: "OrderGraph", ...value.toObject() };
-  } else if (value instanceof Map) {
-    return { __type: "Map", entries: Object.fromEntries(value) };
-  } else if (value instanceof Set) {
-    return { __type: "Set", entries: Array.from(value) };
-  }
-  return value;
-}
-
-function jsonReceiver(_key: string, value: unknown): unknown {
-  if (value && typeof value === "object" && "__type" in value) {
-    if (value["__type"] === "OrderGraph") {
-      return OrderGraph.fromObject(value as any);
-    } else if (value["__type"] === "Map") {
-      return new Map(Object.entries((value as any).entries));
-    } else if (value["__type"] === "Set") {
-      return new Set((value as any).entries);
-    }
-  }
-  return value;
 }
 
 const program = new Command();
@@ -86,14 +62,13 @@ program
 
     let documentData: DocumentData;
 
-    const jsonHandle = refresh ? undefined : await fs.open(jsonPath, "r").catch(() => undefined);
-    if (jsonHandle) {
-      const json = await fs.readFile(jsonPath, "utf-8");
-      documentData = JSON.parse(json, jsonReceiver);
+    const analysisInputs = await resolveAnalysisInputs(input);
+    const cachedData = refresh ? undefined : await readAnalysisCache(jsonPath, analysisInputs);
+    if (cachedData) {
+      documentData = cachedData;
       consola.info(`Using cached data from ${jsonPath}`);
-      jsonHandle.close();
     } else {
-      const inputFiles = Array.isArray(input) ? input : await Array.fromAsync(fs.glob(input));
+      const inputFiles = analysisInputs.files.map((file) => file.path);
 
       consola.info(`Analyzing ${inputFiles.length} XML files...`);
 
@@ -104,7 +79,7 @@ program
 
       consola.info(`Analysis complete.`);
 
-      await fs.writeFile(jsonPath, JSON.stringify(documentData, jsonReplacer, 2), "utf-8");
+      await writeAnalysisCache(jsonPath, analysisInputs, documentData);
     }
 
     const schemaEntries = generateSchema(documentData, {

@@ -114,5 +114,35 @@ sample order. `"0"` and `"1"` are numbers. Observed types are retained even when
 possible-values limit is exceeded; numeric ranges describe only numeric samples.
 `schemaOverrides` takes priority over inferred unions as well as individual types.
 
-Existing analysis caches must be manually removed or regenerated with `--refresh`
-after this change. Cache format versioning and automatic migration are not provided.
+## Cache reuse and config changes
+
+The CLI caches XML analysis, then applies schema and code generation settings on
+every run. The following config changes have these effects:
+
+| Config              | Reanalyze XML?        | Reason                                                                                         |
+| ------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `input`             | Yes                   | Selects source XML files.                                                                      |
+| `predefinedSchemas` | No                    | Matches inferred schemas to external types.                                                    |
+| `forceKind`         | No                    | Selects object/list/metalist during schema generation.                                         |
+| `mergeNumberSuffix` | No                    | Controls schema merging.                                                                       |
+| `schemaOverrides`   | No                    | Adds/corrects properties during schema generation.                                             |
+| `interfaceNames`    | No                    | Names generated TypeScript interfaces.                                                         |
+| `out`               | No change to analysis | Changes output and cache locations. A new location without a matching cache requires analysis. |
+
+The cache contains the resolved `input` configuration, the matched absolute file
+paths, and each file's size and modification time. These must all match to reuse
+analysis. Thus changes to the input pattern, file additions/removals, and source
+updates automatically cause reanalysis. Explicit file arrays preserve their order;
+glob results are sorted for stable processing. Relative paths resolve from the
+working directory, as before.
+
+File contents are not hashed; edits preserving both size and modification time
+require `--refresh`. `--refresh` always forces analysis. Caches without input
+metadata are treated as cache misses. No format versioning or migration is added;
+after future analyzer algorithm changes, regenerate caches with `--refresh`.
+
+`AnalyzeOptions` passed directly to the programmatic `analyzeFiles` API also affect
+analysis (`forceKindRoot`, its own `forceKind`, and `maxPossibleValueCount`). These
+are not CLI config fields: the CLI currently passes fixed analysis options `{}`.
+In particular, config `forceKind` is a schema-generation option, distinct from
+`AnalyzeOptions.forceKind`, and does not invalidate the CLI cache.
