@@ -237,9 +237,14 @@ function generateObjectSchema(
   const properties: Record<string, SchemaPropertyData> = {};
 
   for (const [attrName, attrData] of nodeData.attributes) {
-    const types = (["boolean", "number", "string"] as const)
+    const types = (["boolean", "unsignedInt", "int", "float", "string"] as const)
       .filter((type) => attrData.observedTypes.has(type))
-      .map((type): SchemaTypeData => ({ kind: "inline", type }));
+      .map(
+        (type): SchemaTypeData => ({
+          kind: "inline",
+          type: type === "boolean" || type === "string" ? type : "number",
+        }),
+      );
 
     properties[attrName] = {
       key: attrName,

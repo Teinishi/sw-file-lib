@@ -23,6 +23,10 @@ describe("attribute union inference", () => {
   it.each([
     { values: ["true", "false"], expected: "boolean" },
     { values: ["123", "4.5", "0", "1"], expected: "number" },
+    { values: ["-12", "+12"], expected: "number" },
+    { values: ["1.0", "-.5"], expected: "number" },
+    { values: ["0", "-12", "4.5"], expected: "number" },
+    { values: ["true", "0", "-12", "4.5", "abc"], expected: "boolean | number | string" },
     { values: ["abc", "def"], expected: "string" },
     { values: ["true", "123"], expected: "boolean | number" },
     { values: ["123", "abc"], expected: "number | string" },

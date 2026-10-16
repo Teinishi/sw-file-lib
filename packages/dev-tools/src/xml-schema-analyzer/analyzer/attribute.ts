@@ -1,10 +1,19 @@
-import type { AttributeData } from "./types";
+import type { AttributeData, AttributeValueType } from "./types";
 
 export function analyzeAttribute(value: string): AttributeData {
   const isBoolean = value === "true" || value === "false";
   const isUnsignedInt = /^\d+$/.test(value);
   const isInt = isUnsignedInt || /^[+-]\d+$/.test(value);
   const isFloat = isInt || /^[+-]?(?:\d+\.\d*|\d*\.\d+)$/.test(value);
+  const type: AttributeValueType = isBoolean
+    ? "boolean"
+    : isUnsignedInt
+      ? "unsignedInt"
+      : isInt
+        ? "int"
+        : isFloat
+          ? "float"
+          : "string";
 
   const numberRange = isFloat
     ? {
@@ -16,11 +25,7 @@ export function analyzeAttribute(value: string): AttributeData {
   return {
     possibleValues: new Set([value]),
     numberRange,
-    observedTypes: new Set([isBoolean ? "boolean" : isFloat ? "number" : "string"]),
-    couldBeBoolean: isBoolean,
-    couldBeUnsignedInt: isUnsignedInt,
-    couldBeInt: isInt,
-    couldBeFloat: isFloat,
+    observedTypes: new Set([type]),
     isOptional: false,
   };
 }
@@ -55,10 +60,6 @@ export function intersectAttributeData(
     possibleValues: mergedPossibleValues,
     numberRange: mergedNumberRange,
     observedTypes: a.observedTypes.union(b.observedTypes),
-    couldBeBoolean: a.couldBeBoolean && b.couldBeBoolean,
-    couldBeUnsignedInt: a.couldBeUnsignedInt && b.couldBeUnsignedInt,
-    couldBeInt: a.couldBeInt && b.couldBeInt,
-    couldBeFloat: a.couldBeFloat && b.couldBeFloat,
     isOptional: a.isOptional || b.isOptional,
   };
 }

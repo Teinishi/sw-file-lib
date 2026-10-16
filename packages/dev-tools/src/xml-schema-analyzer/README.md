@@ -94,8 +94,12 @@ The same option is available through `generateSchema(documentData, options)`.
 ## Inferring attribute types
 
 Each observed attribute value is classified as `boolean` (`"true"` or `"false"`),
-`number` (using the existing integer/decimal rules), or `string` (all other values).
-Mixed values produce a union of the observed types:
+`unsignedInt` (digits without a sign), `int` (integers with `+` or `-`), `float`
+(decimal notation), or `string` (all other values). Each value has one category;
+for example, `"123"` is `unsignedInt`, `"+123"` is `int`, and `"123.0"` is `float`.
+The analysis retains all observed categories for future output languages.
+TypeScript schema generation maps all three numeric categories to `number` and
+removes duplicates. Mixed values produce a union of the observed types:
 
 | Values                     | Inferred type                 |
 | -------------------------- | ----------------------------- |
