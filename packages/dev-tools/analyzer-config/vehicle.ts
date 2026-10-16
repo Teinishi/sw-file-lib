@@ -1,10 +1,91 @@
 import path from "node:path";
 import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
-import { defineConfig, type Config } from "../src/xml-schema-analyzer";
+import { defineConfig, type Config, type XmlLocation } from "../src/xml-schema-analyzer";
 import { predefinedSchemas } from "./predefined-schemas";
 
-const DISPLAY_TEXT_VALUE_PAIRS = ["min", "max"] as const;
+// forceKind 関連
+const COMPONENT_O_LOCATION = ["vehicle", "bodies", "body", "components", "c", "o"] as const;
+const MICROPROCESSOR_GROUP_LOCATION = [
+  ...COMPONENT_O_LOCATION,
+  "microprocessor_definition",
+  "group",
+] as const;
 
+const FORCE_KIND_PATTERNS = [
+  [["vehicle", "authors"], "list"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "data", "inputs"], "object"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "data", "outputs"], "object"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "components", "c", "object"], "object"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "components", "c", "object", /^out\d+$/], "object"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "components_bridge", "c"], "object"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "components_bridge", "c", "object", /^out\d+$/], "object"],
+  [[...MICROPROCESSOR_GROUP_LOCATION, "groups"], "object"],
+  [[...COMPONENT_O_LOCATION, "logic_slots", "slot", "value"], "object"],
+  [[...COMPONENT_O_LOCATION, /display_\d+/, "col_extra", "c"], "object"],
+] as const;
+
+const xmlLocationMatches = (
+  xmlLocation: XmlLocation,
+  pattern: readonly (string | RegExp)[],
+): boolean => {
+  if (xmlLocation.length !== pattern.length) {
+    return false;
+  }
+  for (let i = 0; i < xmlLocation.length; i++) {
+    const xmlPart = xmlLocation[i]!;
+    const patternPart = pattern[i]!;
+    if (typeof patternPart === "string") {
+      if (xmlPart !== patternPart) {
+        return false;
+      }
+    } else if (patternPart instanceof RegExp) {
+      if (!patternPart.test(xmlPart)) {
+        return false;
+      }
+    } else {
+      throw new Error(`Invalid pattern part: ${patternPart}`);
+    }
+  }
+  return true;
+};
+
+const forceKind = (xmlLocation: XmlLocation): "object" | "list" | undefined => {
+  for (const [pattern, kind] of FORCE_KIND_PATTERNS) {
+    if (xmlLocationMatches(xmlLocation, pattern)) {
+      return kind;
+    }
+  }
+  return undefined;
+};
+
+// interfaceNames 関連
+const componentOPath = COMPONENT_O_LOCATION.join("/");
+const microprocessorGroupPath = MICROPROCESSOR_GROUP_LOCATION.join("/");
+
+const interfaceNames = Object.fromEntries([
+  ["vehicle/bodies/body/components/c", "Component"],
+  [componentOPath, "ComponentO"],
+  [`${componentOPath}/logic_slots/slot`, "LogicSlot"],
+  [`${componentOPath}/display_1`, "Display"],
+  [`${componentOPath}/microprocessor_definition/nodes/n`, "MicroprocessorN"],
+  [`${componentOPath}/microprocessor_definition/nodes/n/node`, "MicroprocessorNode"],
+  [
+    `${componentOPath}/microprocessor_definition/nodes/n/node/position`,
+    "MicroprocessorNodePosition",
+  ],
+  [`${microprocessorGroupPath}`, "MicroprocessorGroup"],
+  [`${microprocessorGroupPath}/data`, "MicroprocessorGroupData"],
+  [`${microprocessorGroupPath}/components/c`, "MicroprocessorComponent"],
+  [`${microprocessorGroupPath}/components/c/object`, "MicroprocessorObject"],
+  [`${microprocessorGroupPath}/components/c/object/in1`, "MicroprocessorIn"],
+  [`${microprocessorGroupPath}/components/c/object/items/i`, "MicroprocessorItem"],
+  [`${microprocessorGroupPath}/components_bridge/c`, "MicroprocessorComponentBridge"],
+  [`${microprocessorGroupPath}/components_bridge/c/object`, "MicroprocessorObjectBridge"],
+  [`${microprocessorGroupPath}/components_bridge/c/object/in1`, "MicroprocessorInBridge"],
+]);
+
+// schemaOverrides 関連
+const DISPLAY_TEXT_VALUE_PAIRS = ["min", "max"] as const;
 const C_TEXT_VALUE_PAIRS = [
   "impact_sensor_threshold",
   "m_sweep_limit",
@@ -27,6 +108,20 @@ const C_TEXT_VALUE_PAIRS = [
   "trim_z_display",
   "trim_w_display",
 ] as const;
+const MICROPROCESSOR_TEXT_VALUE_PAIRS = [
+  "e",
+  "n",
+  "v",
+  "i",
+  "min",
+  "max",
+  "int",
+  "kp",
+  "ki",
+  "kd",
+  "r",
+  "items/i/v",
+] as const;
 
 const TEXT_VALUE_PAIR_OVERRIDES = {
   properties: {
@@ -35,56 +130,50 @@ const TEXT_VALUE_PAIR_OVERRIDES = {
   },
 } as const;
 
+const MICROPROCESSOR_IN_OVERRIDES = {
+  properties: {
+    component_id: { type: "number", optional: true },
+    disabled: { type: "boolean", optional: true },
+    node_index: { type: "number", optional: true },
+  },
+} as const;
+
+const microprocessorIn = ["inc", "inoff"];
+for (let i = 1; i <= 32; i++) {
+  microprocessorIn.push(`in${i}`);
+}
+
+const schemaOverrides: Exclude<Config["schemaOverrides"], undefined> = Object.fromEntries([
+  ...DISPLAY_TEXT_VALUE_PAIRS.flatMap((k) =>
+    [1, 2, 3, 4].map((i) => [
+      `vehicle/bodies/body/components/c/o/display_${i}/${k}`,
+      TEXT_VALUE_PAIR_OVERRIDES,
+    ]),
+  ),
+  ...C_TEXT_VALUE_PAIRS.map((k) => [
+    `vehicle/bodies/body/components/c/o/${k}`,
+    TEXT_VALUE_PAIR_OVERRIDES,
+  ]),
+  ...MICROPROCESSOR_TEXT_VALUE_PAIRS.map((k) => [
+    `vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/${k}`,
+    TEXT_VALUE_PAIR_OVERRIDES,
+  ]),
+  ...microprocessorIn.map((k) => [
+    `vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/${k}`,
+    MICROPROCESSOR_IN_OVERRIDES,
+  ]),
+]);
+
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_VEHICLES_PATH"]!, "*.xml");
-
-  const schemaOverrides: Exclude<Config["schemaOverrides"], undefined> = Object.fromEntries([
-    ...C_TEXT_VALUE_PAIRS.map((k) => [
-      `vehicle/bodies/body/components/c/o/${k}`,
-      TEXT_VALUE_PAIR_OVERRIDES,
-    ]),
-    ...DISPLAY_TEXT_VALUE_PAIRS.flatMap((k) =>
-      [1, 2, 3, 4].map((i) => [
-        `vehicle/bodies/body/components/c/o/display_${i}/${k}`,
-        TEXT_VALUE_PAIR_OVERRIDES,
-      ]),
-    ),
-  ]);
 
   return {
     input,
     out: "./.tmp/vehicle.ts",
     predefinedSchemas,
-    forceKind: {
-      "vehicle/authors": "list",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data/inputs": "object",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data/outputs": "object",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/out1":
-        "object",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components_bridge/c/object/out1":
-        "object",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/groups": "object",
-      "vehicle/bodies/body/components/c/o/logic_slots/slot/value": "object",
-      "vehicle/bodies/body/components/c/o/display_1/col_extra/c": "object",
-      "vehicle/bodies/body/components/c/o/display_2/col_extra/c": "object",
-      "vehicle/bodies/body/components/c/o/display_3/col_extra/c": "object",
-      "vehicle/bodies/body/components/c/o/display_4/col_extra/c": "object",
-    },
-    interfaceNames: {
-      "vehicle/bodies/body/components/c": "Component",
-      "vehicle/bodies/body/components/c/o": "ComponentO",
-      "vehicle/bodies/body/components/c/o/logic_slots/slot": "LogicSlot",
-      "vehicle/bodies/body/components/c/o/display_1": "Display",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n": "MicroprocessorN",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node":
-        "MicroprocessorNode",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node/position":
-        "MicroprocessorNodePosition",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group": "MicroprocessorGroup",
-      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data":
-        "MicroprocessorGroupData",
-    },
+    forceKind,
+    interfaceNames,
     schemaOverrides,
   };
 });
