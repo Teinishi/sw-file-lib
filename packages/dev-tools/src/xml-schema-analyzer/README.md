@@ -74,8 +74,9 @@ present or sometimes missing in the samples.
 For existing primitive properties, the configured type and optionality take
 priority over inference. When the type changes, observed possible values and
 numeric ranges are cleared; when it stays the same, that metadata is preserved.
-Object, list, union, and empty-object properties cannot be replaced with primitive
-types and cause an error.
+Unions containing only primitive types can also be overridden. Object, list,
+empty-object properties, and unions containing them cannot be replaced with
+primitive types and cause an error.
 
 Paths follow the same exact matching rules as `interfaceNames` and must identify
 existing object elements. Missing paths and list/metalist container paths are
@@ -89,3 +90,25 @@ after observed attributes, in config order, and before child elements. Cached
 analysis is preserved, so changing overrides does not require `--refresh`.
 
 The same option is available through `generateSchema(documentData, options)`.
+
+## Inferring attribute types
+
+Each observed attribute value is classified as `boolean` (`"true"` or `"false"`),
+`number` (using the existing integer/decimal rules), or `string` (all other values).
+Mixed values produce a union of the observed types:
+
+| Values                     | Inferred type                 |
+| -------------------------- | ----------------------------- |
+| `"true"`, `"false"`        | `boolean`                     |
+| `"123"`, `"4.5"`           | `number`                      |
+| `"true"`, `"123"`          | `boolean \| number`           |
+| `"123"`, `"abc"`           | `number \| string`            |
+| `"true"`, `"123"`, `"abc"` | `boolean \| number \| string` |
+
+Union members always appear in `boolean`, `number`, `string` order regardless of
+sample order. `"0"` and `"1"` are numbers. Observed types are retained even when the
+possible-values limit is exceeded; numeric ranges describe only numeric samples.
+`schemaOverrides` takes priority over inferred unions as well as individual types.
+
+Existing analysis caches must be manually removed or regenerated with `--refresh`
+after this change. Cache format versioning and automatic migration are not provided.

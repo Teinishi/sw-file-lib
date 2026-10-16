@@ -97,6 +97,12 @@ function createUnionType(types: SchemaTypeData[]): SchemaTypeData {
   }
 }
 
+function isPrimitiveType(type: SchemaTypeData): boolean {
+  return type.kind === "inline"
+    ? type.type !== "{}"
+    : type.kind === "union" && type.types.length > 0 && type.types.every(isPrimitiveType);
+}
+
 function schemaTypeDataEqual(a: SchemaTypeData, b: SchemaTypeData): boolean {
   if (a.kind !== b.kind) return false;
 
@@ -231,19 +237,14 @@ function generateObjectSchema(
   const properties: Record<string, SchemaPropertyData> = {};
 
   for (const [attrName, attrData] of nodeData.attributes) {
-    let type: "boolean" | "number" | "string";
-    if (attrData.couldBeBoolean) {
-      type = "boolean";
-    } else if (attrData.couldBeFloat || attrData.couldBeInt || attrData.couldBeUnsignedInt) {
-      type = "number";
-    } else {
-      type = "string";
-    }
+    const types = (["boolean", "number", "string"] as const)
+      .filter((type) => attrData.observedTypes.has(type))
+      .map((type): SchemaTypeData => ({ kind: "inline", type }));
 
     properties[attrName] = {
       key: attrName,
       isOptional: attrData.isOptional,
-      type: { kind: "inline", type },
+      type: createUnionType(types),
       possibleValues: attrData.possibleValues ? Array.from(attrData.possibleValues) : null,
       numberRange: attrData.numberRange,
     };
@@ -497,12 +498,12 @@ export function generateSchema(
         }
         const existing = Object.hasOwn(properties, key) ? properties[key]! : undefined;
         if (existing) {
-          if (existing.type.kind !== "inline" || existing.type.type === "{}") {
+          if (!isPrimitiveType(existing.type)) {
             throw new Error(
               `Cannot override non-primitive property at ${xmlPath}/${key}: inferred ${JSON.stringify(existing.type)}.`,
             );
           }
-          const sameType = existing.type.type === property.type;
+          const sameType = existing.type.kind === "inline" && existing.type.type === property.type;
           properties[key] = {
             ...existing,
             type: { kind: "inline", type: property.type },

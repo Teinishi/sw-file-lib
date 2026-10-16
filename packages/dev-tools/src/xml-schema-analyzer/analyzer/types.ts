@@ -15,6 +15,7 @@ export function unionRanges(a: Range, b: Range): Range {
 export interface AttributeData {
   possibleValues: Set<string> | null;
   numberRange: Range | null;
+  observedTypes: Set<"boolean" | "number" | "string">;
   couldBeBoolean: boolean;
   couldBeUnsignedInt: boolean;
   couldBeInt: boolean;

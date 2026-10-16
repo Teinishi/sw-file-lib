@@ -19,6 +19,61 @@ function at(entries: SchemaEntry[], path: string): SchemaEntry {
   return entry!;
 }
 
+describe("attribute union inference", () => {
+  it.each([
+    { values: ["true", "false"], expected: "boolean" },
+    { values: ["123", "4.5", "0", "1"], expected: "number" },
+    { values: ["abc", "def"], expected: "string" },
+    { values: ["true", "123"], expected: "boolean | number" },
+    { values: ["123", "abc"], expected: "number | string" },
+    { values: ["false", "abc"], expected: "boolean | string" },
+    { values: ["true", "123", "abc"], expected: "boolean | number | string" },
+  ])("infers $expected from $values independently of sample order", ({ values, expected }) => {
+    const samples = values.map((value) => `<a x="${value}"/>`);
+    const forward = generateCode(generateSchema(document(...samples)));
+    const backward = generateCode(generateSchema(document(...samples.toReversed())));
+    expect(forward).toContain(`x: ${expected};`);
+    expect(backward).toBe(forward);
+  });
+
+  it("merges schemas with the same union observed in different orders", () => {
+    const entries = generateSchema(
+      document('<root><a x="true"/><b x="123"/></root>', '<root><a x="123"/><b x="false"/></root>'),
+      { forceKind: { root: "object" } },
+    );
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+    expect(generateCode(entries)).toContain("x: boolean | number;");
+  });
+
+  it("infers unions within repeated elements in a single file", () => {
+    const entries = generateSchema(document('<items><a x="true"/><a x="123"/></items>'));
+    expect(generateCode(entries)).toContain("x: boolean | number;");
+  });
+
+  it("infers unions even after discarding observed value candidates", () => {
+    const data = ["true", "123", "abc"]
+      .map((value) => analyzeDocument(parseSwXml(`<a x="${value}"/>`), undefined))
+      .reduce((a, b) => intersectDocumentData(a, b, { maxPossibleValueCount: 1 }));
+    const entries = generateSchema(data);
+    expect(at(entries, "a").properties.x?.possibleValues).toBeNull();
+    expect(generateCode(entries)).toContain("x: boolean | number | string;");
+  });
+
+  it("lets overrides replace primitive unions and clears observed metadata", () => {
+    const entries = generateSchema(document('<a x="true"/>', '<a x="123"/>'), {
+      schemaOverrides: { a: { properties: { x: { type: "string", optional: true } } } },
+    });
+    expect(at(entries, "a").properties.x).toEqual({
+      key: "x",
+      type: { kind: "inline", type: "string" },
+      isOptional: true,
+      possibleValues: null,
+      numberRange: null,
+    });
+    expect(generateCode(entries)).toContain("x?: string;");
+  });
+});
+
 describe("generateSchema schemaOverrides", () => {
   it("supplements an optional property before merging without affecting unrelated paths or cached analysis", () => {
     const data = document('<root><a/><b x="4"/></root>', '<root><a x="3"/><b x="5"/></root>');

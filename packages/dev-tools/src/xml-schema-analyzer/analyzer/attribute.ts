@@ -16,6 +16,7 @@ export function analyzeAttribute(value: string): AttributeData {
   return {
     possibleValues: new Set([value]),
     numberRange,
+    observedTypes: new Set([isBoolean ? "boolean" : isFloat ? "number" : "string"]),
     couldBeBoolean: isBoolean,
     couldBeUnsignedInt: isUnsignedInt,
     couldBeInt: isInt,
@@ -53,6 +54,7 @@ export function intersectAttributeData(
   return {
     possibleValues: mergedPossibleValues,
     numberRange: mergedNumberRange,
+    observedTypes: a.observedTypes.union(b.observedTypes),
     couldBeBoolean: a.couldBeBoolean && b.couldBeBoolean,
     couldBeUnsignedInt: a.couldBeUnsignedInt && b.couldBeUnsignedInt,
     couldBeInt: a.couldBeInt && b.couldBeInt,

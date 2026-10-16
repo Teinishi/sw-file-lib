@@ -24,6 +24,8 @@ function jsonReplacer(_key: string, value: unknown): unknown {
     return { __type: "OrderGraph", ...value.toObject() };
   } else if (value instanceof Map) {
     return { __type: "Map", entries: Object.fromEntries(value) };
+  } else if (value instanceof Set) {
+    return { __type: "Set", entries: Array.from(value) };
   }
   return value;
 }
@@ -34,6 +36,8 @@ function jsonReceiver(_key: string, value: unknown): unknown {
       return OrderGraph.fromObject(value as any);
     } else if (value["__type"] === "Map") {
       return new Map(Object.entries((value as any).entries));
+    } else if (value["__type"] === "Set") {
+      return new Set((value as any).entries);
     }
   }
   return value;
