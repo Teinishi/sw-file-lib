@@ -56,6 +56,7 @@ program
     let predefinedSchemas: Config["predefinedSchemas"] | undefined = undefined;
     let forceKind: Config["forceKind"] | undefined = undefined;
     let mergeNumberSuffix: boolean | undefined = undefined;
+    let interfaceNames: Config["interfaceNames"];
 
     if (options.config) {
       const config = await loadConfig(options.config);
@@ -65,6 +66,7 @@ program
       predefinedSchemas ??= config.predefinedSchemas;
       forceKind ??= config.forceKind;
       mergeNumberSuffix ??= config.mergeNumberSuffix;
+      interfaceNames = config.interfaceNames;
     } else {
       if (!options.input || !options.out) {
         program.error(
@@ -105,7 +107,7 @@ program
       mergeNumberSuffix,
     });
 
-    const code = generateCode(schemaEntries);
+    const code = generateCode(schemaEntries, { interfaceNames });
 
     await fs.writeFile(out, code, "utf-8");
     consola.success(`Schema TypeScript written to ${out}`);

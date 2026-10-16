@@ -1,4 +1,5 @@
 import type { XmlLocation } from "./analyzer";
+import type { GenerateCodeOptions } from "./generate-code";
 
 export * from "./analyzer";
 export * from "./schema";
@@ -22,7 +23,7 @@ export type PredefinedSchema = {
       itemType: PredefinedSchemaType;
     }*/
 
-export interface Config {
+export interface Config extends GenerateCodeOptions {
   readonly input: string | readonly string[];
   readonly out: string;
   readonly predefinedSchemas?: Record<string, Record<string, PredefinedSchema>>;

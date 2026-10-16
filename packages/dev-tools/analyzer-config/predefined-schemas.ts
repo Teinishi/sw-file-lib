@@ -37,5 +37,12 @@ export const predefinedSchemas = {
         "22": { type: "number", optional: true },
       },
     },
+    TextValuePair: {
+      kind: "object",
+      properties: {
+        text: { type: "string", optional: true },
+        value: { type: "number", optional: true },
+      },
+    },
   },
 } as const;

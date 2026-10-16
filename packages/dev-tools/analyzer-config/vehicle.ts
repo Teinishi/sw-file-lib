@@ -26,5 +26,20 @@ export default defineConfig(async () => {
       "vehicle/bodies/body/components/c/o/display_3/col_extra/c": "object",
       "vehicle/bodies/body/components/c/o/display_4/col_extra/c": "object",
     },
+    interfaceNames: {
+      "vehicle/bodies/body/components/c": "Component",
+      "vehicle/bodies/body/components/c/o": "ComponentO",
+      "vehicle/bodies/body/components/c/o/logic_slots/slot": "LogicSlot",
+      "vehicle/bodies/body/components/c/o/display_1": "Display",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n": "MicroprocessorN",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node":
+        "MicroprocessorNode",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node/position":
+        "MicroprocessorNodePosition",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/groups/group":
+        "MicroprocessorGroup",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/groups/group/data":
+        "MicroprocessorGroupData",
+    },
   };
 });

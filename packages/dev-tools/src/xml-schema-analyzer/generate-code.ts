@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { prefixPriority, type OrderGraph } from "./order-graph";
 import type { SchemaEntry, SchemaPropertyData, SchemaReference, SchemaTypeData } from "./schema";
 
@@ -60,7 +61,134 @@ function toPascalCase(parts: string[]): string {
     .join("");
 }
 
-type IdentifierMap = Map<SchemaEntry, string>;
+export interface GenerateCodeOptions {
+  /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
+  readonly interfaceNames?: Readonly<Record<string, string>> | undefined;
+}
+
+const invalidTypeNames = new Set([
+  "any",
+  "bigint",
+  "boolean",
+  "intrinsic",
+  "never",
+  "number",
+  "object",
+  "string",
+  "symbol",
+  "undefined",
+  "unknown",
+  "implements",
+  "interface",
+  "let",
+  "package",
+  "private",
+  "protected",
+  "public",
+  "static",
+  "yield",
+  "await",
+  "eval",
+  "arguments",
+]);
+
+function isInterfaceName(name: string): boolean {
+  if (!/^[$_\p{ID_Start}][$_\u200c\u200d\p{ID_Continue}]*$/u.test(name)) return false;
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false);
+  scanner.setText(name);
+  const token = scanner.scan();
+  return (
+    (token === ts.SyntaxKind.Identifier || token > ts.SyntaxKind.LastReservedWord) &&
+    !invalidTypeNames.has(name)
+  );
+}
+
+function collectImports(type: SchemaTypeData, imports: Map<string, Set<string>>): void {
+  switch (type.kind) {
+    case "object":
+      if (type.ref.kind === "external") {
+        const names = imports.get(type.ref.importPath) ?? new Set<string>();
+        names.add(type.ref.name);
+        imports.set(type.ref.importPath, names);
+      }
+      break;
+    case "list":
+    case "metalist":
+      collectImports(type.itemRef, imports);
+      break;
+    case "union":
+      for (const member of type.types) collectImports(member, imports);
+      break;
+  }
+}
+
+function resolveIdentifiers(
+  entries: SchemaEntry[],
+  options: GenerateCodeOptions,
+  imports: Map<string, Set<string>>,
+): string[] {
+  const specified = new Map(Object.entries(options.interfaceNames ?? {}));
+  const unmatched = new Set(specified.keys());
+  const reserved = new Set<string>();
+  for (const names of imports.values()) {
+    for (const name of names) {
+      if (reserved.has(name)) throw new Error(`Conflicting external import name: ${name}`);
+      reserved.add(name);
+    }
+  }
+  for (const [path, name] of specified) {
+    if (!isInterfaceName(name)) {
+      throw new Error(`Invalid interface name ${JSON.stringify(name)} for XML path ${path}.`);
+    }
+  }
+
+  const identifiers = entries.map((entry) => {
+    const matches = entry.xmlLocations
+      .map((location) => location.join("/"))
+      .filter((path) => specified.has(path));
+    for (const path of matches) unmatched.delete(path);
+    const names = new Set(matches.map((path) => specified.get(path)!));
+    if (names.size > 1) {
+      throw new Error(
+        `Conflicting interface names for merged XML paths: ${matches.map((path) => `${path} = ${specified.get(path)}`).join(", ")}`,
+      );
+    }
+    const name = names.values().next().value;
+    if (name !== undefined) {
+      if (reserved.has(name)) {
+        throw new Error(
+          `Duplicate interface or external import name ${name} for XML paths: ${matches.join(", ")}`,
+        );
+      }
+      reserved.add(name);
+    }
+    return name;
+  });
+  if (unmatched.size > 0) {
+    throw new Error(`No generated interface for XML paths: ${[...unmatched].join(", ")}`);
+  }
+
+  // Keep existing automatic names wherever possible, including when overrides are present.
+  const automatic = makeUniqueIdentifiers(entries.map((entry) => entry.xmlLocations[0]!)).map(
+    toPascalCase,
+  );
+  const unavailable = new Set([...reserved, ...automatic]);
+  return identifiers.map((explicit, index) => {
+    if (explicit !== undefined) return explicit;
+    const candidate = automatic[index]!;
+    const base = isInterfaceName(candidate) ? candidate : `Xml${candidate}`;
+    let name = base;
+    let suffix = 2;
+    if (reserved.has(name)) {
+      do {
+        name = `${base}${suffix++}`;
+      } while (unavailable.has(name));
+    }
+    reserved.add(name);
+    unavailable.add(name);
+    return name;
+  });
+}
 
 function generateSchemaTypeCode(
   type: SchemaTypeData,
@@ -138,16 +266,16 @@ function generateCodeEntry(
   }
 }
 
-export function generateCode(schemaEntries: SchemaEntry[]): string {
-  const identifiers = makeUniqueIdentifiers(schemaEntries.map((e) => e.xmlLocations[0]!)).map(
-    toPascalCase,
-  );
-  const identifierMap: IdentifierMap = new Map();
-  for (let i = 0; i < schemaEntries.length; i++) {
-    identifierMap.set(schemaEntries[i]!, identifiers[i]!);
-  }
-
+export function generateCode(
+  schemaEntries: SchemaEntry[],
+  options: GenerateCodeOptions = {},
+): string {
   const importMap = new Map<string, Set<string>>();
+  for (const entry of schemaEntries) {
+    for (const property of Object.values(entry.properties))
+      collectImports(property.type, importMap);
+  }
+  const identifiers = resolveIdentifiers(schemaEntries, options, importMap);
 
   const getIdentifier = (ref: SchemaReference) => {
     switch (ref.kind) {
@@ -158,9 +286,6 @@ export function generateCode(schemaEntries: SchemaEntry[]): string {
         }
         return identifiers[ref.index]!;
       case "external":
-        const s = importMap.get(ref.importPath) ?? new Set();
-        s.add(ref.name);
-        importMap.set(ref.importPath, s);
         return ref.name;
     }
   };
