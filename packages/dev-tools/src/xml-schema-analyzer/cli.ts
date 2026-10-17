@@ -38,6 +38,7 @@ program
     let mergeNumberSuffix: boolean | undefined = undefined;
     let interfaceNames: Config["interfaceNames"];
     let allPropertiesOptional: Config["allPropertiesOptional"];
+    let preferStringInUnions: Config["preferStringInUnions"];
     let generateTSDoc: Config["generateTSDoc"];
     let schemaOverrides: Config["schemaOverrides"];
 
@@ -51,6 +52,7 @@ program
       mergeNumberSuffix ??= config.mergeNumberSuffix;
       interfaceNames = config.interfaceNames;
       allPropertiesOptional = config.allPropertiesOptional;
+      preferStringInUnions = config.preferStringInUnions;
       generateTSDoc = config.generateTSDoc;
       schemaOverrides = config.schemaOverrides;
     } else {
@@ -95,7 +97,7 @@ program
 
     const code = generateCode(
       schemaEntries,
-      { interfaceNames, allPropertiesOptional, generateTSDoc },
+      { interfaceNames, allPropertiesOptional, preferStringInUnions, generateTSDoc },
       {
         documentData,
         inputFiles: analysisInputs.files.map((file) => file.path),

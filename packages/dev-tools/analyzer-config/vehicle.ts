@@ -175,6 +175,7 @@ export default defineConfig(async () => {
       ]),
     ]),
     allPropertiesOptional: true,
+    preferStringInUnions: true,
     generateTSDoc(context) {
       return generateTSDoc("Stormworks vehicle data", context);
     },

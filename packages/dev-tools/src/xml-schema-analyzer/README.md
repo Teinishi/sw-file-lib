@@ -215,6 +215,31 @@ sample order. `"0"` and `"1"` are numbers. Observed types are retained even when
 possible-values limit is exceeded; numeric ranges describe only numeric samples.
 `schemaOverrides` takes priority over inferred unions as well as individual types.
 
+### Preferring string in unions
+
+Set `preferStringInUnions: true` in config (or `generateCode` options) to omit
+`number` and `boolean` from unions that contain `string`:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  preferStringInUnions: true,
+});
+```
+
+`number | string` and `boolean | number | string` become `string`.
+`boolean | number` stays unchanged. Object references are preserved, so
+`number | string | SomeObject` becomes `string | SomeObject`. The option applies
+recursively, including metalist metadata, inlined items, and list item types.
+Existing restrictions on unrepresentable list unions still apply.
+
+The default is `false`. This is a code generation option: raw analysis, inferred
+schema types, metadata, merging, and cache validity are unchanged. TSDoc callbacks
+receive the original schema types and `context.preferStringInUnions` to distinguish
+inferred types from output behavior. Changing the option does not require
+`--refresh`.
+
 ## List and metalist markers
 
 List properties have an XML schema marker immediately before the property:
@@ -276,6 +301,7 @@ every run. The following config changes have these effects:
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
 | `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
 | `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |
+| `preferStringInUnions`  | No                    | Omits number/boolean from output unions containing string.                                     |
 | `generateTSDoc`         | No                    | Generates documentation from the current schema and cached analysis.                           |
 | `out`                   | No change to analysis | Changes output and cache locations. A new location without a matching cache requires analysis. |
 

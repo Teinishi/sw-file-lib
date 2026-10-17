@@ -33,6 +33,95 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
   };
 }
 
+describe("preferStringInUnions", () => {
+  it.each([
+    { values: ["123", "abc"], original: "number | string", result: "string" },
+    { values: ["true", "abc"], original: "boolean | string", result: "string" },
+    { values: ["true", "123", "abc"], original: "boolean | number | string", result: "string" },
+    { values: ["true", "123"], original: "boolean | number", result: "boolean | number" },
+  ])("prints $original as $result only when enabled", ({ values, original, result }) => {
+    const data = analyzeDocument(
+      parseSwXml(
+        `<root name="test">${values.map((value) => `<item value="${value}"/>`).join("")}</root>`,
+      ),
+      undefined,
+    );
+    const entries = generateSchema(data);
+    expect(generateCode(entries)).toContain(`value: ${original};`);
+    expect(generateCode(entries, { preferStringInUnions: false })).toContain(`value: ${original};`);
+    expect(generateCode(entries, { preferStringInUnions: true })).toContain(`value: ${result};`);
+    expect(generateCode(entries)).toContain(`value: ${original};`);
+  });
+
+  it("preserves object members and exposes the option to TSDoc without changing the raw schema", () => {
+    const rawType: SchemaTypeData = {
+      kind: "union",
+      types: [
+        { kind: "inline", type: "number" },
+        { kind: "inline", type: "string" },
+        { kind: "object", ref: { kind: "internal", index: 0 } },
+        { kind: "inline", type: "boolean" },
+      ],
+    };
+    const entries = [entry(["child"]), entry(["parent"], { value: rawType })];
+    const contexts: InterfaceTSDocContext[] = [];
+    const code = generateCode(entries, {
+      preferStringInUnions: true,
+      generateTSDoc(context) {
+        contexts.push(context);
+        return undefined;
+      },
+    });
+    expect(code).toContain("value: string | Child;");
+    expect(contexts[1]!.schema.properties.value?.type).toBe(rawType);
+    expect(contexts[1]!.preferStringInUnions).toBe(true);
+    expect(contexts[0]!.parents).toMatchObject([
+      { identifier: "Parent", propertyPaths: ["value"] },
+    ]);
+  });
+
+  it("handles nested unions and list items without redundant parentheses", () => {
+    const type: SchemaTypeData = {
+      kind: "union",
+      types: [
+        { kind: "inline", type: "number" },
+        {
+          kind: "union",
+          types: [
+            { kind: "inline", type: "boolean" },
+            { kind: "inline", type: "string" },
+          ],
+        },
+      ],
+    };
+    const code = generateCode(
+      [
+        entry(["container"], {
+          value: type,
+          values: { kind: "list", itemTag: "item", itemRef: type },
+        }),
+      ],
+      { preferStringInUnions: true },
+    );
+    expect(code).toContain("value: string;");
+    expect(code).toContain('// @xml-schema list "item"\n  values: string[];');
+  });
+
+  it("applies to metalist metadata and inline item fields", () => {
+    const entries = generateSchema(
+      analyzeDocument(
+        parseSwXml(
+          '<foo size="123"><bar text="123"/><bar text="abc"/></foo><foo size="abc"><bar text="123"/><bar text="abc"/></foo>',
+        ),
+        undefined,
+      ),
+    );
+    const code = generateCode(entries, { preferStringInUnions: true });
+    expect(code).toContain("meta: {\n    size: string;");
+    expect(code).toContain("items: {\n    text: string;");
+  });
+});
+
 describe("TSDoc parents", () => {
   it("groups direct, list, and union references by emitted parent and deduplicates property paths", () => {
     const target: SchemaTypeData = { kind: "object", ref: { kind: "internal", index: 0 } };

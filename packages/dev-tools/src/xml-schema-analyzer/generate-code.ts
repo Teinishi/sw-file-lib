@@ -90,6 +90,7 @@ export interface InterfaceTSDocContext {
   readonly inputFiles: readonly string[] | undefined;
   readonly outputPath: string | undefined;
   readonly allPropertiesOptional: boolean;
+  readonly preferStringInUnions: boolean;
   readonly getIdentifier: (ref: SchemaReference) => string;
   /** External references have no local schema and return undefined. */
   readonly getSchema: (ref: SchemaReference) => SchemaEntry | undefined;
@@ -100,6 +101,8 @@ export interface GenerateCodeOptions {
   readonly generateTSDoc?: ((context: InterfaceTSDocContext) => string | undefined) | undefined;
   /** Make generated properties optional, except metalist meta/items wrappers. Defaults to false. */
   readonly allPropertiesOptional?: boolean | undefined;
+  /** When a union contains string, omit its number and boolean members. Defaults to false. */
+  readonly preferStringInUnions?: boolean | undefined;
   /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
   readonly interfaceNames?: Readonly<Record<string, string>> | undefined;
 }
@@ -231,14 +234,15 @@ function generateSchemaTypeCode(
   type: SchemaTypeData,
   getIdentifier: (ref: SchemaReference) => string,
   location: string,
-): { comment?: string; body: string } {
+  options: GenerateCodeOptions,
+): { comment?: string; body: string; isUnion?: boolean } {
   switch (type.kind) {
     case "inline":
       return { body: type.type };
     case "object":
       return { body: getIdentifier(type.ref) };
     case "list":
-      const itemCode = generateSchemaTypeCode(type.itemRef, getIdentifier, location);
+      const itemCode = generateSchemaTypeCode(type.itemRef, getIdentifier, location, options);
       if (itemCode.comment) {
         throw new Error(
           `Cannot represent nested list/metalist with one @xml-schema marker at ${location}.`,
@@ -246,10 +250,24 @@ function generateSchemaTypeCode(
       }
       return {
         comment: `// @xml-schema ${type.kind} ${JSON.stringify(type.itemTag)}`,
-        body: `${type.itemRef.kind === "union" ? `(${itemCode.body})` : itemCode.body}[]`,
+        body: `${itemCode.isUnion ? `(${itemCode.body})` : itemCode.body}[]`,
       };
     case "union":
-      const members = type.types.map((t) => generateSchemaTypeCode(t, getIdentifier, location));
+      const flatten = (member: SchemaTypeData): SchemaTypeData[] =>
+        member.kind === "union" ? member.types.flatMap(flatten) : [member];
+      const types = type.types.flatMap(flatten);
+      const preferString =
+        options.preferStringInUnions &&
+        types.some((member) => member.kind === "inline" && member.type === "string");
+      const filtered = preferString
+        ? types.filter(
+            (member) =>
+              member.kind !== "inline" || (member.type !== "number" && member.type !== "boolean"),
+          )
+        : types;
+      const members = filtered.map((t) =>
+        generateSchemaTypeCode(t, getIdentifier, location, options),
+      );
       if (members.some((member) => member.comment)) {
         throw new Error(
           `Cannot represent list/metalist inside a union with one @xml-schema marker at ${location}.`,
@@ -257,6 +275,7 @@ function generateSchemaTypeCode(
       }
       return {
         body: members.map((member) => member.body).join(" | "),
+        isUnion: members.length > 1,
       };
   }
 }
@@ -294,7 +313,12 @@ function generateObjectTypeCode(
     }
     const needQuotes = !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(prop.key);
     const optionalMark = options.allPropertiesOptional || prop.isOptional ? "?" : "";
-    const typeCode = generateSchemaTypeCode(prop.type, getIdentifier, `${identifier}.${prop.key}`);
+    const typeCode = generateSchemaTypeCode(
+      prop.type,
+      getIdentifier,
+      `${identifier}.${prop.key}`,
+      options,
+    );
     if (typeCode.comment) {
       code += `  ${typeCode.comment}\n`;
     }
@@ -492,6 +516,7 @@ export function generateCode(
       inputFiles: source.inputFiles,
       outputPath: source.outputPath,
       allPropertiesOptional: options.allPropertiesOptional ?? false,
+      preferStringInUnions: options.preferStringInUnions ?? false,
       getIdentifier,
       getSchema,
     });

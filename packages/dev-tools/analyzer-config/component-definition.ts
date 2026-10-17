@@ -21,6 +21,7 @@ export default defineConfig(async () => {
       "definition/jet_engine_connections_prev/j": "JetEngineConnection",
     },
     allPropertiesOptional: true,
+    preferStringInUnions: true,
     generateTSDoc(context) {
       return generateTSDoc("Stormworks component definition data", context);
     },
