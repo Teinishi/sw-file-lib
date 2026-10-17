@@ -5,32 +5,21 @@ import {
   ComponentDefinitionSchema,
   type ComponentDefinition,
   type ComponentDefinitionImmutable,
-} from "./ComponentDefinition";
-import {
-  MicrocontrollerSchema,
-  type Microcontroller,
-  type MicrocontrollerImmutable,
-} from "./Microcontroller";
-import { VehicleSchema, type Vehicle, type VehicleImmutable } from "./Vehicle";
+} from "./component-definition";
+import { VehicleSchema, type Vehicle, type VehicleImmutable } from "./vehicle";
 
 export * from "./common";
+export * as ComponentDefinitionSchemas from "./component-definition";
+export * as VehicleSchemas from "./vehicle";
 
 export {
   ComponentDefinitionSchema,
   type ComponentDefinition,
   type ComponentDefinitionImmutable,
-} from "./ComponentDefinition";
-export * as ComponentDefinitionSchemas from "./ComponentDefinition";
-
-export {
-  MicrocontrollerSchema,
-  type Microcontroller,
-  type MicrocontrollerImmutable,
-} from "./Microcontroller";
-export * as MicrocontrollerSchemas from "./Microcontroller";
-
-export { VehicleSchema, type Vehicle, type VehicleImmutable } from "./Vehicle";
-export * as VehicleSchemas from "./Vehicle";
+  VehicleSchema,
+  type Vehicle,
+  type VehicleImmutable,
+};
 
 export { SchemaError, SchemaSerializeError } from "../xml-schema";
 
@@ -90,50 +79,6 @@ export function safeSerializeComponentDefinitionXml(
   options?: XmlWriterOptions,
 ): x.Result<string, x.SchemaSerializeError> {
   return safeSerialize(ComponentDefinitionSchema, "definition", data, options);
-}
-
-/**
- * Parses a Stormworks microcontroller XML document.
- *
- * @throws {@link SchemaError} when the XML content does not match the microcontroller schema.
- */
-export function parseMicrocontrollerXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options?: ParseOptions,
-): Microcontroller {
-  return MicrocontrollerSchema.parse(input, "microprocessor", options);
-}
-
-/**
- * Parses a Stormworks microcontroller XML document without throwing schema errors.
- */
-export function safeParseMicrocontrollerXml(
-  input: string | Uint8Array<ArrayBuffer>,
-  options?: ParseOptions,
-): x.Result<Microcontroller, x.SchemaError> {
-  return MicrocontrollerSchema.safeParse(input, "microprocessor", options);
-}
-
-/**
- * Serializes a Stormworks microcontroller into an XML document.
- *
- * @throws {@link SchemaSerializeError} when the microcontroller cannot be serialized.
- */
-export function serializeMicrocontrollerXml(
-  data: MicrocontrollerImmutable,
-  options?: XmlWriterOptions,
-): string {
-  return MicrocontrollerSchema.serialize(data, "microprocessor", options).toString();
-}
-
-/**
- * Serializes a Stormworks microcontroller into an XML document without throwing schema errors.
- */
-export function safeSerializeMicrocontrollerXml(
-  data: MicrocontrollerImmutable,
-  options?: XmlWriterOptions,
-): x.Result<string, x.SchemaSerializeError> {
-  return safeSerialize(MicrocontrollerSchema, "microprocessor", data, options);
 }
 
 /**

@@ -23,6 +23,7 @@ import {
   type SchemaPath,
   type UnknownFieldData,
   type DuplicateChildElementData,
+  type Infer,
 } from "..";
 import { parseSwXml, SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
 import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer";
@@ -187,15 +188,15 @@ export function parseShape<T extends Shape>(
 /**
  * itemTag, itemSchema をもとに子要素をリストアイテムとしてパースしてデータ配列を作成
  */
-export function parseList<T>(
+export function parseList<S extends ElementSchema<any>>(
   value: SwXmlNodeList,
   itemTag: string,
-  itemSchema: ElementSchema<T>,
+  itemSchema: S,
   ctx: SchemaParseContext,
   options?: SchemaParseOptions,
   prependPath: string[] = [],
-) {
-  const items: T[] = [];
+): { items: Infer<S>[]; issues: AnySchemaIssue[] } {
+  const items: Infer<S>[] = [];
   const issues: AnySchemaIssue[] = [];
 
   for (const [index, child] of value.nodes.entries()) {

@@ -1,7 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
 
-  "extends": ["../../typedoc.base.json"],
+  "extends": ["../../typedoc.base.json", "./src/schemas/generated/intentionally-not-exported.json"],
   "entryPoints": ["src/index.ts", "src/xml-schema/index.ts"],
   "entryPointStrategy": "resolve"
 }

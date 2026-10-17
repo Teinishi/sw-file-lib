@@ -28,3 +28,4 @@ lerna-debug.log*
 *.tmp
 docs/.vitepress/cache
 docs/src/api
+*.cache.json

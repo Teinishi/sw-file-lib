@@ -1,0 +1,63 @@
+{
+  "name": "@sw-file-lib/dev-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal tools for library development.",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Teinishi",
+  "bin": {
+    "xml-schema-analyzer": "./src/xml-schema-analyzer/cli.ts",
+    "xml-schema-codegen": "./src/xml-schema-codegen/cli.ts"
+  },
+  "type": "module",
+  "exports": {
+    "./xml-schema-analyzer": {
+      "types": "./src/xml-schema-analyzer/index.ts",
+      "import": "./src/xml-schema-analyzer/index.ts"
+    },
+    "./xml-schema-codegen": {
+      "types": "./src/xml-schema-codegen/index.ts",
+      "import": "./src/xml-schema-codegen/index.ts"
+    },
+    "./typedoc-markdown-codeblock": {
+      "types": "./src/typedoc-markdown-codeblock/index.ts",
+      "import": "./src/typedoc-markdown-codeblock/index.ts"
+    },
+    "./vitepress-table-column-classes": {
+      "types": "./src/vitepress-table-column-classes/index.ts",
+      "import": "./src/vitepress-table-column-classes/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "analyze": "tsx ./src/xml-schema-analyzer/cli.ts",
+    "analyze:component": "pnpm run analyze --config analyzer-config/component-definition.ts",
+    "analyze:vehicle": "pnpm run analyze --config analyzer-config/vehicle.ts"
+  },
+  "dependencies": {
+    "@sw-file-lib/test-utils": "workspace:*",
+    "@sw-file-lib/xml": "workspace:*",
+    "cli-progress": "^3.12.0",
+    "commander": "^15.0.0",
+    "consola": "^3.4.2",
+    "load-oxfmt-config": "^0.23.0"
+  },
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
+    "oxfmt": "^0.61.0",
+    "tsx": "^4.23.13",
+    "typescript": "6.0.3",
+    "vite": "^8.2.1"
+  },
+  "peerDependencies": {
+    "oxfmt": "^0.61.0",
+    "tsx": "^4.23.13",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0",
+    "typescript": "6.0.3",
+    "vite": "^8.2.1"
+  }
+}

@@ -1,0 +1,48 @@
+export const predefinedSchemas = {
+  "./common": {
+    XmlVec2: {
+      kind: "object",
+      properties: {
+        x: { type: "number", optional: true },
+        y: { type: "number", optional: true },
+      },
+    },
+    XmlVec3: {
+      kind: "object",
+      properties: {
+        x: { type: "number", optional: true },
+        y: { type: "number", optional: true },
+        z: { type: "number", optional: true },
+      },
+    },
+    XmlRgb: {
+      kind: "object",
+      properties: {
+        r: { type: "number", optional: true },
+        g: { type: "number", optional: true },
+        b: { type: "number", optional: true },
+      },
+    },
+    XmlMat3: {
+      kind: "object",
+      properties: {
+        "00": { type: "number", optional: true },
+        "01": { type: "number", optional: true },
+        "02": { type: "number", optional: true },
+        "10": { type: "number", optional: true },
+        "11": { type: "number", optional: true },
+        "12": { type: "number", optional: true },
+        "20": { type: "number", optional: true },
+        "21": { type: "number", optional: true },
+        "22": { type: "number", optional: true },
+      },
+    },
+    TextValuePair: {
+      kind: "object",
+      properties: {
+        text: { type: "string", optional: true },
+        value: { type: "number", optional: true },
+      },
+    },
+  },
+} as const;
