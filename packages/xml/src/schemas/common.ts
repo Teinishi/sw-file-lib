@@ -69,3 +69,18 @@ export interface XmlMat3 {
   "21"?: number;
   "22"?: number;
 }
+
+// @xml-schema
+/**
+ * Represents elements with `text` and `value` attributes in Stormworks microcontroller data.
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link TextValuePairImmutable} for its parameter type.
+ *
+ * @see {@link TextValuePairSchema}
+ * @see {@link TextValuePairImmutable}
+ */
+export interface TextValuePair {
+  text?: string;
+  value?: number;
+}

@@ -27,9 +27,9 @@ export type PredefinedSchema = {
 export interface Config extends GenerateCodeOptions {
   readonly input: string | readonly string[];
   readonly out: string;
-  readonly predefinedSchemas?: Record<string, Record<string, PredefinedSchema>>;
+  readonly predefinedSchemas?: Readonly<Record<string, Readonly<Record<string, PredefinedSchema>>>>;
   readonly forceKind?:
-    | Record<string, "object" | "list" | "metalist">
+    | Readonly<Record<string, "object" | "list" | "metalist">>
     | ((xmlLocation: XmlLocation) => "object" | "list" | "metalist" | undefined);
   readonly mergeNumberSuffix?: boolean;
   readonly schemaOverrides?: Readonly<Record<string, SchemaOverride>>;

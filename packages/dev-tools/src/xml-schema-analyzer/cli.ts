@@ -36,6 +36,7 @@ program
     let predefinedSchemas: Config["predefinedSchemas"] | undefined = undefined;
     let forceKind: Config["forceKind"] | undefined = undefined;
     let mergeNumberSuffix: boolean | undefined = undefined;
+    let precedingCode: Config["precedingCode"] | undefined = undefined;
     let interfaceNames: Config["interfaceNames"];
     let allPropertiesOptional: Config["allPropertiesOptional"];
     let preferStringInUnions: Config["preferStringInUnions"];
@@ -50,6 +51,7 @@ program
       predefinedSchemas ??= config.predefinedSchemas;
       forceKind ??= config.forceKind;
       mergeNumberSuffix ??= config.mergeNumberSuffix;
+      precedingCode ??= config.precedingCode;
       interfaceNames = config.interfaceNames;
       allPropertiesOptional = config.allPropertiesOptional;
       preferStringInUnions = config.preferStringInUnions;
@@ -97,7 +99,7 @@ program
 
     const code = generateCode(
       schemaEntries,
-      { interfaceNames, allPropertiesOptional, preferStringInUnions, generateTSDoc },
+      { precedingCode, interfaceNames, allPropertiesOptional, preferStringInUnions, generateTSDoc },
       {
         documentData,
         inputFiles: analysisInputs.files.map((file) => file.path),

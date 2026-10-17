@@ -97,6 +97,7 @@ export interface InterfaceTSDocContext {
 }
 
 export interface GenerateCodeOptions {
+  readonly precedingCode?: string | undefined;
   /** Return TSDoc body text (without comment delimiters), or undefined to omit it. Synchronous. */
   readonly generateTSDoc?: ((context: InterfaceTSDocContext) => string | undefined) | undefined;
   /** Make generated properties optional, except metalist meta/items wrappers. Defaults to false. */
@@ -552,5 +553,10 @@ export function generateCode(
     codeEntries.unshift(importStatements.join("\n") + "\n");
   }
 
-  return codeEntries.join("\n");
+  let code = codeEntries.join("\n");
+  if (options.precedingCode !== undefined) {
+    code = options.precedingCode + "\n" + code;
+  }
+
+  return code;
 }

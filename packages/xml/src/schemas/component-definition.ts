@@ -1,11 +1,11 @@
-import type { XmlMat3, XmlVec3 } from "./common";
-
 export * from "./generated/component-definition-schema";
 export * from "./generated/component-definition-immutable";
 
+import type { XmlVec3, XmlMat3 } from "./common";
+
 // @xml-schema
 /**
- * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ * Represents `<sfx_layer>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
  *
@@ -30,7 +30,7 @@ export interface SfxLayer {
 
 // @xml-schema
 /**
- * Represents `<sfx_data>` elements in Stormworks component definition data.
+ * Represents `<sfx_data>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <sfx_datas> / <sfx_data>`
  *
@@ -54,9 +54,9 @@ export interface SfxData {
 
 // @xml-schema
 /**
- * Represents `<surface>` elements in Stormworks component definition data.
+ * Represents `<surface>` element in Stormworks component definition data.
  *
- * XML location:
+ * XML locations:
  * - `<definition> / <surfaces> / <surface>`
  * - `<definition> / <buoyancy_surfaces> / <surface>`
  *
@@ -81,7 +81,7 @@ export interface Surface {
 
 // @xml-schema
 /**
- * Represents `<logic_node>` elements in Stormworks component definition data.
+ * Represents `<logic_node>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <logic_nodes> / <logic_node>`
  *
@@ -105,7 +105,7 @@ export interface LogicNode {
 
 // @xml-schema
 /**
- * Represents `<coupling>` elements in Stormworks component definition data.
+ * Represents `<coupling>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <couplings> / <coupling>`
  *
@@ -130,7 +130,7 @@ export interface Coupling {
 
 // @xml-schema
 /**
- * Represents `<voxel>` elements in Stormworks component definition data.
+ * Represents `<voxel>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <voxels> / <voxel>`
  *
@@ -152,9 +152,47 @@ export interface Voxel {
 
 // @xml-schema
 /**
- * Represents `<j>` elements in Stormworks component definition data.
+ * Represents `<tooltip_properties>` element in Stormworks component definition data.
  *
- * XML location:
+ * XML location: `<definition> / <tooltip_properties>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link TooltipPropertiesImmutable} for its parameter type.
+ *
+ * @see {@link TooltipPropertiesSchema}
+ * @see {@link TooltipPropertiesImmutable}
+ */
+export interface TooltipProperties {
+  description?: string;
+  short_description?: string;
+}
+
+// @xml-schema
+/**
+ * Represents `<reward_properties>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <reward_properties>`
+ *
+ * Parent: {@link ComponentDefinition}
+ *
+ * If your function only reads the value and does not mutate it, prefer
+ * {@link RewardPropertiesImmutable} for its parameter type.
+ *
+ * @see {@link RewardPropertiesSchema}
+ * @see {@link RewardPropertiesImmutable}
+ */
+export interface RewardProperties {
+  tier?: number;
+  number_rewarded?: number;
+}
+
+// @xml-schema
+/**
+ * Represents `<j>` element in Stormworks component definition data.
+ *
+ * XML locations:
  * - `<definition> / <jet_engine_connections_prev> / <j>`
  * - `<definition> / <jet_engine_connections_next> / <j>`
  *
@@ -173,7 +211,9 @@ export interface JetEngineConnection {
 
 // @xml-schema
 /**
- * Represents root `<definition>` elements in Stormworks component definition data.
+ * Represents `<definition>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition>`
  *
  * If your function only reads the value and does not mutate it, prefer
  * {@link ComponentDefinitionImmutable} for its parameter type.
@@ -344,14 +384,8 @@ export interface ComponentDefinition {
   magnet_offset?: XmlVec3;
   connector_axis?: XmlVec3;
   connector_up?: XmlVec3;
-  tooltip_properties?: {
-    description?: string;
-    short_description?: string;
-  };
-  reward_properties?: {
-    tier?: number;
-    number_rewarded?: number;
-  };
+  tooltip_properties?: TooltipProperties;
+  reward_properties?: RewardProperties;
   // @xml-schema list "j"
   jet_engine_connections_prev?: JetEngineConnection[];
   // @xml-schema list "j"

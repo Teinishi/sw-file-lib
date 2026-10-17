@@ -1,8 +1,7 @@
 import path from "node:path";
-import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
+import { findWorkspaceRoot, loadWorkspaceEnv } from "@sw-file-lib/test-utils";
 import { defineConfig, type XmlLocation } from "../src/xml-schema-analyzer";
-import { predefinedSchemas } from "./predefined-schemas";
-import { generateTSDoc } from "./utils";
+import { generateTSDoc, predefinedSchemas } from "./utils";
 
 // forceKind 関連
 const COMPONENT_O_LOCATION = ["vehicle", "bodies", "body", "components", "c", "o"] as const;
@@ -140,10 +139,13 @@ const xmlLocationMatches = (
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_VEHICLES_PATH"]!, "*.xml");
+  const root = await findWorkspaceRoot();
 
   return {
     input,
-    out: "./.tmp/vehicle.ts",
+    out: path.join(root, "packages", "xml", "src", "schemas", "vehicle.ts"),
+    precedingCode:
+      'export * from "./generated/vehicle-schema";\nexport * from "./generated/vehicle-immutable";\n',
     predefinedSchemas,
     forceKind(xmlLocation: XmlLocation) {
       for (const [pattern, kind] of FORCE_KIND_PATTERNS) {

@@ -1,5 +1,7 @@
 import type { InterfaceTSDocContext, XmlLocation } from "../../src/xml-schema-analyzer";
 
+export * from "./predefined-schemas";
+
 const disjunctionFormatter = new Intl.ListFormat("en", {
   style: "long",
   type: "disjunction",
