@@ -222,10 +222,10 @@ function generateObjectSchema(
   nodeData: NodeData,
   registerEntry: RegisterEntryFn,
   options: GenerateSchemaOptions,
-  allowEmpty = false,
+  metalist?: { readonly itemTag: string; readonly itemRef: SchemaTypeData },
 ): { dependencies: SchemaReference[]; data: SchemaTypeData } {
   if (
-    !allowEmpty &&
+    !metalist &&
     nodeData.attributes.size === 0 &&
     nodeData.children.size === 0 &&
     !Object.hasOwn(options.schemaOverrides ?? {}, xmlLocation.join("/"))
@@ -293,7 +293,7 @@ function generateObjectSchema(
   }
 
   const ref = registerEntry({
-    kind: "object",
+    ...(metalist ? { kind: "metalist" as const, ...metalist } : { kind: "object" as const }),
     xmlLocations: [xmlLocation],
     properties: properties,
     attributeOrder: nodeData.attributeOrder,
@@ -377,9 +377,9 @@ function generateMetalistSchema(
   const result = generateObjectSchema(
     xmlLocation,
     { ...nodeData, children: metaChildren, childOrder: metaChildOrder },
-    (entry) => registerEntry({ ...entry, kind: "metalist", itemTag, itemRef: data }),
+    registerEntry,
     options,
-    true,
+    { itemTag, itemRef: data },
   );
   return { ...result, dependencies: [...dependencies, ...result.dependencies] };
 }

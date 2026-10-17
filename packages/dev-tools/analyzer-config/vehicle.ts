@@ -1,6 +1,6 @@
 import path from "node:path";
 import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
-import { defineConfig, type Config, type XmlLocation } from "../src/xml-schema-analyzer";
+import { defineConfig, type XmlLocation } from "../src/xml-schema-analyzer";
 import { predefinedSchemas } from "./predefined-schemas";
 
 // forceKind 関連
@@ -23,40 +23,6 @@ const FORCE_KIND_PATTERNS = [
   [[...COMPONENT_O_LOCATION, "logic_slots", "slot", "value"], "object"],
   [[...COMPONENT_O_LOCATION, /display_\d+/, "col_extra", "c"], "object"],
 ] as const;
-
-const xmlLocationMatches = (
-  xmlLocation: XmlLocation,
-  pattern: readonly (string | RegExp)[],
-): boolean => {
-  if (xmlLocation.length !== pattern.length) {
-    return false;
-  }
-  for (let i = 0; i < xmlLocation.length; i++) {
-    const xmlPart = xmlLocation[i]!;
-    const patternPart = pattern[i]!;
-    if (typeof patternPart === "string") {
-      if (xmlPart !== patternPart) {
-        return false;
-      }
-    } else if (patternPart instanceof RegExp) {
-      if (!patternPart.test(xmlPart)) {
-        return false;
-      }
-    } else {
-      throw new Error(`Invalid pattern part: ${patternPart}`);
-    }
-  }
-  return true;
-};
-
-const forceKind = (xmlLocation: XmlLocation): "object" | "list" | undefined => {
-  for (const [pattern, kind] of FORCE_KIND_PATTERNS) {
-    if (xmlLocationMatches(xmlLocation, pattern)) {
-      return kind;
-    }
-  }
-  return undefined;
-};
 
 // interfaceNames 関連
 const componentOPath = COMPONENT_O_LOCATION.join("/");
@@ -108,6 +74,7 @@ const C_TEXT_VALUE_PAIRS = [
   "trim_z_display",
   "trim_w_display",
 ] as const;
+
 const MICROPROCESSOR_TEXT_VALUE_PAIRS = [
   "e",
   "n",
@@ -122,6 +89,11 @@ const MICROPROCESSOR_TEXT_VALUE_PAIRS = [
   "r",
   "items/i/v",
 ] as const;
+
+const microprocessorIn = ["inc", "inoff"];
+for (let i = 1; i <= 32; i++) {
+  microprocessorIn.push(`in${i}`);
+}
 
 const TEXT_VALUE_PAIR_OVERRIDES = {
   properties: {
@@ -138,43 +110,103 @@ const MICROPROCESSOR_IN_OVERRIDES = {
   },
 } as const;
 
-const microprocessorIn = ["inc", "inoff"];
-for (let i = 1; i <= 32; i++) {
-  microprocessorIn.push(`in${i}`);
-}
-
-const schemaOverrides: Exclude<Config["schemaOverrides"], undefined> = Object.fromEntries([
-  ...DISPLAY_TEXT_VALUE_PAIRS.flatMap((k) =>
-    [1, 2, 3, 4].map((i) => [
-      `vehicle/bodies/body/components/c/o/display_${i}/${k}`,
-      TEXT_VALUE_PAIR_OVERRIDES,
-    ]),
-  ),
-  ...C_TEXT_VALUE_PAIRS.map((k) => [
-    `vehicle/bodies/body/components/c/o/${k}`,
-    TEXT_VALUE_PAIR_OVERRIDES,
-  ]),
-  ...MICROPROCESSOR_TEXT_VALUE_PAIRS.map((k) => [
-    `vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/${k}`,
-    TEXT_VALUE_PAIR_OVERRIDES,
-  ]),
-  ...microprocessorIn.map((k) => [
-    `vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/${k}`,
-    MICROPROCESSOR_IN_OVERRIDES,
-  ]),
-]);
+// ヘルパー関数
+const xmlLocationMatches = (
+  xmlLocation: XmlLocation,
+  pattern: readonly (string | RegExp)[],
+): boolean => {
+  if (xmlLocation.length !== pattern.length) {
+    return false;
+  }
+  for (let i = 0; i < xmlLocation.length; i++) {
+    const xmlPart = xmlLocation[i]!;
+    const patternPart = pattern[i]!;
+    if (typeof patternPart === "string") {
+      if (xmlPart !== patternPart) {
+        return false;
+      }
+    } else if (patternPart instanceof RegExp) {
+      if (!patternPart.test(xmlPart)) {
+        return false;
+      }
+    } else {
+      throw new Error(`Invalid pattern part: ${patternPart}`);
+    }
+  }
+  return true;
+};
 
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_VEHICLES_PATH"]!, "*.xml");
 
+  const disjunctionFormatter = new Intl.ListFormat("en", {
+    style: "long",
+    type: "disjunction",
+  });
+
+  function formatXmlLocation(xmlLocation: XmlLocation): string {
+    return xmlLocation.map((tag) => `<${tag}>`).join(" / ");
+  }
+
   return {
     input,
     out: "./.tmp/vehicle.ts",
     predefinedSchemas,
-    forceKind,
+    forceKind(xmlLocation: XmlLocation) {
+      for (const [pattern, kind] of FORCE_KIND_PATTERNS) {
+        if (xmlLocationMatches(xmlLocation, pattern)) {
+          return kind;
+        }
+      }
+      return undefined;
+    },
     interfaceNames,
-    schemaOverrides,
+    schemaOverrides: Object.fromEntries([
+      ...DISPLAY_TEXT_VALUE_PAIRS.flatMap((k) =>
+        [1, 2, 3, 4].map((i) => [
+          `vehicle/bodies/body/components/c/o/display_${i}/${k}`,
+          TEXT_VALUE_PAIR_OVERRIDES,
+        ]),
+      ),
+      ...C_TEXT_VALUE_PAIRS.map((k) => [
+        `vehicle/bodies/body/components/c/o/${k}`,
+        TEXT_VALUE_PAIR_OVERRIDES,
+      ]),
+      ...MICROPROCESSOR_TEXT_VALUE_PAIRS.map((k) => [
+        `vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/${k}`,
+        TEXT_VALUE_PAIR_OVERRIDES,
+      ]),
+      ...microprocessorIn.map((k) => [
+        `vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/${k}`,
+        MICROPROCESSOR_IN_OVERRIDES,
+      ]),
+    ]),
     allPropertiesOptional: true,
+    generateTSDoc({ identifier, xmlLocations: xmlPaths, parents }) {
+      const tagNames = new Set(xmlPaths.map((path) => path.at(-1)!));
+      let doc = `Represents ${disjunctionFormatter.format(tagNames.values().map((t) => `\`<${t}>\` element`))} in Stormworks vehicle data.`;
+
+      if (xmlPaths.length === 1) {
+        doc += `\n\nXML location: \`${formatXmlLocation(xmlPaths[0]!)}\``;
+      } else {
+        doc += "\n\nXML locations:\n";
+        for (const xmlPath of xmlPaths) {
+          doc += `- \`${formatXmlLocation(xmlPath)}\`\n`;
+        }
+      }
+
+      if (parents.length === 1) {
+        doc += `\n\nParent: {@link ${parents[0]!.identifier}}`;
+      } else if (parents.length > 1) {
+        doc += `\n\nParents: ${disjunctionFormatter.format(parents.map((p) => `{@link ${p.identifier}}`))}`;
+      }
+
+      doc += `\n\nIf your function only reads the value and does not mutate it, prefer\n{@link ${identifier}Immutable} for its parameter type.`;
+
+      doc += `\n\n@see {@link ${identifier}Schema}\n@see {@link ${identifier}Immutable}`;
+
+      return doc;
+    },
   };
 });

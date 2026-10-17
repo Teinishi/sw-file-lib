@@ -1,4 +1,5 @@
 import ts from "typescript";
+import type { DocumentData } from "./analyzer";
 import { prefixPriority, type OrderGraph } from "./order-graph";
 import type { SchemaEntry, SchemaPropertyData, SchemaReference, SchemaTypeData } from "./schema";
 
@@ -61,7 +62,42 @@ function toPascalCase(parts: string[]): string {
     .join("");
 }
 
+export interface GenerateCodeSource {
+  readonly documentData?: DocumentData | undefined;
+  readonly inputFiles?: readonly string[] | undefined;
+  readonly outputPath?: string | undefined;
+}
+
+export interface InterfaceParentInfo {
+  readonly identifier: string;
+  readonly schema: SchemaEntry;
+  /** Paths relative to the parent interface, e.g. child, children[], meta.child, items[].child. */
+  readonly propertyPaths: readonly string[];
+}
+
+export interface InterfaceTSDocContext {
+  readonly identifier: string;
+  readonly schemaIndex: number;
+  /** Final schema after overrides and merging. For metalists, properties describe meta. */
+  readonly schema: SchemaEntry;
+  readonly xmlLocations: readonly (readonly string[])[];
+  /** Includes inlined item schemas whose standalone declarations are omitted. */
+  readonly schemaEntries: readonly SchemaEntry[];
+  /** Emitted interfaces that directly reference this interface in their generated types. */
+  readonly parents: readonly InterfaceParentInfo[];
+  /** Original XML analysis when supplied to generateCode; treat it as read-only. */
+  readonly documentData: DocumentData | undefined;
+  readonly inputFiles: readonly string[] | undefined;
+  readonly outputPath: string | undefined;
+  readonly allPropertiesOptional: boolean;
+  readonly getIdentifier: (ref: SchemaReference) => string;
+  /** External references have no local schema and return undefined. */
+  readonly getSchema: (ref: SchemaReference) => SchemaEntry | undefined;
+}
+
 export interface GenerateCodeOptions {
+  /** Return TSDoc body text (without comment delimiters), or undefined to omit it. Synchronous. */
+  readonly generateTSDoc?: ((context: InterfaceTSDocContext) => string | undefined) | undefined;
   /** Make generated properties optional, except metalist meta/items wrappers. Defaults to false. */
   readonly allPropertiesOptional?: boolean | undefined;
   /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
@@ -319,7 +355,7 @@ function generateCodeEntry(
           `Cannot represent metalist item type at ${identifier}.items: expected an object or metalist reference.`,
         );
       }
-      return `// @xml-schema metalist ${JSON.stringify(entry.itemTag)}\nexport interface ${identifier} {\n  meta: ${metaCode.replace(/\n/g, "\n  ")};\n  items: ${itemBody}[];\n}\n`;
+      return `export interface ${identifier} {\n  meta: ${metaCode.replace(/\n/g, "\n  ")};\n  items: ${itemBody}[];\n}\n`;
     default:
       throw new Error("Unimplemented");
   }
@@ -328,6 +364,7 @@ function generateCodeEntry(
 export function generateCode(
   schemaEntries: SchemaEntry[],
   options: GenerateCodeOptions = {},
+  source: GenerateCodeSource = {},
 ): string {
   const inlinedItems = new Set<number>();
   const inlinePaths = new Set<string>();
@@ -383,21 +420,100 @@ export function generateCode(
   };
 
   const codeEntries = [];
+  const getSchema = (ref: SchemaReference) =>
+    ref.kind === "internal" ? schemaEntries[ref.index] : undefined;
 
-  for (const [i, entry] of schemaEntries.entries()) {
-    // Keep definitions shared with other XML locations or referenced by emitted types.
-    if (
+  const emittedIndices = new Set(
+    schemaEntries.flatMap((entry, i) =>
       inlinedItems.has(i) &&
       !referencedEntries.has(i) &&
       entry.xmlLocations.every((location) => inlinePaths.has(location.join("/")))
-    )
-      continue;
+        ? []
+        : [i],
+    ),
+  );
+  type ParentInfo = Omit<InterfaceParentInfo, "propertyPaths"> & { propertyPaths: string[] };
+  const parentsBySchema = new Map<number, Map<number, ParentInfo>>();
+  for (const parentIndex of emittedIndices) {
+    const parent = schemaEntries[parentIndex]!;
+    const visit = (type: SchemaTypeData, propertyPath: string): void => {
+      switch (type.kind) {
+        case "object":
+          if (type.ref.kind === "internal" && emittedIndices.has(type.ref.index)) {
+            const parents = parentsBySchema.get(type.ref.index) ?? new Map<number, ParentInfo>();
+            const info = parents.get(parentIndex) ?? {
+              identifier: identifiers[parentIndex]!,
+              schema: parent,
+              propertyPaths: [],
+            };
+            if (!info.propertyPaths.includes(propertyPath)) info.propertyPaths.push(propertyPath);
+            parents.set(parentIndex, info);
+            parentsBySchema.set(type.ref.index, parents);
+          }
+          break;
+        case "list":
+          visit(type.itemRef, `${propertyPath}[]`);
+          break;
+        case "union":
+          for (const member of type.types) visit(member, propertyPath);
+          break;
+      }
+    };
+    const visitProperties = (entry: SchemaEntry, prefix: string): void => {
+      for (const property of Object.values(entry.properties)) {
+        const segment = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(property.key)
+          ? `${prefix ? "." : ""}${property.key}`
+          : `[${JSON.stringify(property.key)}]`;
+        visit(property.type, `${prefix}${segment}`);
+      }
+    };
+    visitProperties(parent, parent.kind === "metalist" ? "meta" : "");
+    if (parent.kind === "metalist") {
+      const itemEntry =
+        parent.itemRef.kind === "object" ? getSchema(parent.itemRef.ref) : undefined;
+      if (itemEntry?.kind === "object") visitProperties(itemEntry, "items[]");
+      else visit(parent.itemRef, "items[]");
+    }
+  }
+
+  for (const [i, entry] of schemaEntries.entries()) {
+    // Keep definitions shared with other XML locations or referenced by emitted types.
+    if (!emittedIndices.has(i)) continue;
     const identifier = identifiers[i]!;
-    codeEntries.push(
-      generateCodeEntry(entry, identifier, getIdentifier, options, (ref) =>
-        ref.kind === "internal" ? schemaEntries[ref.index] : undefined,
-      ),
-    );
+    const declaration = generateCodeEntry(entry, identifier, getIdentifier, options, getSchema);
+    const content = options.generateTSDoc?.({
+      identifier,
+      schemaIndex: i,
+      schema: entry,
+      xmlLocations: entry.xmlLocations,
+      schemaEntries,
+      parents: [...(parentsBySchema.get(i)?.values() ?? [])],
+      documentData: source.documentData,
+      inputFiles: source.inputFiles,
+      outputPath: source.outputPath,
+      allPropertiesOptional: options.allPropertiesOptional ?? false,
+      getIdentifier,
+      getSchema,
+    });
+    let tsdoc = "";
+    if (content?.trim()) {
+      if (content.includes("*/")) {
+        throw new Error(
+          `generateTSDoc must return comment body text without closing delimiters at ${identifier}.`,
+        );
+      }
+      tsdoc = `/**\n${content
+        .trim()
+        .replace(/\r\n?/g, "\n")
+        .split("\n")
+        .map((line) => (line ? ` * ${line}` : " *"))
+        .join("\n")}\n */\n`;
+    }
+    const marker =
+      entry.kind === "metalist"
+        ? `// @xml-schema metalist ${JSON.stringify(entry.itemTag)}`
+        : "// @xml-schema";
+    codeEntries.push(`${marker}\n${tsdoc}${declaration}`);
   }
 
   const importStatements = Array.from(importMap.entries())

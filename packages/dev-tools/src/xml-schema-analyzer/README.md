@@ -46,6 +46,86 @@ const code = generateCode(schemaEntries, {
 Naming happens after XML analysis, so changes to `interfaceNames` also apply when
 the CLI reuses its analysis cache; `--refresh` is unnecessary for naming changes.
 
+## Interface markers and TSDoc
+
+Every emitted object interface has a `// @xml-schema` marker. Metalist interfaces
+have `// @xml-schema metalist "itemTag"` instead. To insert TSDoc between the marker
+and declaration, provide a synchronous `generateTSDoc` callback:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  generateTSDoc({ identifier, xmlLocations }) {
+    const xmlPaths = xmlLocations.map((location) => location.join("/"));
+    return `${identifier} inferred from XML.\n\n@remarks\nXML paths: ${xmlPaths.join(", ")}`;
+  },
+});
+```
+
+The callback returns comment body text, without `/**` and `*/`. The generator wraps
+it in a TSDoc block. Return `undefined`, an empty string, or whitespace to omit
+TSDoc. Multiline text and TSDoc tags are supported; closing comment delimiters in
+the body are rejected. Output has this order:
+
+```ts
+// @xml-schema
+/**
+ * Vehicle inferred from XML.
+ *
+ * @remarks
+ * XML paths: vehicle
+ */
+export interface Vehicle {}
+```
+
+The exported `InterfaceTSDocContext` provides:
+
+| Field                      | Information                                                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `identifier`               | Final interface name, including config overrides and collision resolution.                                                                                                                                                                                               |
+| `schemaIndex`, `schema`    | Entry index and final schema after overrides and merging. Includes kind, XML locations, property types, optionality, possible values, numeric ranges, and attribute/child order graphs. Metalist properties describe `meta`; `itemTag` and `itemRef` describe its items. |
+| `xmlLocations`             | All merged XML locations as arrays of tag names.                                                                                                                                                                                                                         |
+| `parents`                  | Emitted parent interfaces, including their final identifiers, schemas, and referencing property paths.                                                                                                                                                                   |
+| `schemaEntries`            | All schemas, including inlined item schemas omitted from standalone output.                                                                                                                                                                                              |
+| `getIdentifier(ref)`       | Resolves an internal or external reference to its TypeScript name.                                                                                                                                                                                                       |
+| `getSchema(ref)`           | Resolves an internal reference to its schema. External references return `undefined`.                                                                                                                                                                                    |
+| `documentData`             | Original analysis, including observed numeric categories and value statistics before schema overrides.                                                                                                                                                                   |
+| `inputFiles`, `outputPath` | Resolved input file paths and effective output path from the CLI.                                                                                                                                                                                                        |
+| `allPropertiesOptional`    | Whether output optionality is forced. Raw schema properties retain their own optionality; metalist wrappers remain required.                                                                                                                                             |
+
+`parents` lists emitted interfaces that directly reference the current interface:
+
+```ts
+generateTSDoc({ parents }) {
+  return parents
+    .map(({ identifier, propertyPaths }) =>
+      `Parent: {@link ${identifier}} (${propertyPaths.join(", ")})`,
+    )
+    .join("\n");
+}
+```
+
+Each entry has `identifier`, `schema`, and `propertyPaths`. Multiple references from
+one parent are grouped, with duplicate paths removed. Paths are relative to the
+parent interface: `child`, `children[]`, `meta.child`, or `items[].child`. Keys
+requiring quotes use bracket notation, such as `["a-b"]`. Parents use final names
+from `interfaceNames` and collision resolution. Root/unreferenced interfaces have
+an empty array. These are TypeScript reference relationships, rather than XML
+ancestry. Inlined metalist items contribute their child references to the emitted
+metalist parent; omitted item interfaces are never listed as parents. When a
+metalist item is another metalist interface, its parent path is `items[]`.
+
+Treat supplied data as read-only. The callback runs once per emitted interface;
+it does not run for omitted inlined item declarations. Downstream schema codegen
+recognizes markers even when TSDoc appears between the marker and interface.
+
+For programmatic calls, use `generateCode(schemaEntries, { generateTSDoc }, source)`.
+The optional third argument (`GenerateCodeSource`) supplies `documentData`,
+`inputFiles`, and `outputPath`; these context fields are otherwise `undefined`.
+The CLI supplies all three on fresh and cached runs. Changing the callback does
+not require XML reanalysis.
+
 ## Making all generated properties optional
 
 Set `allPropertiesOptional: true` in config to emit `?` on every property of every
@@ -196,6 +276,7 @@ every run. The following config changes have these effects:
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
 | `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
 | `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |
+| `generateTSDoc`         | No                    | Generates documentation from the current schema and cached analysis.                           |
 | `out`                   | No change to analysis | Changes output and cache locations. A new location without a matching cache requires analysis. |
 
 The cache contains the resolved `input` configuration, the matched absolute file

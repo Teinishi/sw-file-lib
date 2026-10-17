@@ -2,8 +2,11 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { parseSwXml } from "@sw-file-lib/xml";
 import { analyzeFile } from "../xml-schema-codegen/analyzer";
+import { analyzeJSDocComment } from "../xml-schema-codegen/comments";
+import { parseXmlSchemaMarker } from "../xml-schema-codegen/parse-marker";
 import { analyzeDocument } from "./analyzer/document";
-import { generateCode } from "./generate-code";
+import { generateCode, type InterfaceTSDocContext } from "./generate-code";
+import { defineConfig } from "./index";
 import { OrderGraph } from "./order-graph";
 import { generateSchema, type SchemaEntry, type SchemaTypeData } from "./schema";
 
@@ -29,6 +32,177 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
     childOrder,
   };
 }
+
+describe("TSDoc parents", () => {
+  it("groups direct, list, and union references by emitted parent and deduplicates property paths", () => {
+    const target: SchemaTypeData = { kind: "object", ref: { kind: "internal", index: 0 } };
+    const entries = [
+      entry(["target"]),
+      entry(["first"], {
+        child: target,
+        children: { kind: "list", itemTag: "item", itemRef: target },
+        choice: { kind: "union", types: [target, { kind: "inline", type: "string" }, target] },
+        "a-b": target,
+      }),
+      entry(["second"], { other: target }),
+    ];
+    const contexts: InterfaceTSDocContext[] = [];
+    generateCode(entries, {
+      interfaceNames: { first: "CustomParent" },
+      generateTSDoc(context) {
+        contexts.push(context);
+        return undefined;
+      },
+    });
+    expect(contexts[0]!.parents).toEqual([
+      {
+        identifier: "CustomParent",
+        schema: entries[1],
+        propertyPaths: ["child", "children[]", "choice", '["a-b"]'],
+      },
+      { identifier: "Second", schema: entries[2], propertyPaths: ["other"] },
+    ]);
+    expect(contexts[1]!.parents).toEqual([]);
+    expect(contexts[2]!.parents).toEqual([]);
+  });
+
+  it("reports metalist meta and inline item references against the emitted metalist, not the omitted item", () => {
+    const entries = generateSchema(
+      analyzeDocument(
+        parseSwXml(
+          '<root name="test"><foo size="2"><note value="9"/><bar text="a"><detail value="3"/></bar><bar text="b"><detail value="4"/></bar></foo></root>',
+        ),
+        undefined,
+      ),
+    );
+    const contexts: InterfaceTSDocContext[] = [];
+    const code = generateCode(entries, {
+      interfaceNames: { "root/foo": "CustomFoo" },
+      generateTSDoc(context) {
+        contexts.push(context);
+        return context.parents.map((parent) => `Parent: {@link ${parent.identifier}}`).join("\n");
+      },
+    });
+    const detail = contexts.find((context) => context.identifier === "Detail")!;
+    expect(detail.parents).toHaveLength(1);
+    expect(detail.parents[0]).toMatchObject({
+      identifier: "CustomFoo",
+      propertyPaths: ["meta.note", "items[].detail"],
+    });
+    expect(contexts.some((context) => context.identifier === "Bar")).toBe(false);
+    expect(contexts.find((context) => context.identifier === "CustomFoo")?.parents).toMatchObject([
+      { identifier: "Root", propertyPaths: ["foo"] },
+    ]);
+    expect(code).toContain("Parent: {@link CustomFoo}");
+    expect(code).not.toContain("{@link Bar}");
+  });
+
+  it("reports referenced nested metalists at items[]", () => {
+    const entries = generateSchema(
+      analyzeDocument(
+        parseSwXml(
+          '<foo size="2"><bar size="2"><item text="a"/><item text="b"/></bar><bar size="2"><item text="c"/><item text="d"/></bar></foo>',
+        ),
+        undefined,
+      ),
+    );
+    const contexts: InterfaceTSDocContext[] = [];
+    generateCode(entries, {
+      generateTSDoc(context) {
+        contexts.push(context);
+        return undefined;
+      },
+    });
+    expect(contexts.find((context) => context.identifier === "Bar")?.parents).toMatchObject([
+      { identifier: "Foo", propertyPaths: ["items[]"] },
+    ]);
+  });
+});
+
+describe("interface markers and TSDoc", () => {
+  it("passes merged schema, raw observations, references, and source information to config callbacks", async () => {
+    const documentData = analyzeDocument(
+      parseSwXml('<root name="test"><a x="3"/><b x="4"/></root>'),
+      undefined,
+    );
+    const entries = generateSchema(documentData);
+    const contexts: InterfaceTSDocContext[] = [];
+    const config = await defineConfig({
+      input: "sample.xml",
+      out: "schema.ts",
+      allPropertiesOptional: true,
+      interfaceNames: { "root/a": "Shared" },
+      generateTSDoc(context) {
+        contexts.push(context);
+        return `${context.identifier}: ${context.xmlLocations.map((location) => location.join("/")).join(", ")}\n\n@remarks Generated from XML.`;
+      },
+    });
+    const code = generateCode(entries, config, {
+      documentData,
+      inputFiles: ["sample.xml"],
+      outputPath: "schema.ts",
+    });
+    expect(contexts).toHaveLength(2);
+    const shared = contexts.find((context) => context.identifier === "Shared")!;
+    expect(shared.xmlLocations).toEqual([
+      ["root", "a"],
+      ["root", "b"],
+    ]);
+    expect(shared.schema.properties.x).toMatchObject({
+      isOptional: false,
+      type: { kind: "inline", type: "number" },
+      possibleValues: ["3", "4"],
+      numberRange: { min: 3, max: 4 },
+    });
+    expect(shared.documentData).toBe(documentData);
+    expect(
+      shared.documentData?.elements.get("root")?.children.get("a")?.attributes.get("x")
+        ?.observedTypes,
+    ).toEqual(new Set(["unsignedInt"]));
+    expect(shared.inputFiles).toEqual(["sample.xml"]);
+    expect(shared.outputPath).toBe("schema.ts");
+    expect(shared.allPropertiesOptional).toBe(true);
+    expect(shared.schemaEntries[shared.schemaIndex]).toBe(shared.schema);
+    const root = contexts.find((context) => context.identifier === "Root")!;
+    const type = root.schema.properties.a!.type;
+    expect(type.kind).toBe("object");
+    if (type.kind === "object") {
+      expect(root.getIdentifier(type.ref)).toBe("Shared");
+      expect(root.getSchema(type.ref)).toBe(shared.schema);
+    }
+    expect(
+      root.getSchema({ kind: "external", importPath: "./shared", name: "External" }),
+    ).toBeUndefined();
+    expect(code).toContain(
+      "// @xml-schema\n/**\n * Shared: root/a, root/b\n *\n * @remarks Generated from XML.\n */\nexport interface Shared",
+    );
+    expect(code).toContain("x?: number;");
+  });
+
+  it("keeps the marker readable before TSDoc and exposes TSDoc to the downstream reader", () => {
+    const code = generateCode([entry(["foo"])], {
+      generateTSDoc: () => "Description.\r\nMore detail.",
+    });
+    const source = ts.createSourceFile("schema.ts", code, ts.ScriptTarget.Latest, true);
+    const node = source.statements.find(ts.isInterfaceDeclaration)!;
+    expect(parseXmlSchemaMarker(node, source)).toEqual([]);
+    expect(analyzeJSDocComment(node, source)).toEqual([
+      { paragraphs: [{ text: "Description.\nMore detail." }] },
+    ]);
+  });
+
+  it.each([undefined, "", " \n"])("omits empty documentation %j", (content) => {
+    expect(generateCode([entry(["foo"])], { generateTSDoc: () => content })).toBe(
+      "// @xml-schema\nexport interface Foo {\n}\n",
+    );
+  });
+
+  it("rejects closing comment delimiters in callback content", () => {
+    expect(() => generateCode([entry(["foo"])], { generateTSDoc: () => "bad */ content" })).toThrow(
+      "generateTSDoc must return comment body text without closing delimiters at Foo.",
+    );
+  });
+});
 
 describe("metalist interfaces", () => {
   function schemas(xml: string) {
@@ -87,6 +261,35 @@ describe("metalist interfaces", () => {
     expect(
       analyzeGenerated(code)?.schemas.find((schema) => schema.name === "Foo")?.schema.kind,
     ).toBe("metalist");
+  });
+
+  it("documents metalists and exposes their inlined item schemas without documenting omitted declarations", () => {
+    const entries = schemas(
+      '<root id="test"><foo size="2"><bar text="a"/><bar text="b"/></foo></root>',
+    );
+    const contexts: InterfaceTSDocContext[] = [];
+    const code = generateCode(entries, {
+      generateTSDoc(context) {
+        contexts.push(context);
+        return `Documentation for ${context.identifier}.`;
+      },
+    });
+    expect(contexts.map((context) => context.identifier)).toEqual(["Foo", "Root"]);
+    const context = contexts[0]!;
+    expect(context.schema).toMatchObject({ kind: "metalist", itemTag: "bar" });
+    if (context.schema.kind === "metalist" && context.schema.itemRef.kind === "object") {
+      expect(
+        context.getSchema(context.schema.itemRef.ref)?.properties.text?.possibleValues,
+      ).toEqual(["a", "b"]);
+    }
+    expect(code).toContain(
+      '// @xml-schema metalist "bar"\n/**\n * Documentation for Foo.\n */\nexport interface Foo',
+    );
+    const result = analyzeGenerated(code);
+    expect(result?.schemas.find((schema) => schema.name === "Foo")).toMatchObject({
+      schema: { kind: "metalist", itemTag: "bar" },
+      jsdoc: [{ paragraphs: [{ text: "Documentation for Foo." }] }],
+    });
   });
 
   it("keeps an item interface shared with a normal list", () => {
@@ -385,7 +588,7 @@ describe("generateCode interface names", () => {
 
   it("preserves existing automatic names and output", () => {
     expect(generateCode([entry(["vehicle/body"]), entry(["vehicle"])])).toBe(
-      "export interface Body {\n}\n\nexport interface Vehicle {\n}\n",
+      "// @xml-schema\nexport interface Body {\n}\n\n// @xml-schema\nexport interface Vehicle {\n}\n",
     );
   });
 
