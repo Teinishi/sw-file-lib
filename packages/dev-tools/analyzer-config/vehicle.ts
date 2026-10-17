@@ -175,5 +175,6 @@ export default defineConfig(async () => {
     forceKind,
     interfaceNames,
     schemaOverrides,
+    allPropertiesOptional: true,
   };
 });

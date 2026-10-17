@@ -28,6 +28,51 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
   };
 }
 
+describe("generateCode allPropertiesOptional", () => {
+  function schemas() {
+    return generateSchema(
+      analyzeDocument(
+        parseSwXml(
+          '<vehicle id="123" a-b="test"><parts><part value="abc"/><part value="def"/></parts></vehicle>',
+        ),
+        undefined,
+      ),
+      {
+        schemaOverrides: {
+          vehicle: {
+            properties: {
+              id: { type: "number", optional: false },
+              comment: { type: "string", optional: true },
+            },
+          },
+        },
+      },
+    );
+  }
+
+  it("makes attributes, child lists, quoted keys, and nested interface properties optional", () => {
+    const entries = schemas();
+    const original = generateCode(entries);
+    const code = generateCode(entries, { allPropertiesOptional: true });
+    expect(code).toContain("id?: number;");
+    expect(code).toContain('"a-b"?: string;');
+    expect(code).toContain("comment?: string;");
+    expect(code).toContain("parts?: Part[];");
+    expect(code).toContain("value?: string;");
+    expect(generateCode(entries)).toBe(original);
+  });
+
+  it("preserves inferred and overridden optionality when false or omitted", () => {
+    const entries = schemas();
+    const code = generateCode(entries);
+    expect(generateCode(entries, { allPropertiesOptional: false })).toBe(code);
+    expect(code).toContain("id: number;");
+    expect(code).toContain("comment?: string;");
+    expect(code).toContain("parts: Part[];");
+    expect(code).toContain("value: string;");
+  });
+});
+
 describe("generateCode interface names", () => {
   const document = () =>
     analyzeDocument(

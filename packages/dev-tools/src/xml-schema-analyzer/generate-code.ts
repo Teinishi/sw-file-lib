@@ -62,6 +62,8 @@ function toPascalCase(parts: string[]): string {
 }
 
 export interface GenerateCodeOptions {
+  /** Emit every property of generated interfaces as optional. Defaults to false. */
+  readonly allPropertiesOptional?: boolean | undefined;
   /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
   readonly interfaceNames?: Readonly<Record<string, string>> | undefined;
 }
@@ -224,6 +226,7 @@ function generateObjectSchemaCode(
   attributeOrder: OrderGraph<string>,
   childOrder: OrderGraph<string>,
   getIdentifier: (ref: SchemaReference) => string,
+  options: GenerateCodeOptions,
 ): string {
   const order = mergeArrays(
     attributeOrder.topoSort(prefixPriority),
@@ -238,7 +241,7 @@ function generateObjectSchemaCode(
       throw new Error(`Unexpected error: Property ${key} not found.`);
     }
     const needQuotes = !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(prop.key);
-    const optionalMark = prop.isOptional ? "?" : "";
+    const optionalMark = options.allPropertiesOptional || prop.isOptional ? "?" : "";
     code += `  ${needQuotes ? `"${prop.key}"` : prop.key}${optionalMark}: ${generateSchemaTypeCode(prop.type, getIdentifier)};\n`;
   }
 
@@ -251,6 +254,7 @@ function generateCodeEntry(
   entry: SchemaEntry,
   identifier: string,
   getIdentifier: (ref: SchemaReference) => string,
+  options: GenerateCodeOptions,
 ): string {
   switch (entry.kind) {
     case "object":
@@ -260,6 +264,7 @@ function generateCodeEntry(
         entry.attributeOrder,
         entry.childOrder,
         getIdentifier,
+        options,
       );
     default:
       throw new Error("Unimplemented");
@@ -294,7 +299,7 @@ export function generateCode(
 
   for (const [i, entry] of schemaEntries.entries()) {
     const identifier = identifiers[i]!;
-    codeEntries.push(generateCodeEntry(entry, identifier, getIdentifier));
+    codeEntries.push(generateCodeEntry(entry, identifier, getIdentifier, options));
   }
 
   const importStatements = Array.from(importMap.entries())

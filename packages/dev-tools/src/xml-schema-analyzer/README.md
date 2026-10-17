@@ -46,6 +46,25 @@ const code = generateCode(schemaEntries, {
 Naming happens after XML analysis, so changes to `interfaceNames` also apply when
 the CLI reuses its analysis cache; `--refresh` is unnecessary for naming changes.
 
+## Making all generated properties optional
+
+Set `allPropertiesOptional: true` in config to emit `?` on every property of every
+generated interface, including attributes, child elements, and list properties:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  allPropertiesOptional: true,
+});
+```
+
+This takes priority over inferred requiredness and `schemaOverrides` entries with
+`optional: false`. The default is `false`, which preserves each property's inferred
+or overridden optionality. This option only changes code generation; it preserves
+schema data and analysis caches. Properties inside imported predefined types keep
+their external definitions. The option is also accepted by `generateCode`.
+
 ## Supplementing and overriding inferred properties
 
 Use `schemaOverrides` to add missing primitive properties or override their inferred
@@ -119,15 +138,16 @@ possible-values limit is exceeded; numeric ranges describe only numeric samples.
 The CLI caches XML analysis, then applies schema and code generation settings on
 every run. The following config changes have these effects:
 
-| Config              | Reanalyze XML?        | Reason                                                                                         |
-| ------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
-| `input`             | Yes                   | Selects source XML files.                                                                      |
-| `predefinedSchemas` | No                    | Matches inferred schemas to external types.                                                    |
-| `forceKind`         | No                    | Selects object/list/metalist during schema generation.                                         |
-| `mergeNumberSuffix` | No                    | Controls schema merging.                                                                       |
-| `schemaOverrides`   | No                    | Adds/corrects properties during schema generation.                                             |
-| `interfaceNames`    | No                    | Names generated TypeScript interfaces.                                                         |
-| `out`               | No change to analysis | Changes output and cache locations. A new location without a matching cache requires analysis. |
+| Config                  | Reanalyze XML?        | Reason                                                                                         |
+| ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `input`                 | Yes                   | Selects source XML files.                                                                      |
+| `predefinedSchemas`     | No                    | Matches inferred schemas to external types.                                                    |
+| `forceKind`             | No                    | Selects object/list/metalist during schema generation.                                         |
+| `mergeNumberSuffix`     | No                    | Controls schema merging.                                                                       |
+| `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
+| `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
+| `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |
+| `out`                   | No change to analysis | Changes output and cache locations. A new location without a matching cache requires analysis. |
 
 The cache contains the resolved `input` configuration, the matched absolute file
 paths, and each file's size and modification time. These must all match to reuse

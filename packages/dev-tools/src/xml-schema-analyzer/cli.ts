@@ -37,6 +37,7 @@ program
     let forceKind: Config["forceKind"] | undefined = undefined;
     let mergeNumberSuffix: boolean | undefined = undefined;
     let interfaceNames: Config["interfaceNames"];
+    let allPropertiesOptional: Config["allPropertiesOptional"];
     let schemaOverrides: Config["schemaOverrides"];
 
     if (options.config) {
@@ -48,6 +49,7 @@ program
       forceKind ??= config.forceKind;
       mergeNumberSuffix ??= config.mergeNumberSuffix;
       interfaceNames = config.interfaceNames;
+      allPropertiesOptional = config.allPropertiesOptional;
       schemaOverrides = config.schemaOverrides;
     } else {
       if (!options.input || !options.out) {
@@ -89,7 +91,7 @@ program
       schemaOverrides,
     });
 
-    const code = generateCode(schemaEntries, { interfaceNames });
+    const code = generateCode(schemaEntries, { interfaceNames, allPropertiesOptional });
 
     await fs.writeFile(out, code, "utf-8");
     consola.success(`Schema TypeScript written to ${out}`);
