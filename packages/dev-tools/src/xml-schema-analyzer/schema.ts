@@ -42,8 +42,8 @@ export type SchemaReference =
 export type SchemaTypeData =
   | { readonly kind: "inline"; readonly type: "string" | "number" | "boolean" | "{}" }
   | { readonly kind: "object"; readonly ref: SchemaReference }
-  | { readonly kind: "list"; readonly itemRef: SchemaTypeData }
-  | { readonly kind: "metalist"; readonly itemRef: SchemaTypeData }
+  | { readonly kind: "list"; readonly itemTag: string; readonly itemRef: SchemaTypeData }
+  | { readonly kind: "metalist"; readonly itemTag: string; readonly itemRef: SchemaTypeData }
   | { readonly kind: "union"; readonly types: SchemaTypeData[] };
 
 export interface SchemaPropertyData {
@@ -112,9 +112,12 @@ function schemaTypeDataEqual(a: SchemaTypeData, b: SchemaTypeData): boolean {
     case "object":
       return schemaReferenceEqual(a.ref, (b as any).ref);
     case "list":
-      return schemaTypeDataEqual(a.itemRef, (b as any).itemRef);
     case "metalist":
-      return schemaTypeDataEqual(a.itemRef, (b as any).itemRef);
+      return (
+        (b.kind === "list" || b.kind === "metalist") &&
+        a.itemTag === b.itemTag &&
+        schemaTypeDataEqual(a.itemRef, b.itemRef)
+      );
     case "union":
       const bTypes = (b as any).types as SchemaTypeData[];
       if (a.types.length !== bTypes.length) return false;
@@ -328,6 +331,7 @@ function generateListSchema(
     dependencies,
     data: {
       kind: "list",
+      itemTag,
       itemRef: data,
     },
   };
@@ -368,6 +372,7 @@ function generateMetalistSchema(
     dependencies,
     data: {
       kind: "metalist",
+      itemTag,
       itemRef: data,
     },
   };

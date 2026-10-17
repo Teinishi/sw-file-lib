@@ -195,17 +195,35 @@ function resolveIdentifiers(
 function generateSchemaTypeCode(
   type: SchemaTypeData,
   getIdentifier: (ref: SchemaReference) => string,
-): string {
+  location: string,
+): { comment?: string; body: string } {
   switch (type.kind) {
     case "inline":
-      return type.type;
+      return { body: type.type };
     case "object":
-      return getIdentifier(type.ref);
+      return { body: getIdentifier(type.ref) };
     case "list":
     case "metalist":
-      return `${generateSchemaTypeCode(type.itemRef, getIdentifier)}[]`;
+      const itemCode = generateSchemaTypeCode(type.itemRef, getIdentifier, location);
+      if (itemCode.comment) {
+        throw new Error(
+          `Cannot represent nested list/metalist with one @xml-schema marker at ${location}.`,
+        );
+      }
+      return {
+        comment: `// @xml-schema ${type.kind} ${JSON.stringify(type.itemTag)}`,
+        body: `${type.itemRef.kind === "union" ? `(${itemCode.body})` : itemCode.body}[]`,
+      };
     case "union":
-      return type.types.map((t) => generateSchemaTypeCode(t, getIdentifier)).join(" | ");
+      const members = type.types.map((t) => generateSchemaTypeCode(t, getIdentifier, location));
+      if (members.some((member) => member.comment)) {
+        throw new Error(
+          `Cannot represent list/metalist inside a union with one @xml-schema marker at ${location}.`,
+        );
+      }
+      return {
+        body: members.map((member) => member.body).join(" | "),
+      };
   }
 }
 
@@ -242,7 +260,11 @@ function generateObjectSchemaCode(
     }
     const needQuotes = !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(prop.key);
     const optionalMark = options.allPropertiesOptional || prop.isOptional ? "?" : "";
-    code += `  ${needQuotes ? `"${prop.key}"` : prop.key}${optionalMark}: ${generateSchemaTypeCode(prop.type, getIdentifier)};\n`;
+    const typeCode = generateSchemaTypeCode(prop.type, getIdentifier, `${identifier}.${prop.key}`);
+    if (typeCode.comment) {
+      code += `  ${typeCode.comment}\n`;
+    }
+    code += `  ${needQuotes ? `"${prop.key}"` : prop.key}${optionalMark}: ${typeCode.body};\n`;
   }
 
   code += `}\n`;

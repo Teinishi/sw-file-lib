@@ -133,6 +133,29 @@ sample order. `"0"` and `"1"` are numbers. Observed types are retained even when
 possible-values limit is exceeded; numeric ranges describe only numeric samples.
 `schemaOverrides` takes priority over inferred unions as well as individual types.
 
+## List and metalist markers
+
+Generated list and metalist properties have an XML schema marker immediately
+before the property. The item tag comes from the original XML child element:
+
+```ts
+// @xml-schema list "item"
+items?: Item[];
+// @xml-schema metalist "entry"
+entries?: Entry[];
+```
+
+Item tags are part of schema type equality. Lists with different item tags are
+not treated as equivalent, even when their TypeScript item types match. If a
+forced merge produces a union containing a list or metalist, code generation
+fails explicitly. Directly nested lists/metalists also fail because one property
+marker cannot describe multiple levels. Errors identify the interface and property.
+Separate referenced interfaces may each contain their own marked properties.
+
+This metadata is derived during schema generation, so existing XML analysis
+caches can be reused. The downstream `xml-schema-codegen` does not yet implement
+property-level metalist markers; emitting them does not add that support.
+
 ## Cache reuse and config changes
 
 The CLI caches XML analysis, then applies schema and code generation settings on

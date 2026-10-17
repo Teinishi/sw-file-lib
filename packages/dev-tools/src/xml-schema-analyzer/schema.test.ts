@@ -19,6 +19,55 @@ function at(entries: SchemaEntry[], path: string): SchemaEntry {
   return entry!;
 }
 
+describe("list item tags", () => {
+  it.each(["list", "metalist"] as const)(
+    "keeps different %s item tags distinct when merging",
+    (kind) => {
+      const attributes = kind === "metalist" ? ' label="test"' : "";
+      const data = document(
+        `<root id="test"><a id="a"><items${attributes}><left x="3"/><left x="4"/></items></a><b id="b"><items${attributes}><right x="5"/><right x="6"/></items></b></root>`,
+      );
+      const entries = generateSchema(data);
+      expect(at(entries, "root/a")).not.toBe(at(entries, "root/b"));
+      expect(at(entries, "root/a").properties.items?.type).toMatchObject({ kind, itemTag: "left" });
+      expect(at(entries, "root/b").properties.items?.type).toMatchObject({
+        kind,
+        itemTag: "right",
+      });
+      const code = generateCode(entries);
+      expect(code).toContain(`// @xml-schema ${kind} "left"`);
+      expect(code).toContain(`// @xml-schema ${kind} "right"`);
+    },
+  );
+
+  it("still merges lists with the same item tag and item type", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="test"><a id="a"><items><item x="3"/><item x="4"/></items></a><b id="b"><items><item x="5"/><item x="6"/></items></b></root>',
+      ),
+    );
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+  });
+
+  it("preserves conflicting tags in a forced merge and reports the unrepresentable union", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="test"><a1 id="a"><items><left x="3"/><left x="4"/></items></a1><a2 id="b"><items><right x="5"/><right x="6"/></items></a2></root>',
+      ),
+      { mergeNumberSuffix: true },
+    );
+    const type = at(entries, "root/a1").properties.items?.type;
+    expect(type).toMatchObject({
+      kind: "union",
+      types: [
+        { kind: "list", itemTag: "left" },
+        { kind: "list", itemTag: "right" },
+      ],
+    });
+    expect(() => generateCode(entries)).toThrow(/inside a union.*\.items/);
+  });
+});
+
 describe("attribute union inference", () => {
   it.each([
     { values: ["true", "false"], expected: "boolean" },

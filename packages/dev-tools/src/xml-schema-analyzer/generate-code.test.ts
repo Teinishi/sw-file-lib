@@ -28,6 +28,83 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
   };
 }
 
+describe("generateCode list markers", () => {
+  it.each(["list", "metalist"] as const)("preserves the XML item tag for %s", (kind) => {
+    const entries = generateSchema(
+      analyzeDocument(
+        parseSwXml(
+          `<root id="test"><items${kind === "metalist" ? ' label="test"' : ""}><item x="3"/><item x="4"/></items></root>`,
+        ),
+        undefined,
+      ),
+    );
+    expect(generateCode(entries, { allPropertiesOptional: true })).toContain(
+      `  // @xml-schema ${kind} "item"\n  items?: Item[];`,
+    );
+  });
+
+  it.each(["list", "metalist"] as const)("rejects %s inside a union", (kind) => {
+    const type: SchemaTypeData = {
+      kind: "union",
+      types: [
+        { kind: "inline", type: "string" },
+        { kind, itemTag: "item", itemRef: { kind: "inline", type: "number" } },
+      ],
+    };
+    expect(() => generateCode([entry(["container"], { values: type })])).toThrow(
+      "Cannot represent list/metalist inside a union with one @xml-schema marker at Container.values.",
+    );
+  });
+
+  it("rejects a union of lists with different item tags", () => {
+    const type: SchemaTypeData = {
+      kind: "union",
+      types: [
+        { kind: "list", itemTag: "left", itemRef: { kind: "inline", type: "number" } },
+        { kind: "list", itemTag: "right", itemRef: { kind: "inline", type: "number" } },
+      ],
+    };
+    expect(() => generateCode([entry(["container"], { values: type })])).toThrow("inside a union");
+  });
+
+  it.each([
+    ["list", "list"],
+    ["list", "metalist"],
+    ["metalist", "list"],
+    ["metalist", "metalist"],
+  ] as const)("rejects nested %s/%s", (outer, inner) => {
+    const type: SchemaTypeData = {
+      kind: outer,
+      itemTag: "outer",
+      itemRef: {
+        kind: inner,
+        itemTag: "inner",
+        itemRef: { kind: "inline", type: "number" },
+      },
+    };
+    expect(() => generateCode([entry(["container"], { values: type })])).toThrow(
+      "Cannot represent nested list/metalist with one @xml-schema marker at Container.values.",
+    );
+  });
+
+  it("parenthesizes union item types without losing the array marker", () => {
+    const type: SchemaTypeData = {
+      kind: "list",
+      itemTag: "item",
+      itemRef: {
+        kind: "union",
+        types: [
+          { kind: "inline", type: "boolean" },
+          { kind: "inline", type: "number" },
+        ],
+      },
+    };
+    expect(generateCode([entry(["container"], { values: type })])).toContain(
+      '// @xml-schema list "item"\n  values: (boolean | number)[];',
+    );
+  });
+});
+
 describe("generateCode allPropertiesOptional", () => {
   function schemas() {
     return generateSchema(
@@ -136,7 +213,11 @@ describe("generateCode interface names", () => {
     const entries = [
       entry(["vehicle/body", "vehicle/other_body"]),
       entry(["vehicle"], {
-        bodies: { kind: "list", itemRef: { kind: "object", ref: { kind: "internal", index: 0 } } },
+        bodies: {
+          kind: "list",
+          itemTag: "body",
+          itemRef: { kind: "object", ref: { kind: "internal", index: 0 } },
+        },
       }),
     ];
     const code = generateCode(entries, { interfaceNames: { "vehicle/other_body": "VehicleBody" } });
@@ -207,29 +288,24 @@ describe("generateCode interface names", () => {
     ).toThrow("No generated interface for XML paths: vehicle/missing");
   });
 
-  it("reserves external names inside unions and lists", () => {
+  it("reserves external names inside lists", () => {
     const external: SchemaTypeData = {
-      kind: "union",
-      types: [
-        { kind: "inline", type: "string" },
-        {
-          kind: "metalist",
-          itemRef: {
-            kind: "object",
-            ref: {
-              kind: "external",
-              importPath: "./shared",
-              name: "Body",
-            },
-          },
+      kind: "metalist",
+      itemTag: "body",
+      itemRef: {
+        kind: "object",
+        ref: {
+          kind: "external",
+          importPath: "./shared",
+          name: "Body",
         },
-      ],
+      },
     };
     const entries = [entry(["body"], { value: external })];
     const code = generateCode(entries);
     expect(code).toContain('import type { Body } from "./shared";');
     expect(code).toContain("interface Body2 {");
-    expect(code).toContain("value: string | Body[];");
+    expect(code).toContain('// @xml-schema metalist "body"\n  value: Body[];');
     expect(() => generateCode(entries, { interfaceNames: { body: "Body" } })).toThrow(
       "Duplicate interface or external import name Body",
     );
