@@ -49,7 +49,8 @@ the CLI reuses its analysis cache; `--refresh` is unnecessary for naming changes
 ## Making all generated properties optional
 
 Set `allPropertiesOptional: true` in config to emit `?` on every property of every
-generated interface, including attributes, child elements, and list properties:
+generated interface, including attributes, child elements, and list properties,
+except for the structural `meta` and `items` fields of metalist interfaces:
 
 ```ts
 export default defineConfig({
@@ -98,7 +99,8 @@ empty-object properties, and unions containing them cannot be replaced with
 primitive types and cause an error.
 
 Paths follow the same exact matching rules as `interfaceNames` and must identify
-existing object elements. Missing paths and list/metalist container paths are
+existing object or metalist elements. Overrides on a metalist apply to its metadata
+using the original XML property names. Missing paths and list container paths are
 errors; target the item element to supplement a list. Empty elements can be
 supplemented when selected as objects with `forceKind`.
 
@@ -135,26 +137,50 @@ possible-values limit is exceeded; numeric ranges describe only numeric samples.
 
 ## List and metalist markers
 
-Generated list and metalist properties have an XML schema marker immediately
-before the property. The item tag comes from the original XML child element:
+List properties have an XML schema marker immediately before the property:
 
 ```ts
 // @xml-schema list "item"
 items?: Item[];
-// @xml-schema metalist "entry"
-entries?: Entry[];
 ```
 
-Item tags are part of schema type equality. Lists with different item tags are
-not treated as equivalent, even when their TypeScript item types match. If a
-forced merge produces a union containing a list or metalist, code generation
-fails explicitly. Directly nested lists/metalists also fail because one property
-marker cannot describe multiple levels. Errors identify the interface and property.
-Separate referenced interfaces may each contain their own marked properties.
+Metalists have their own interface with a declaration-level marker. Attributes
+and non-repeating child elements go into `meta`; repeated elements go into the
+`items` array. For `<foo size="2"><bar text="a"/><bar text="b"/></foo>`:
+
+```ts
+// @xml-schema metalist "bar"
+export interface Foo {
+  meta: { size: number };
+  items: { text: string }[];
+}
+```
+
+Parent properties simply reference `Foo`, without an array suffix or a metalist
+property marker. The structural `meta` and `items` fields are always required,
+including with `allPropertiesOptional: true`; their inner properties honor that
+option. `interfaceNames` can name the metalist using its XML path.
+
+Object item interfaces used only by inlined metalist items are omitted from the
+output. Definitions shared with other XML locations or referenced by other
+properties/lists remain, as do interfaces referenced from the inlined item body.
+
+Item tags come from the original XML child element and are part of schema type
+equality. Different list tags are not equivalent, even when their TypeScript item
+types match. Metalists are kept separate from plain objects and only merge with
+metalists having the same item tag and item type. Forced incompatible metalist
+merges report an error.
+
+A union containing a list or directly nested lists cannot be described with one
+property marker and cause an explicit code-generation error identifying the
+interface and property. Metalists use interface references and can therefore
+appear in unions or be list items. A metalist item may be an object (inlined), an
+external predefined type, or another metalist interface. A list container as a
+metalist item cannot currently be represented and reports an error.
 
 This metadata is derived during schema generation, so existing XML analysis
-caches can be reused. The downstream `xml-schema-codegen` does not yet implement
-property-level metalist markers; emitting them does not add that support.
+caches can be reused. The downstream `xml-schema-codegen` reads declaration-level
+metalist markers and supports referenced item types as well as inline objects.
 
 ## Cache reuse and config changes
 

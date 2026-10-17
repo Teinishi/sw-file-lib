@@ -43,7 +43,6 @@ export type SchemaTypeData =
   | { readonly kind: "inline"; readonly type: "string" | "number" | "boolean" | "{}" }
   | { readonly kind: "object"; readonly ref: SchemaReference }
   | { readonly kind: "list"; readonly itemTag: string; readonly itemRef: SchemaTypeData }
-  | { readonly kind: "metalist"; readonly itemTag: string; readonly itemRef: SchemaTypeData }
   | { readonly kind: "union"; readonly types: SchemaTypeData[] };
 
 export interface SchemaPropertyData {
@@ -55,12 +54,14 @@ export interface SchemaPropertyData {
 }
 
 export type SchemaEntry = {
-  readonly kind: "object";
   readonly xmlLocations: readonly XmlLocation[];
   readonly properties: Record<string, SchemaPropertyData>;
   readonly attributeOrder: OrderGraph<string>;
   readonly childOrder: OrderGraph<string>;
-};
+} & (
+  | { readonly kind: "object" }
+  | { readonly kind: "metalist"; readonly itemTag: string; readonly itemRef: SchemaTypeData }
+);
 
 function schemaReferenceEqual(a: SchemaReference, b: SchemaReference): boolean {
   if (a.kind !== b.kind) return false;
@@ -112,11 +113,8 @@ function schemaTypeDataEqual(a: SchemaTypeData, b: SchemaTypeData): boolean {
     case "object":
       return schemaReferenceEqual(a.ref, (b as any).ref);
     case "list":
-    case "metalist":
       return (
-        (b.kind === "list" || b.kind === "metalist") &&
-        a.itemTag === b.itemTag &&
-        schemaTypeDataEqual(a.itemRef, b.itemRef)
+        b.kind === "list" && a.itemTag === b.itemTag && schemaTypeDataEqual(a.itemRef, b.itemRef)
       );
     case "union":
       const bTypes = (b as any).types as SchemaTypeData[];
@@ -209,7 +207,7 @@ function mergeSchemaEntries(a: SchemaEntry, b: SchemaEntry): SchemaEntry {
   childOrder.merge(b.childOrder);
 
   return {
-    kind: "object",
+    ...a,
     xmlLocations: jsonUnique([...a.xmlLocations, ...b.xmlLocations]),
     properties,
     attributeOrder,
@@ -224,8 +222,10 @@ function generateObjectSchema(
   nodeData: NodeData,
   registerEntry: RegisterEntryFn,
   options: GenerateSchemaOptions,
+  allowEmpty = false,
 ): { dependencies: SchemaReference[]; data: SchemaTypeData } {
   if (
+    !allowEmpty &&
     nodeData.attributes.size === 0 &&
     nodeData.children.size === 0 &&
     !Object.hasOwn(options.schemaOverrides ?? {}, xmlLocation.join("/"))
@@ -368,14 +368,20 @@ function generateMetalistSchema(
     options,
   );
 
-  return {
-    dependencies,
-    data: {
-      kind: "metalist",
-      itemTag,
-      itemRef: data,
-    },
-  };
+  const metaChildren = new Map(nodeData.children);
+  metaChildren.delete(itemTag);
+  const metaChildOrder = new OrderGraph<string>();
+  metaChildOrder.addSequence(
+    nodeData.childOrder.topoSort(prefixPriority).filter((tag) => tag !== itemTag),
+  );
+  const result = generateObjectSchema(
+    xmlLocation,
+    { ...nodeData, children: metaChildren, childOrder: metaChildOrder },
+    (entry) => registerEntry({ ...entry, kind: "metalist", itemTag, itemRef: data }),
+    options,
+    true,
+  );
+  return { ...result, dependencies: [...dependencies, ...result.dependencies] };
 }
 
 function generateNodeSchema(
@@ -544,6 +550,7 @@ export function generateSchema(
     }
 
     for (const { importPath, name, entry: predefinedEntry } of predefined) {
+      if (entry.kind !== "object") continue;
       if (!entryPropertiesCompatible(entry.properties, predefinedEntry.properties, "loose")) {
         continue;
       }
@@ -553,6 +560,24 @@ export function generateSchema(
 
     for (let i = 0; i < entries.length; i++) {
       const existingEntry = entries[i]!;
+
+      if (entry.kind !== existingEntry.kind) continue;
+      if (
+        entry.kind === "metalist" &&
+        existingEntry.kind === "metalist" &&
+        (entry.itemTag !== existingEntry.itemTag ||
+          !schemaTypeDataEqual(entry.itemRef, existingEntry.itemRef))
+      ) {
+        if (
+          options?.mergeNumberSuffix &&
+          matchesIgnoreingNumberSuffix(entry.xmlLocations, existingEntry.xmlLocations)
+        ) {
+          throw new Error(
+            `Cannot merge metalists with different item tags or item types at ${entry.xmlLocations.map((location) => location.join("/")).join(", ")}.`,
+          );
+        }
+        continue;
+      }
 
       const merge =
         (options?.mergeNumberSuffix &&

@@ -222,7 +222,9 @@ function analyzeMetalistInterfaceNode(
   }
 
   const metaMembers = analyzeTypeLiteralNode(metaTypeNode, context);
-  const itemType = analyzeElementTypeNode(itemsTypeNode.elementType, [], context, true);
+  const itemType = ts.isTypeReferenceNode(itemsTypeNode.elementType)
+    ? analyzeTypeReferenceNode(itemsTypeNode.elementType, context)
+    : analyzeElementTypeNode(itemsTypeNode.elementType, [], context, true);
   if (!itemType) {
     throw new Error(
       `Could not analyze element type for 'items' member in metalist interface at ${loc(itemsField, context.sourceFile)}`,

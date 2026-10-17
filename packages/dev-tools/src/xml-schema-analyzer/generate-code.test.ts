@@ -1,5 +1,7 @@
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { parseSwXml } from "@sw-file-lib/xml";
+import { analyzeFile } from "../xml-schema-codegen/analyzer";
 import { analyzeDocument } from "./analyzer/document";
 import { generateCode } from "./generate-code";
 import { OrderGraph } from "./order-graph";
@@ -28,13 +30,196 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
   };
 }
 
+describe("metalist interfaces", () => {
+  function schemas(xml: string) {
+    return generateSchema(analyzeDocument(parseSwXml(xml), undefined));
+  }
+
+  function analyzeGenerated(code: string) {
+    const filename = "generated-metalist.ts";
+    const source = ts.createSourceFile(filename, code, ts.ScriptTarget.Latest, true);
+    const host = ts.createCompilerHost({ noLib: true });
+    host.getSourceFile = (file) => (file === filename ? source : undefined);
+    const program = ts.createProgram([filename], { noLib: true }, host);
+    return analyzeFile(program.getTypeChecker(), source, {
+      input: [filename],
+      outDir: ".",
+      tsconfig: "unused",
+    });
+  }
+
+  it("emits required meta and items wrappers with a declaration marker and a plain parent reference", () => {
+    const entries = schemas(
+      '<root id="test"><foo size="2"><bar text="a"/><bar text="b"/></foo></root>',
+    );
+    const code = generateCode(entries);
+    expect(code).toContain(
+      '// @xml-schema metalist "bar"\nexport interface Foo {\n  meta: {\n    size: number;\n  };\n  items: {\n    text: string;\n  }[];\n}',
+    );
+    expect(code).toContain("foo: Foo;");
+    expect(code).not.toContain("export interface Bar ");
+    expect(code).not.toContain('// @xml-schema metalist "bar"\n  foo');
+    const result = analyzeGenerated(code);
+    expect(result?.schemas.find((schema) => schema.name === "Foo")?.schema).toMatchObject({
+      kind: "metalist",
+      itemTag: "bar",
+      metaMembers: [{ name: "size", optional: false, type: { kind: "number" } }],
+      itemType: {
+        kind: "object",
+        members: [{ name: "text", optional: false, type: { kind: "string" } }],
+      },
+    });
+  });
+
+  it("keeps structural wrappers required while making their contents and parent optional", () => {
+    const code = generateCode(
+      schemas('<root id="test"><foo size="2"><bar text="a"/><bar text="b"/></foo></root>'),
+      {
+        allPropertiesOptional: true,
+      },
+    );
+    expect(code).toContain(
+      "interface Foo {\n  meta: {\n    size?: number;\n  };\n  items: {\n    text?: string;\n  }[];",
+    );
+    expect(code).toContain("foo?: Foo;");
+    expect(code).not.toContain("meta?:");
+    expect(code).not.toContain("items?:");
+    expect(
+      analyzeGenerated(code)?.schemas.find((schema) => schema.name === "Foo")?.schema.kind,
+    ).toBe("metalist");
+  });
+
+  it("keeps an item interface shared with a normal list", () => {
+    const code = generateCode(
+      schemas(
+        '<root id="test"><foo size="2"><bar text="a"/><bar text="b"/></foo><others><bar text="c"/><bar text="d"/></others></root>',
+      ),
+    );
+    expect(code).toContain("export interface Bar {");
+    expect(code).toContain('// @xml-schema list "bar"\n  others: Bar[];');
+    expect(code).toContain("items: {\n    text: string;");
+  });
+
+  it("keeps an item interface referenced by a normal child property", () => {
+    const code = generateCode(
+      schemas(
+        '<root id="test"><foo size="2"><bar text="a"/><bar text="b"/></foo><other text="c"/></root>',
+      ),
+    );
+    expect(code).toContain("export interface Bar {");
+    expect(code).toContain("other: Bar;");
+  });
+
+  it("keeps a shared item interface used at another root XML location", () => {
+    const code = generateCode(
+      schemas('<plain text="c"/><foo size="2"><bar text="a"/><bar text="b"/></foo>'),
+    );
+    expect(code).toContain("export interface Plain {");
+    expect(code).toContain("export interface Foo {");
+  });
+
+  it("keeps interfaces referenced from an inlined item", () => {
+    const code = generateCode(
+      schemas(
+        '<foo size="2"><bar text="a"><detail value="3"/></bar><bar text="b"><detail value="4"/></bar></foo>',
+      ),
+    );
+    expect(code).not.toContain("export interface Bar ");
+    expect(code).toContain("export interface Detail {");
+    expect(code).toContain("detail: Detail;");
+  });
+
+  it("preserves non-repeating child elements as metadata", () => {
+    const code = generateCode(
+      schemas('<foo size="2"><title text="title"/><bar text="a"/><bar text="b"/></foo>'),
+    );
+    expect(code).toContain("meta: {\n    size: number;\n    title:");
+    expect(code).toContain("items: {\n    text: string;");
+  });
+
+  it("allows renamed metalist interfaces and overrides on their metadata", () => {
+    const entries = generateSchema(
+      analyzeDocument(parseSwXml('<foo size="2"><bar text="a"/><bar text="b"/></foo>'), undefined),
+      {
+        schemaOverrides: { foo: { properties: { size: { type: "string", optional: true } } } },
+      },
+    );
+    expect(generateCode(entries, { interfaceNames: { foo: "CustomFoo" } })).toContain(
+      "interface CustomFoo {\n  meta: {\n    size?: string;",
+    );
+  });
+
+  it("supports external predefined item types without replacing the metalist with its metadata", () => {
+    const entries = generateSchema(
+      analyzeDocument(parseSwXml('<foo size="2"><bar text="a"/><bar text="b"/></foo>'), undefined),
+      {
+        predefinedSchemas: {
+          "./shared": {
+            Item: { kind: "object", properties: { text: { type: "string", optional: false } } },
+            Meta: { kind: "object", properties: { size: { type: "number", optional: false } } },
+          },
+        },
+      },
+    );
+    const code = generateCode(entries);
+    expect(code).toContain('import type { Item } from "./shared";');
+    expect(code).toContain("interface Foo {\n  meta: {\n    size: number;");
+    expect(code).toContain("items: Item[];");
+  });
+
+  it("represents nested metalists through marked interface references", () => {
+    const code = generateCode(
+      schemas(
+        '<foo size="2"><bar size="2"><item text="a"/><item text="b"/></bar><bar size="2"><item text="c"/><item text="d"/></bar></foo>',
+      ),
+    );
+    expect(code).toContain('// @xml-schema metalist "bar"\nexport interface Foo');
+    expect(code).toContain('// @xml-schema metalist "item"\nexport interface Bar');
+    expect(code).toContain("items: Bar[];");
+    const result = analyzeGenerated(code);
+    expect(result?.schemas.find((schema) => schema.name === "Foo")?.schema).toMatchObject({
+      kind: "metalist",
+      itemType: { kind: "identifier", name: "Bar" },
+    });
+  });
+
+  it("rejects metalist items that are unrepresentable list containers", () => {
+    const entries = schemas(
+      '<foo size="2"><bar><item text="a"/><item text="b"/></bar><bar><item text="c"/><item text="d"/></bar></foo>',
+    );
+    expect(() => generateCode(entries)).toThrow("Cannot represent metalist item type at Foo.items");
+  });
+
+  it("uses a normal list marker when metalists are list items", () => {
+    const code = generateCode(
+      schemas(
+        '<root id="test"><foos><foo size="2"><bar text="a"/><bar text="b"/></foo><foo size="2"><bar text="c"/><bar text="d"/></foo></foos></root>',
+      ),
+    );
+    expect(code).toContain('// @xml-schema list "foo"\n  foos: Foo[];');
+    expect(code).toContain('// @xml-schema metalist "bar"\nexport interface Foo');
+  });
+
+  it("retains an empty required metadata object when metalist is forced", () => {
+    const entries = generateSchema(
+      analyzeDocument(parseSwXml('<foo><bar text="a"/><bar text="b"/></foo>'), undefined),
+      {
+        forceKind: { foo: "metalist" },
+      },
+    );
+    const code = generateCode(entries, { allPropertiesOptional: true });
+    expect(code).toContain("meta: {\n  };");
+    expect(
+      analyzeGenerated(code)?.schemas.find((schema) => schema.name === "Foo")?.schema,
+    ).toMatchObject({ kind: "metalist", metaMembers: [] });
+  });
+});
+
 describe("generateCode list markers", () => {
-  it.each(["list", "metalist"] as const)("preserves the XML item tag for %s", (kind) => {
+  it.each(["list"] as const)("preserves the XML item tag for %s", (kind) => {
     const entries = generateSchema(
       analyzeDocument(
-        parseSwXml(
-          `<root id="test"><items${kind === "metalist" ? ' label="test"' : ""}><item x="3"/><item x="4"/></items></root>`,
-        ),
+        parseSwXml(`<root id="test"><items><item x="3"/><item x="4"/></items></root>`),
         undefined,
       ),
     );
@@ -43,7 +228,7 @@ describe("generateCode list markers", () => {
     );
   });
 
-  it.each(["list", "metalist"] as const)("rejects %s inside a union", (kind) => {
+  it.each(["list"] as const)("rejects %s inside a union", (kind) => {
     const type: SchemaTypeData = {
       kind: "union",
       types: [
@@ -67,12 +252,7 @@ describe("generateCode list markers", () => {
     expect(() => generateCode([entry(["container"], { values: type })])).toThrow("inside a union");
   });
 
-  it.each([
-    ["list", "list"],
-    ["list", "metalist"],
-    ["metalist", "list"],
-    ["metalist", "metalist"],
-  ] as const)("rejects nested %s/%s", (outer, inner) => {
+  it.each([["list", "list"]] as const)("rejects nested %s/%s", (outer, inner) => {
     const type: SchemaTypeData = {
       kind: outer,
       itemTag: "outer",
@@ -290,7 +470,7 @@ describe("generateCode interface names", () => {
 
   it("reserves external names inside lists", () => {
     const external: SchemaTypeData = {
-      kind: "metalist",
+      kind: "list",
       itemTag: "body",
       itemRef: {
         kind: "object",
@@ -305,7 +485,7 @@ describe("generateCode interface names", () => {
     const code = generateCode(entries);
     expect(code).toContain('import type { Body } from "./shared";');
     expect(code).toContain("interface Body2 {");
-    expect(code).toContain('// @xml-schema metalist "body"\n  value: Body[];');
+    expect(code).toContain('// @xml-schema list "body"\n  value: Body[];');
     expect(() => generateCode(entries, { interfaceNames: { body: "Body" } })).toThrow(
       "Duplicate interface or external import name Body",
     );

@@ -20,6 +20,17 @@ function at(entries: SchemaEntry[], path: string): SchemaEntry {
 }
 
 describe("list item tags", () => {
+  it("does not merge a metalist with a plain object having the same metadata shape", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="test"><plain size="2"/><foo size="2"><bar text="a"/><bar text="b"/></foo></root>',
+      ),
+    );
+    expect(at(entries, "root/plain").kind).toBe("object");
+    expect(at(entries, "root/foo").kind).toBe("metalist");
+    expect(at(entries, "root/plain")).not.toBe(at(entries, "root/foo"));
+  });
+
   it.each(["list", "metalist"] as const)(
     "keeps different %s item tags distinct when merging",
     (kind) => {
@@ -29,11 +40,20 @@ describe("list item tags", () => {
       );
       const entries = generateSchema(data);
       expect(at(entries, "root/a")).not.toBe(at(entries, "root/b"));
-      expect(at(entries, "root/a").properties.items?.type).toMatchObject({ kind, itemTag: "left" });
-      expect(at(entries, "root/b").properties.items?.type).toMatchObject({
-        kind,
-        itemTag: "right",
-      });
+      if (kind === "list") {
+        expect(at(entries, "root/a").properties.items?.type).toMatchObject({
+          kind,
+          itemTag: "left",
+        });
+        expect(at(entries, "root/b").properties.items?.type).toMatchObject({
+          kind,
+          itemTag: "right",
+        });
+      } else {
+        expect(at(entries, "root/a/items")).toMatchObject({ kind, itemTag: "left" });
+        expect(at(entries, "root/b/items")).toMatchObject({ kind, itemTag: "right" });
+        expect(at(entries, "root/a").properties.items?.type.kind).toBe("object");
+      }
       const code = generateCode(entries);
       expect(code).toContain(`// @xml-schema ${kind} "left"`);
       expect(code).toContain(`// @xml-schema ${kind} "right"`);

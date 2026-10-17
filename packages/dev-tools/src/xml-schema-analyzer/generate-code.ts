@@ -62,7 +62,7 @@ function toPascalCase(parts: string[]): string {
 }
 
 export interface GenerateCodeOptions {
-  /** Emit every property of generated interfaces as optional. Defaults to false. */
+  /** Make generated properties optional, except metalist meta/items wrappers. Defaults to false. */
   readonly allPropertiesOptional?: boolean | undefined;
   /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
   readonly interfaceNames?: Readonly<Record<string, string>> | undefined;
@@ -115,7 +115,6 @@ function collectImports(type: SchemaTypeData, imports: Map<string, Set<string>>)
       }
       break;
     case "list":
-    case "metalist":
       collectImports(type.itemRef, imports);
       break;
     case "union":
@@ -203,7 +202,6 @@ function generateSchemaTypeCode(
     case "object":
       return { body: getIdentifier(type.ref) };
     case "list":
-    case "metalist":
       const itemCode = generateSchemaTypeCode(type.itemRef, getIdentifier, location);
       if (itemCode.comment) {
         throw new Error(
@@ -238,7 +236,7 @@ function mergeArrays(a: string[], b: string[]): string[] {
   return [...onlyA, ...common, ...onlyB];
 }
 
-function generateObjectSchemaCode(
+function generateObjectTypeCode(
   identifier: string,
   properties: Record<string, SchemaPropertyData>,
   attributeOrder: OrderGraph<string>,
@@ -251,7 +249,7 @@ function generateObjectSchemaCode(
     childOrder.topoSort(prefixPriority),
   );
 
-  let code = `export interface ${identifier} {\n`;
+  let code = `{\n`;
 
   for (const key of order) {
     const prop = properties[key];
@@ -267,7 +265,7 @@ function generateObjectSchemaCode(
     code += `  ${needQuotes ? `"${prop.key}"` : prop.key}${optionalMark}: ${typeCode.body};\n`;
   }
 
-  code += `}\n`;
+  code += `}`;
 
   return code;
 }
@@ -277,17 +275,51 @@ function generateCodeEntry(
   identifier: string,
   getIdentifier: (ref: SchemaReference) => string,
   options: GenerateCodeOptions,
+  getEntry: (ref: SchemaReference) => SchemaEntry | undefined,
 ): string {
   switch (entry.kind) {
     case "object":
-      return generateObjectSchemaCode(
+      return `export interface ${identifier} ${generateObjectTypeCode(
         identifier,
         entry.properties,
         entry.attributeOrder,
         entry.childOrder,
         getIdentifier,
         options,
+      )}\n`;
+    case "metalist":
+      const metaCode = generateObjectTypeCode(
+        `${identifier}.meta`,
+        entry.properties,
+        entry.attributeOrder,
+        entry.childOrder,
+        getIdentifier,
+        options,
       );
+      let itemBody: string;
+      if (entry.itemRef.kind === "object") {
+        const itemEntry = getEntry(entry.itemRef.ref);
+        if (itemEntry?.kind === "object") {
+          const itemCode = generateObjectTypeCode(
+            `${identifier}.items`,
+            itemEntry.properties,
+            itemEntry.attributeOrder,
+            itemEntry.childOrder,
+            getIdentifier,
+            options,
+          );
+          itemBody = itemCode.replace(/\n/g, "\n  ");
+        } else {
+          itemBody = getIdentifier(entry.itemRef.ref);
+        }
+      } else if (entry.itemRef.kind === "inline" && entry.itemRef.type === "{}") {
+        itemBody = "{}";
+      } else {
+        throw new Error(
+          `Cannot represent metalist item type at ${identifier}.items: expected an object or metalist reference.`,
+        );
+      }
+      return `// @xml-schema metalist ${JSON.stringify(entry.itemTag)}\nexport interface ${identifier} {\n  meta: ${metaCode.replace(/\n/g, "\n  ")};\n  items: ${itemBody}[];\n}\n`;
     default:
       throw new Error("Unimplemented");
   }
@@ -297,8 +329,41 @@ export function generateCode(
   schemaEntries: SchemaEntry[],
   options: GenerateCodeOptions = {},
 ): string {
+  const inlinedItems = new Set<number>();
+  const inlinePaths = new Set<string>();
+  const referencedEntries = new Set<number>();
+  const collectReferences = (type: SchemaTypeData): void => {
+    switch (type.kind) {
+      case "object":
+        if (type.ref.kind === "internal") referencedEntries.add(type.ref.index);
+        break;
+      case "list":
+        collectReferences(type.itemRef);
+        break;
+      case "union":
+        for (const member of type.types) collectReferences(member);
+        break;
+    }
+  };
+  for (const entry of schemaEntries) {
+    for (const property of Object.values(entry.properties)) collectReferences(property.type);
+    if (entry.kind !== "metalist") continue;
+    if (
+      entry.itemRef.kind === "object" &&
+      entry.itemRef.ref.kind === "internal" &&
+      schemaEntries[entry.itemRef.ref.index]?.kind === "object"
+    ) {
+      inlinedItems.add(entry.itemRef.ref.index);
+      for (const location of entry.xmlLocations)
+        inlinePaths.add([...location, entry.itemTag].join("/"));
+    } else {
+      collectReferences(entry.itemRef);
+    }
+  }
+
   const importMap = new Map<string, Set<string>>();
   for (const entry of schemaEntries) {
+    if (entry.kind === "metalist") collectImports(entry.itemRef, importMap);
     for (const property of Object.values(entry.properties))
       collectImports(property.type, importMap);
   }
@@ -320,8 +385,19 @@ export function generateCode(
   const codeEntries = [];
 
   for (const [i, entry] of schemaEntries.entries()) {
+    // Keep definitions shared with other XML locations or referenced by emitted types.
+    if (
+      inlinedItems.has(i) &&
+      !referencedEntries.has(i) &&
+      entry.xmlLocations.every((location) => inlinePaths.has(location.join("/")))
+    )
+      continue;
     const identifier = identifiers[i]!;
-    codeEntries.push(generateCodeEntry(entry, identifier, getIdentifier, options));
+    codeEntries.push(
+      generateCodeEntry(entry, identifier, getIdentifier, options, (ref) =>
+        ref.kind === "internal" ? schemaEntries[ref.index] : undefined,
+      ),
+    );
   }
 
   const importStatements = Array.from(importMap.entries())
