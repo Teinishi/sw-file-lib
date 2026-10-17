@@ -2,12 +2,13 @@
 
 import * as x from "../../xml-schema";
 /* oxlint-disable no-unused-vars */
-import type { XmlVec2, XmlVec3, XmlRgb, XmlMat3 } from "../common";
+import type { XmlVec2, XmlVec3, XmlRgb, XmlMat3, TextValuePair } from "../common";
 import type {
   XmlVec2Immutable,
   XmlVec3Immutable,
   XmlRgbImmutable,
   XmlMat3Immutable,
+  TextValuePairImmutable,
 } from "./common-immutable";
 /* oxlint-enable no-unused-vars */
 
@@ -71,3 +72,17 @@ const XmlMat3Shape = {
  * @see {@link XmlMat3Immutable}
  */
 export const XmlMat3Schema: x.ObjectSchema<typeof XmlMat3Shape, XmlMat3> = x.object(XmlMat3Shape);
+
+const TextValuePairShape = {
+  text: x.string().optional(),
+  value: x.number().optional(),
+};
+
+/**
+ * Represents elements with `text` and `value` attributes in Stormworks microcontroller data.
+ *
+ * @see {@link TextValuePair}
+ * @see {@link TextValuePairImmutable}
+ */
+export const TextValuePairSchema: x.ObjectSchema<typeof TextValuePairShape, TextValuePair> =
+  x.object(TextValuePairShape);

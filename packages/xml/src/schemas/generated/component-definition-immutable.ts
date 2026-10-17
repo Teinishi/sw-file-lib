@@ -9,6 +9,8 @@ import type {
   LogicNode,
   Coupling,
   Voxel,
+  TooltipProperties,
+  RewardProperties,
   JetEngineConnection,
   ComponentDefinition,
 } from "../component-definition";
@@ -19,13 +21,15 @@ import type {
   LogicNodeSchema,
   CouplingSchema,
   VoxelSchema,
+  TooltipPropertiesSchema,
+  RewardPropertiesSchema,
   JetEngineConnectionSchema,
   ComponentDefinitionSchema,
 } from "./component-definition-schema";
 /* oxlint-enable no-unused-vars */
 
 /**
- * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ * Represents `<sfx_layer>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
  *
@@ -49,7 +53,7 @@ export interface SfxLayerImmutable {
 }
 
 /**
- * Represents `<sfx_data>` elements in Stormworks component definition data.
+ * Represents `<sfx_data>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <sfx_datas> / <sfx_data>`
  *
@@ -71,9 +75,9 @@ export interface SfxDataImmutable {
 }
 
 /**
- * Represents `<surface>` elements in Stormworks component definition data.
+ * Represents `<surface>` element in Stormworks component definition data.
  *
- * XML location:
+ * XML locations:
  * - `<definition> / <surfaces> / <surface>`
  * - `<definition> / <buoyancy_surfaces> / <surface>`
  *
@@ -97,7 +101,7 @@ export interface SurfaceImmutable {
 }
 
 /**
- * Represents `<logic_node>` elements in Stormworks component definition data.
+ * Represents `<logic_node>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <logic_nodes> / <logic_node>`
  *
@@ -120,7 +124,7 @@ export interface LogicNodeImmutable {
 }
 
 /**
- * Represents `<coupling>` elements in Stormworks component definition data.
+ * Represents `<coupling>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <couplings> / <coupling>`
  *
@@ -144,7 +148,7 @@ export interface CouplingImmutable {
 }
 
 /**
- * Represents `<voxel>` elements in Stormworks component definition data.
+ * Represents `<voxel>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <voxels> / <voxel>`
  *
@@ -165,9 +169,45 @@ export interface VoxelImmutable {
 }
 
 /**
- * Represents `<j>` elements in Stormworks component definition data.
+ * Represents `<tooltip_properties>` element in Stormworks component definition data.
  *
- * XML location:
+ * XML location: `<definition> / <tooltip_properties>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when it does not need to modify the value.
+ * Use {@link TooltipProperties} instead if mutation is required.
+ *
+ * @see {@link TooltipPropertiesSchema}
+ * @see {@link TooltipProperties}
+ */
+export interface TooltipPropertiesImmutable {
+  readonly description?: string;
+  readonly short_description?: string;
+}
+
+/**
+ * Represents `<reward_properties>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <reward_properties>`
+ *
+ * Parent: {@link ComponentDefinitionImmutable}
+ *
+ * This is the recommended type for function parameters when it does not need to modify the value.
+ * Use {@link RewardProperties} instead if mutation is required.
+ *
+ * @see {@link RewardPropertiesSchema}
+ * @see {@link RewardProperties}
+ */
+export interface RewardPropertiesImmutable {
+  readonly tier?: number;
+  readonly number_rewarded?: number;
+}
+
+/**
+ * Represents `<j>` element in Stormworks component definition data.
+ *
+ * XML locations:
  * - `<definition> / <jet_engine_connections_prev> / <j>`
  * - `<definition> / <jet_engine_connections_next> / <j>`
  *
@@ -185,7 +225,9 @@ export interface JetEngineConnectionImmutable {
 }
 
 /**
- * Represents root `<definition>` elements in Stormworks component definition data.
+ * Represents `<definition>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition>`
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link ComponentDefinition} instead if mutation is required.
@@ -350,14 +392,8 @@ export interface ComponentDefinitionImmutable {
   readonly magnet_offset?: XmlVec3Immutable;
   readonly connector_axis?: XmlVec3Immutable;
   readonly connector_up?: XmlVec3Immutable;
-  readonly tooltip_properties?: {
-    readonly description?: string;
-    readonly short_description?: string;
-  };
-  readonly reward_properties?: {
-    readonly tier?: number;
-    readonly number_rewarded?: number;
-  };
+  readonly tooltip_properties?: TooltipPropertiesImmutable;
+  readonly reward_properties?: RewardPropertiesImmutable;
   readonly jet_engine_connections_prev?: readonly JetEngineConnectionImmutable[];
   readonly jet_engine_connections_next?: readonly JetEngineConnectionImmutable[];
   readonly seat_exit_position?: XmlVec3Immutable;

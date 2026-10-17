@@ -10,6 +10,8 @@ import type {
   LogicNode,
   Coupling,
   Voxel,
+  TooltipProperties,
+  RewardProperties,
   JetEngineConnection,
   ComponentDefinition,
 } from "../component-definition";
@@ -20,6 +22,8 @@ import type {
   LogicNodeImmutable,
   CouplingImmutable,
   VoxelImmutable,
+  TooltipPropertiesImmutable,
+  RewardPropertiesImmutable,
   JetEngineConnectionImmutable,
   ComponentDefinitionImmutable,
 } from "./component-definition-immutable";
@@ -37,7 +41,7 @@ const SfxLayerShape = {
 };
 
 /**
- * Represents `<sfx_layer>` elements in Stormworks component definition data.
+ * Represents `<sfx_layer>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <sfx_datas> / <sfx_data> / <sfx_layers> / <sfx_layer>`
  *
@@ -59,7 +63,7 @@ const SfxDataShape = {
 };
 
 /**
- * Represents `<sfx_data>` elements in Stormworks component definition data.
+ * Represents `<sfx_data>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <sfx_datas> / <sfx_data>`
  *
@@ -82,9 +86,9 @@ const SurfaceShape = {
 };
 
 /**
- * Represents `<surface>` elements in Stormworks component definition data.
+ * Represents `<surface>` element in Stormworks component definition data.
  *
- * XML location:
+ * XML locations:
  * - `<definition> / <surfaces> / <surface>`
  * - `<definition> / <buoyancy_surfaces> / <surface>`
  *
@@ -106,7 +110,7 @@ const LogicNodeShape = {
 };
 
 /**
- * Represents `<logic_node>` elements in Stormworks component definition data.
+ * Represents `<logic_node>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <logic_nodes> / <logic_node>`
  *
@@ -130,7 +134,7 @@ const CouplingShape = {
 };
 
 /**
- * Represents `<coupling>` elements in Stormworks component definition data.
+ * Represents `<coupling>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <couplings> / <coupling>`
  *
@@ -151,7 +155,7 @@ const VoxelShape = {
 };
 
 /**
- * Represents `<voxel>` elements in Stormworks component definition data.
+ * Represents `<voxel>` element in Stormworks component definition data.
  *
  * XML location: `<definition> / <voxels> / <voxel>`
  *
@@ -162,15 +166,55 @@ const VoxelShape = {
  */
 export const VoxelSchema: x.ObjectSchema<typeof VoxelShape, Voxel> = x.object(VoxelShape);
 
+const TooltipPropertiesShape = {
+  description: x.string().optional(),
+  short_description: x.string().optional(),
+};
+
+/**
+ * Represents `<tooltip_properties>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <tooltip_properties>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link TooltipProperties}
+ * @see {@link TooltipPropertiesImmutable}
+ */
+export const TooltipPropertiesSchema: x.ObjectSchema<
+  typeof TooltipPropertiesShape,
+  TooltipProperties
+> = x.object(TooltipPropertiesShape);
+
+const RewardPropertiesShape = {
+  tier: x.number().optional(),
+  number_rewarded: x.number().optional(),
+};
+
+/**
+ * Represents `<reward_properties>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition> / <reward_properties>`
+ *
+ * Parent: {@link ComponentDefinitionSchema}
+ *
+ * @see {@link RewardProperties}
+ * @see {@link RewardPropertiesImmutable}
+ */
+export const RewardPropertiesSchema: x.ObjectSchema<
+  typeof RewardPropertiesShape,
+  RewardProperties
+> = x.object(RewardPropertiesShape);
+
 const JetEngineConnectionShape = {
   pos: XmlVec3Schema.optional(),
   normal: XmlVec3Schema.optional(),
 };
 
 /**
- * Represents `<j>` elements in Stormworks component definition data.
+ * Represents `<j>` element in Stormworks component definition data.
  *
- * XML location:
+ * XML locations:
  * - `<definition> / <jet_engine_connections_prev> / <j>`
  * - `<definition> / <jet_engine_connections_next> / <j>`
  *
@@ -341,18 +385,8 @@ const ComponentDefinitionShape = {
   magnet_offset: XmlVec3Schema.optional(),
   connector_axis: XmlVec3Schema.optional(),
   connector_up: XmlVec3Schema.optional(),
-  tooltip_properties: x
-    .object({
-      description: x.string().optional(),
-      short_description: x.string().optional(),
-    })
-    .optional(),
-  reward_properties: x
-    .object({
-      tier: x.number().optional(),
-      number_rewarded: x.number().optional(),
-    })
-    .optional(),
+  tooltip_properties: TooltipPropertiesSchema.optional(),
+  reward_properties: RewardPropertiesSchema.optional(),
   jet_engine_connections_prev: x.list("j", JetEngineConnectionSchema).optional(),
   jet_engine_connections_next: x.list("j", JetEngineConnectionSchema).optional(),
   seat_exit_position: XmlVec3Schema.optional(),
@@ -367,7 +401,9 @@ const ComponentDefinitionShape = {
 };
 
 /**
- * Represents root `<definition>` elements in Stormworks component definition data.
+ * Represents `<definition>` element in Stormworks component definition data.
+ *
+ * XML location: `<definition>`
  *
  * @see {@link ComponentDefinition}
  * @see {@link ComponentDefinitionImmutable}
