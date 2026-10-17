@@ -2,6 +2,7 @@ import path from "node:path";
 import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
 import { defineConfig } from "../src/xml-schema-analyzer";
 import { predefinedSchemas } from "./predefined-schemas";
+import { generateTSDoc } from "./utils";
 
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
@@ -14,6 +15,14 @@ export default defineConfig(async () => {
     forceKind: {
       definition: "object",
       "definition/jet_engine_connections_prev": "list",
+    },
+    interfaceNames: {
+      definition: "ComponentDefinition",
+      "definition/jet_engine_connections_prev/j": "JetEngineConnection",
+    },
+    allPropertiesOptional: true,
+    generateTSDoc(context) {
+      return generateTSDoc("Stormworks component definition data", context);
     },
   };
 });

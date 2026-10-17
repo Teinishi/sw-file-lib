@@ -2,6 +2,7 @@ import path from "node:path";
 import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
 import { defineConfig, type XmlLocation } from "../src/xml-schema-analyzer";
 import { predefinedSchemas } from "./predefined-schemas";
+import { generateTSDoc } from "./utils";
 
 // forceKind 関連
 const COMPONENT_O_LOCATION = ["vehicle", "bodies", "body", "components", "c", "o"] as const;
@@ -140,15 +141,6 @@ export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_VEHICLES_PATH"]!, "*.xml");
 
-  const disjunctionFormatter = new Intl.ListFormat("en", {
-    style: "long",
-    type: "disjunction",
-  });
-
-  function formatXmlLocation(xmlLocation: XmlLocation): string {
-    return xmlLocation.map((tag) => `<${tag}>`).join(" / ");
-  }
-
   return {
     input,
     out: "./.tmp/vehicle.ts",
@@ -183,30 +175,8 @@ export default defineConfig(async () => {
       ]),
     ]),
     allPropertiesOptional: true,
-    generateTSDoc({ identifier, xmlLocations: xmlPaths, parents }) {
-      const tagNames = new Set(xmlPaths.map((path) => path.at(-1)!));
-      let doc = `Represents ${disjunctionFormatter.format(tagNames.values().map((t) => `\`<${t}>\` element`))} in Stormworks vehicle data.`;
-
-      if (xmlPaths.length === 1) {
-        doc += `\n\nXML location: \`${formatXmlLocation(xmlPaths[0]!)}\``;
-      } else {
-        doc += "\n\nXML locations:\n";
-        for (const xmlPath of xmlPaths) {
-          doc += `- \`${formatXmlLocation(xmlPath)}\`\n`;
-        }
-      }
-
-      if (parents.length === 1) {
-        doc += `\n\nParent: {@link ${parents[0]!.identifier}}`;
-      } else if (parents.length > 1) {
-        doc += `\n\nParents: ${disjunctionFormatter.format(parents.map((p) => `{@link ${p.identifier}}`))}`;
-      }
-
-      doc += `\n\nIf your function only reads the value and does not mutate it, prefer\n{@link ${identifier}Immutable} for its parameter type.`;
-
-      doc += `\n\n@see {@link ${identifier}Schema}\n@see {@link ${identifier}Immutable}`;
-
-      return doc;
+    generateTSDoc(context) {
+      return generateTSDoc("Stormworks vehicle data", context);
     },
   };
 });
