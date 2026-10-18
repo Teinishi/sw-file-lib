@@ -266,7 +266,14 @@ function generateSchemaTypeCode(
               member.kind !== "inline" || (member.type !== "number" && member.type !== "boolean"),
           )
         : types;
-      const members = filtered.map((t) =>
+      const isPrimitive = (member: SchemaTypeData) =>
+        member.kind === "inline" && member.type !== "{}";
+      // Stable partition: preserve the relative order within each group.
+      const ordered = [
+        ...filtered.filter(isPrimitive),
+        ...filtered.filter((member) => !isPrimitive(member)),
+      ];
+      const members = ordered.map((t) =>
         generateSchemaTypeCode(t, getIdentifier, location, options),
       );
       if (members.some((member) => member.comment)) {

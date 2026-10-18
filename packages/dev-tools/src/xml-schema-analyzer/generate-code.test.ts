@@ -33,6 +33,51 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
   };
 }
 
+describe("union output order", () => {
+  it.each([false, true])(
+    "puts primitives before interface references (preferStringInUnions: %s)",
+    (preferStringInUnions) => {
+      const type: SchemaTypeData = {
+        kind: "union",
+        types: [
+          { kind: "object", ref: { kind: "internal", index: 0 } },
+          { kind: "inline", type: "number" },
+          {
+            kind: "union",
+            types: [
+              {
+                kind: "object",
+                ref: { kind: "external", importPath: "./shared", name: "External" },
+              },
+              { kind: "inline", type: "string" },
+            ],
+          },
+          { kind: "inline", type: "boolean" },
+          { kind: "object", ref: { kind: "internal", index: 1 } },
+        ],
+      };
+      const original = [...type.types];
+      const code = generateCode(
+        [
+          entry(["first"]),
+          entry(["second"]),
+          entry(["container"], {
+            value: type,
+            values: { kind: "list", itemTag: "item", itemRef: type },
+          }),
+        ],
+        { preferStringInUnions },
+      );
+      const expected = preferStringInUnions
+        ? "string | First | External | Second"
+        : "number | string | boolean | First | External | Second";
+      expect(code).toContain(`value: ${expected};`);
+      expect(code).toContain(`values: (${expected})[];`);
+      expect(type.types).toEqual(original);
+    },
+  );
+});
+
 describe("preferStringInUnions", () => {
   it.each([
     { values: ["123", "abc"], original: "number | string", result: "string" },
