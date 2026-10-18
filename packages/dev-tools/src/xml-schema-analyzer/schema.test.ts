@@ -19,6 +19,189 @@ function at(entries: SchemaEntry[], path: string): SchemaEntry {
   return entry!;
 }
 
+describe("mergeSchemas", () => {
+  it.each([false, true])(
+    "merges partial objects without absorbing unrelated schemas (unrelated first: %s)",
+    async (first) => {
+      const unrelated = '<other common="7" x="8"/>';
+      const data = document(
+        `<root id="test">${first ? unrelated : ""}<a common="3" x="4"/><b common="5" y="6"/>${first ? "" : unrelated}</root>`,
+      );
+      const config = await defineConfig({
+        input: "*.xml",
+        out: "schema.ts",
+        mergeSchemas: { point: ["root/a", "root/b"] },
+        interfaceNames: { "root/a": "SharedPoint" },
+      });
+      const entries = generateSchema(data, config);
+      const shared = at(entries, "root/a");
+      expect(shared).toBe(at(entries, "root/b"));
+      expect(shared).not.toBe(at(entries, "root/other"));
+      expect(shared.xmlLocations).toEqual([
+        ["root", "a"],
+        ["root", "b"],
+      ]);
+      expect(shared.properties.common).toMatchObject({
+        isOptional: false,
+        numberRange: { min: 3, max: 5 },
+      });
+      expect(shared.properties.x?.isOptional).toBe(true);
+      expect(shared.properties.y?.isOptional).toBe(true);
+      expect(at(entries, "root/other").properties.x?.isOptional).toBe(false);
+      const code = generateCode(entries, config);
+      expect(code).toContain("a: SharedPoint;\n  b: SharedPoint;");
+      expect(code).toContain("x?: number;\n  y?: number;");
+    },
+  );
+
+  it("keeps matching schemas in different explicit groups separate", () => {
+    const entries = generateSchema(document('<root id="test"><a x="3"/><b x="4"/></root>'), {
+      mergeSchemas: { first: "root/a", second: "root/b" },
+    });
+    expect(at(entries, "root/a")).not.toBe(at(entries, "root/b"));
+  });
+
+  it("supports regex selectors, mixed selectors, and stateful regex flags deterministically", () => {
+    const regex = /^root\/b\d+$/g;
+    regex.lastIndex = 42;
+    const data = document('<root id="test"><a x="3"/><b1 y="4"/><b2 z="5"/></root>');
+    const options = { mergeSchemas: { point: ["root/a", regex] } };
+    const entries = generateSchema(data, options);
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b1"));
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b2"));
+    expect(
+      Object.values(at(entries, "root/a").properties).every((property) => property.isOptional),
+    ).toBe(true);
+    expect(regex.lastIndex).toBe(42);
+    expect(generateCode(generateSchema(data, options))).toBe(generateCode(entries));
+  });
+
+  it("supports a regex directly as a group selector", () => {
+    const entries = generateSchema(document('<root id="test"><a x="3"/><b y="4"/></root>'), {
+      mergeSchemas: { point: /^root\/[ab]$/ },
+    });
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+  });
+
+  it("supports a callback and unionizes conflicting property types after overrides", () => {
+    const calls: string[] = [];
+    const entries = generateSchema(
+      document('<root id="test"><a value="3"/><b value="true" y="4"/><c value="text"/></root>'),
+      {
+        mergeSchemas(location) {
+          calls.push(location.join("/"));
+          return location.length === 2 ? "value" : undefined;
+        },
+        schemaOverrides: {
+          "root/a": { properties: { extra: { type: "string", optional: false } } },
+        },
+      },
+    );
+    expect(calls.toSorted()).toEqual(["root", "root/a", "root/b", "root/c"]);
+    expect(at(entries, "root/a")).toBe(at(entries, "root/c"));
+    expect(at(entries, "root/a").properties.extra?.isOptional).toBe(true);
+    expect(generateCode(entries)).toContain("value: number | boolean | string;");
+  });
+
+  it("can merge empty elements selected as objects", () => {
+    const entries = generateSchema(document('<root id="test"><a/><b x="3"/></root>'), {
+      forceKind: { "root/a": "object" },
+      mergeSchemas: { point: ["root/a", "root/b"] },
+    });
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+    expect(at(entries, "root/a").properties.x?.isOptional).toBe(true);
+  });
+
+  it("supports list item groups while retaining list markers and parent references", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="test"><first><item x="3"/><item x="4"/></first><second><item y="5"/><item y="6"/></second></root>',
+      ),
+      {
+        mergeSchemas: { point: ["root/first/item", "root/second/item"] },
+      },
+    );
+    expect(at(entries, "root/first/item")).toBe(at(entries, "root/second/item"));
+    const code = generateCode(entries, { interfaceNames: { "root/first/item": "Point" } });
+    expect(code).toContain('"item"\n  first: Point[];');
+    expect(code).toContain('"item"\n  second: Point[];');
+  });
+
+  it("prioritizes explicit groups over predefined schema matching", () => {
+    const entries = generateSchema(document('<root id="test"><a x="3"/><b y="4"/></root>'), {
+      mergeSchemas: { point: ["root/a", "root/b"] },
+      predefinedSchemas: {
+        "./shared": {
+          X: { kind: "object", properties: { x: { type: "number", optional: false } } },
+        },
+      },
+    });
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+    expect(generateCode(entries)).not.toContain('from "./shared"');
+  });
+
+  it("rejects ambiguous selectors", () => {
+    expect(() =>
+      generateSchema(document('<a x="3"/>'), {
+        mergeSchemas: { first: "a", second: /^a$/ },
+      }),
+    ).toThrow("XML path a matches multiple mergeSchemas groups: first, second");
+  });
+
+  it.each(["missing", "root/items"])(
+    "rejects an exact selector with no object or metalist: %s",
+    (path) => {
+      expect(() =>
+        generateSchema(
+          document('<root id="test"><items><item x="3"/><item x="4"/></items></root>'),
+          {
+            mergeSchemas: { point: path },
+          },
+        ),
+      ).toThrow(`No object or metalist schema for mergeSchemas XML paths: ${path}`);
+    },
+  );
+
+  it("merges metalist metadata and inlined items when item schemas are grouped", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="test"><a size="2"><item x="3"/><item x="4"/></a><b label="test"><item y="5"/><item y="6"/></b></root>',
+      ),
+      {
+        mergeSchemas: { items: ["root/a/item", "root/b/item"], collections: ["root/a", "root/b"] },
+      },
+    );
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+    expect(at(entries, "root/a").properties.size?.isOptional).toBe(true);
+    const code = generateCode(entries);
+    expect(code).toContain("items: {\n    x?: number;\n    y?: number;");
+  });
+
+  it("rejects mixed object and metalist groups", () => {
+    expect(() =>
+      generateSchema(
+        document('<root id="test"><a size="2"/><b size="2"><item x="3"/><item x="4"/></b></root>'),
+        {
+          mergeSchemas: { mixed: ["root/a", "root/b"] },
+        },
+      ),
+    ).toThrow("Cannot merge object and metalist in mergeSchemas group mixed");
+  });
+
+  it("rejects incompatible metalist item tags in a group", () => {
+    expect(() =>
+      generateSchema(
+        document(
+          '<root id="test"><a size="2"><left x="3"/><left x="4"/></a><b size="2"><right x="5"/><right x="6"/></b></root>',
+        ),
+        {
+          mergeSchemas: { mixed: ["root/a", "root/b"] },
+        },
+      ),
+    ).toThrow("Cannot merge metalists with different item tags or item types");
+  });
+});
+
 describe("list item tags", () => {
   it("does not merge a metalist with a plain object having the same metadata shape", () => {
     const entries = generateSchema(

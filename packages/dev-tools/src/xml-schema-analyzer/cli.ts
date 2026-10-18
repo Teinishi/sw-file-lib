@@ -42,6 +42,7 @@ program
     let preferStringInUnions: Config["preferStringInUnions"];
     let generateTSDoc: Config["generateTSDoc"];
     let schemaOverrides: Config["schemaOverrides"];
+    let mergeSchemas: Config["mergeSchemas"];
 
     if (options.config) {
       const config = await loadConfig(options.config);
@@ -57,6 +58,7 @@ program
       preferStringInUnions = config.preferStringInUnions;
       generateTSDoc = config.generateTSDoc;
       schemaOverrides = config.schemaOverrides;
+      mergeSchemas = config.mergeSchemas;
     } else {
       if (!options.input || !options.out) {
         program.error(
@@ -95,6 +97,7 @@ program
       forceKind,
       mergeNumberSuffix,
       schemaOverrides,
+      mergeSchemas,
     });
 
     const code = generateCode(

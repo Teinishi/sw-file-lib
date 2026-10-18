@@ -218,6 +218,66 @@ analysis is preserved, so changing overrides does not require `--refresh`.
 
 The same option is available through `generateSchema(documentData, options)`.
 
+## Merging partially observed schemas
+
+Use `mergeSchemas` to group XML elements whose differing sample properties should
+belong to one schema. Group selectors can be exact XML paths, regular expressions,
+or arrays mixing both:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  mergeSchemas: {
+    positions: ["vehicle/position", "vehicle/previous_position"],
+    components: /^vehicle\/components\/component\d+$/,
+  },
+});
+```
+
+Alternatively, use a synchronous callback that returns a group key, or `undefined`
+for ordinary automatic schema matching:
+
+```ts
+mergeSchemas(xmlLocation) {
+  const tag = xmlLocation.at(-1);
+  return tag === "position" || tag === "previous_position"
+    ? "positions"
+    : undefined;
+},
+```
+
+Group keys are matching identifiers, not output interface names. Use
+`interfaceNames` to name the shared interface. All XML locations are retained and
+internal references point to the merged schema. Callbacks run once per
+object/metalist location, before merging.
+
+Grouping `{ x: number }` and `{ y: number }` produces `{ x?: number; y?: number }`.
+Properties missing from either schema become optional. Common properties retain
+their types and optionality; conflicting types form a union. Ordering, possible
+values, and numeric ranges are merged. Nested child schemas are not recursively
+forced to merge: group their paths separately if needed. Empty elements can
+participate when selected as objects with `forceKind`.
+
+Explicit groups stay separate from other groups and ungrouped schemas, even when
+their structures match. They take priority over `predefinedSchemas` and generate
+local interfaces. `schemaOverrides` applies before merging. `mergeNumberSuffix`
+continues to apply to ungrouped schemas without crossing group boundaries.
+
+A path matching multiple groups is an error. Exact selectors must identify
+existing object or metalist schemas; unmatched paths and list container paths are
+errors. Select the item element to group list items. Regexes and callbacks may
+match no elements. Regex `lastIndex` does not affect matching and is not modified,
+including for global/sticky expressions.
+
+Objects and metalists cannot merge with each other. Metalists must have the same
+item tag and item schema; group their item paths too when those schemas differ
+because of sample coverage. Incompatible metalists report an error.
+Unrepresentable list unions still fail during code generation.
+
+Grouping runs on cached analysis, so changing `mergeSchemas` needs no `--refresh`.
+The same option is accepted by `generateSchema`.
+
 ## Inferring attribute types
 
 Each observed attribute value is classified as `boolean` (`"true"` or `"false"`),
@@ -324,6 +384,7 @@ every run. The following config changes have these effects:
 | `predefinedSchemas`     | No                    | Matches inferred schemas to external types.                                                    |
 | `forceKind`             | No                    | Selects object/list/metalist during schema generation.                                         |
 | `mergeNumberSuffix`     | No                    | Controls schema merging.                                                                       |
+| `mergeSchemas`          | No                    | Groups partially observed object/metalist schemas.                                             |
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
 | `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
 | `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |

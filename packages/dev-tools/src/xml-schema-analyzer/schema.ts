@@ -21,6 +21,34 @@ export type SchemaOverrides =
   | Readonly<Record<string, SchemaOverride>>
   | ((xmlLocation: XmlLocation) => SchemaOverride | undefined);
 
+export type SchemaMergeSelector = string | RegExp;
+export type SchemaMergeGroups =
+  | Readonly<Record<string, SchemaMergeSelector | readonly SchemaMergeSelector[]>>
+  | ((xmlLocation: XmlLocation) => string | undefined);
+
+function getMergeGroup(
+  xmlLocation: XmlLocation,
+  groups: SchemaMergeGroups | undefined,
+): string | undefined {
+  if (typeof groups === "function") return groups(xmlLocation);
+  const xmlPath = xmlLocation.join("/");
+  const matches = Object.entries(groups ?? {}).filter(([, selectors]) => {
+    const list =
+      typeof selectors === "string" || selectors instanceof RegExp ? [selectors] : selectors;
+    return list.some((selector) =>
+      typeof selector === "string"
+        ? selector === xmlPath
+        : new RegExp(selector.source, selector.flags).test(xmlPath),
+    );
+  });
+  if (matches.length > 1) {
+    throw new Error(
+      `XML path ${xmlPath} matches multiple mergeSchemas groups: ${matches.map(([name]) => name).join(", ")}.`,
+    );
+  }
+  return matches[0]?.[0];
+}
+
 export interface GenerateSchemaOptions {
   predefinedSchemas?: Record<string, Record<string, PredefinedSchema>> | undefined;
   forceKind?:
@@ -30,6 +58,8 @@ export interface GenerateSchemaOptions {
   mergeNumberSuffix?: boolean | undefined;
   /** Resolve overrides for each object/metalist XML location before schema merging. */
   schemaOverrides?: SchemaOverrides | undefined;
+  /** Explicit groups merge partial schemas and stay separate from automatic structural merging. */
+  mergeSchemas?: SchemaMergeGroups | undefined;
 }
 
 export type SchemaReference =
@@ -164,7 +194,12 @@ function mergeSchemaProperties(
   a: Record<string, SchemaPropertyData>,
   b: Record<string, SchemaPropertyData>,
 ): Record<string, SchemaPropertyData> {
-  const merged: Record<string, SchemaPropertyData> = { ...a };
+  const merged: Record<string, SchemaPropertyData> = Object.fromEntries(
+    Object.entries(a).map(([key, property]) => [
+      key,
+      Object.hasOwn(b, key) ? property : { ...property, isOptional: true },
+    ]),
+  );
 
   for (const [key, bProp] of Object.entries(b)) {
     const aProp = merged[key];
@@ -191,7 +226,7 @@ function mergeSchemaProperties(
         numberRange,
       };
     } else {
-      merged[key] = bProp;
+      merged[key] = { ...bProp, isOptional: true };
       continue;
     }
   }
@@ -222,6 +257,7 @@ function mergeSchemaEntries(a: SchemaEntry, b: SchemaEntry): SchemaEntry {
 type RegisterEntryFn = (
   entry: SchemaEntry,
   override: SchemaOverride | undefined,
+  mergeGroup: string | undefined,
 ) => SchemaReference;
 
 function generateObjectSchema(
@@ -232,6 +268,7 @@ function generateObjectSchema(
   metalist?: { readonly itemTag: string; readonly itemRef: SchemaTypeData },
 ): { dependencies: SchemaReference[]; data: SchemaTypeData } {
   const xmlPath = xmlLocation.join("/");
+  const mergeGroup = getMergeGroup(xmlLocation, options.mergeSchemas);
   const override =
     typeof options.schemaOverrides === "function"
       ? options.schemaOverrides(xmlLocation)
@@ -242,7 +279,8 @@ function generateObjectSchema(
     !metalist &&
     nodeData.attributes.size === 0 &&
     nodeData.children.size === 0 &&
-    override === undefined
+    override === undefined &&
+    mergeGroup === undefined
   ) {
     return {
       dependencies: [],
@@ -315,6 +353,7 @@ function generateObjectSchema(
       childOrder: nodeData.childOrder,
     },
     override,
+    mergeGroup,
   );
 
   return {
@@ -515,12 +554,24 @@ export function generateSchema(
   );
 
   const entries: SchemaEntry[] = [];
+  const mergeGroups = new Map<number, string>();
+  const unmatchedMergePaths = new Set(
+    typeof options?.mergeSchemas === "function"
+      ? []
+      : Object.values(options?.mergeSchemas ?? {}).flatMap((selectors) => {
+          const list =
+            typeof selectors === "string" || selectors instanceof RegExp ? [selectors] : selectors;
+          return list.filter((selector): selector is string => typeof selector === "string");
+        }),
+  );
 
   function registerEntry(
     entry: SchemaEntry,
     override: SchemaOverride | undefined,
+    mergeGroup: string | undefined,
   ): SchemaReference {
     const xmlPath = entry.xmlLocations[0]!.join("/");
+    unmatchedMergePaths.delete(xmlPath);
     if (override) {
       unmatchedOverrides.delete(xmlPath);
       const properties = { ...entry.properties };
@@ -572,6 +623,7 @@ export function generateSchema(
     }
 
     for (const { importPath, name, entry: predefinedEntry } of predefined) {
+      if (mergeGroup !== undefined) break;
       if (entry.kind !== "object") continue;
       if (!entryPropertiesCompatible(entry.properties, predefinedEntry.properties, "loose")) {
         continue;
@@ -583,7 +635,15 @@ export function generateSchema(
     for (let i = 0; i < entries.length; i++) {
       const existingEntry = entries[i]!;
 
-      if (entry.kind !== existingEntry.kind) continue;
+      if (mergeGroup !== mergeGroups.get(i)) continue;
+
+      if (entry.kind !== existingEntry.kind) {
+        if (mergeGroup !== undefined)
+          throw new Error(
+            `Cannot merge object and metalist in mergeSchemas group ${mergeGroup} at ${xmlPath}.`,
+          );
+        continue;
+      }
       if (
         entry.kind === "metalist" &&
         existingEntry.kind === "metalist" &&
@@ -591,8 +651,9 @@ export function generateSchema(
           !schemaTypeDataEqual(entry.itemRef, existingEntry.itemRef))
       ) {
         if (
-          options?.mergeNumberSuffix &&
-          matchesIgnoreingNumberSuffix(entry.xmlLocations, existingEntry.xmlLocations)
+          mergeGroup !== undefined ||
+          (options?.mergeNumberSuffix &&
+            matchesIgnoreingNumberSuffix(entry.xmlLocations, existingEntry.xmlLocations))
         ) {
           throw new Error(
             `Cannot merge metalists with different item tags or item types at ${entry.xmlLocations.map((location) => location.join("/")).join(", ")}.`,
@@ -602,6 +663,7 @@ export function generateSchema(
       }
 
       const merge =
+        mergeGroup !== undefined ||
         (options?.mergeNumberSuffix &&
           matchesIgnoreingNumberSuffix(entry.xmlLocations, existingEntry.xmlLocations)) ||
         entryPropertiesCompatible(entry.properties, existingEntry.properties, "ignore");
@@ -615,6 +677,7 @@ export function generateSchema(
     }
 
     entries.push(entry);
+    if (mergeGroup !== undefined) mergeGroups.set(entries.length - 1, mergeGroup);
     return { kind: "internal", index: entries.length - 1 };
   }
 
@@ -625,6 +688,12 @@ export function generateSchema(
   if (unmatchedOverrides.size > 0) {
     throw new Error(
       `No object schema for schemaOverrides XML paths: ${[...unmatchedOverrides].join(", ")}`,
+    );
+  }
+
+  if (unmatchedMergePaths.size > 0) {
+    throw new Error(
+      `No object or metalist schema for mergeSchemas XML paths: ${[...unmatchedMergePaths].join(", ")}`,
     );
   }
 
