@@ -147,6 +147,114 @@ describe("attribute union inference", () => {
   });
 });
 
+describe("schemaOverrides callbacks", () => {
+  it("accepts a callback through defineConfig and applies it once per object path before merging", async () => {
+    const calls: string[] = [];
+    const config = await defineConfig({
+      input: "*.xml",
+      out: "schema.ts",
+      schemaOverrides(xmlLocation) {
+        const path = xmlLocation.join("/");
+        calls.push(path);
+        if (xmlLocation.at(-1)?.startsWith("a")) {
+          return { properties: { x: { type: "string", optional: true } } };
+        }
+        return undefined;
+      },
+    });
+    const entries = generateSchema(
+      document('<root id="test"><a1 x="3"/><a2 x="4"/><b x="5"/></root>'),
+      config,
+    );
+    expect(calls.toSorted()).toEqual(["root", "root/a1", "root/a2", "root/b"]);
+    expect(at(entries, "root/a1")).toBe(at(entries, "root/a2"));
+    expect(at(entries, "root/a1").properties.x).toMatchObject({
+      isOptional: true,
+      type: { kind: "inline", type: "string" },
+    });
+    expect(at(entries, "root/b").properties.x).toMatchObject({
+      isOptional: false,
+      type: { kind: "inline", type: "number" },
+    });
+  });
+
+  it("can supplement empty objects and preserves them as inline when returning undefined", () => {
+    const data = document('<root id="test"><empty/><untouched/></root>');
+    const calls: string[] = [];
+    const entries = generateSchema(data, {
+      forceKind: { "root/empty": "object", "root/untouched": "object" },
+      schemaOverrides(location) {
+        const path = location.join("/");
+        calls.push(path);
+        if (path === "root/empty") return { properties: { y: { type: "number", optional: true } } };
+        return undefined;
+      },
+    });
+    expect(at(entries, "root/empty").properties.y?.isOptional).toBe(true);
+    expect(at(entries, "root").properties.untouched?.type).toEqual({ kind: "inline", type: "{}" });
+    expect(calls.filter((path) => path === "root/empty")).toHaveLength(1);
+    expect(calls.filter((path) => path === "root/untouched")).toHaveLength(1);
+  });
+
+  it("applies callbacks to metalist metadata and items but not list containers", () => {
+    const calls: string[] = [];
+    const entries = generateSchema(
+      document(
+        '<root id="test"><foos><foo size="2"><bar x="3"/><bar x="4"/></foo><foo size="2"><bar x="5"/><bar x="6"/></foo></foos></root>',
+      ),
+      {
+        schemaOverrides(location) {
+          const path = location.join("/");
+          calls.push(path);
+          if (path === "root/foos/foo")
+            return { properties: { size: { type: "string", optional: true } } };
+          if (path === "root/foos/foo/bar")
+            return { properties: { y: { type: "number", optional: true } } };
+          return undefined;
+        },
+      },
+    );
+    expect(calls.toSorted()).toEqual(["root", "root/foos/foo", "root/foos/foo/bar"]);
+    expect(at(entries, "root/foos/foo")).toMatchObject({
+      kind: "metalist",
+      properties: {
+        size: { isOptional: true, type: { kind: "inline", type: "string" } },
+      },
+    });
+    expect(generateCode(entries)).toContain("y?: number;");
+  });
+
+  it("matches predefined schemas after a callback override", () => {
+    const data = document('<root id="test"><a x="3"/></root>');
+    const entries = generateSchema(data, {
+      schemaOverrides: (location) =>
+        location.at(-1) === "a"
+          ? { properties: { x: { type: "string", optional: true } } }
+          : undefined,
+      predefinedSchemas: {
+        "./shared": {
+          TextValue: {
+            kind: "object",
+            properties: { x: { type: "string", optional: true } },
+          },
+        },
+      },
+    });
+    expect(generateCode(entries)).toContain('import type { TextValue } from "./shared";');
+    expect(generateCode(entries)).toContain("a: TextValue;");
+  });
+
+  it("propagates callback errors", () => {
+    expect(() =>
+      generateSchema(document('<a x="3"/>'), {
+        schemaOverrides: () => {
+          throw new Error("Invalid custom override");
+        },
+      }),
+    ).toThrow("Invalid custom override");
+  });
+});
+
 describe("generateSchema schemaOverrides", () => {
   it("supplements an optional property before merging without affecting unrelated paths or cached analysis", () => {
     const data = document('<root><a/><b x="4"/></root>', '<root><a x="3"/><b x="5"/></root>');

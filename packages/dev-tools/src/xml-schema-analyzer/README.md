@@ -166,6 +166,32 @@ export default defineConfig({
 });
 ```
 
+Like `forceKind`, `schemaOverrides` also accepts a synchronous callback receiving
+the XML location as a readonly array of tag names:
+
+```ts
+schemaOverrides(xmlLocation) {
+  if (xmlLocation.at(-1) === "position") {
+    return {
+      properties: {
+        y: { type: "number", optional: true },
+      },
+    };
+  }
+  return undefined;
+},
+```
+
+The callback runs once per object or metalist location before schema merging.
+Return `undefined` to leave that location unchanged. Empty elements selected as
+objects can also be supplemented. Metalist overrides apply to metadata; callbacks
+also run for its object items and metadata children. List container locations are
+not passed to the callback, but their object item locations are.
+
+Record entries for nonexistent/non-object paths still produce errors. Callbacks
+have no enumerated keys, so there is no unused-path check for them. Both forms
+apply to cached analysis without `--refresh` and are accepted by `generateSchema`.
+
 For example, an inferred `{ x: number }` becomes `{ x?: string; y?: number }`.
 Supported property types are `string`, `number`, and `boolean`; `optional` is
 required and controls whether the property is optional, even if it was always

@@ -17,6 +17,10 @@ export interface SchemaOverride {
   readonly properties: Readonly<Record<string, Readonly<PredefinedSchemaProperty>>>;
 }
 
+export type SchemaOverrides =
+  | Readonly<Record<string, SchemaOverride>>
+  | ((xmlLocation: XmlLocation) => SchemaOverride | undefined);
+
 export interface GenerateSchemaOptions {
   predefinedSchemas?: Record<string, Record<string, PredefinedSchema>> | undefined;
   forceKind?:
@@ -24,8 +28,8 @@ export interface GenerateSchemaOptions {
     | ((xmlLocation: XmlLocation) => "object" | "list" | "metalist" | undefined)
     | undefined;
   mergeNumberSuffix?: boolean | undefined;
-  /** Exact XML object paths (root/child) to supplement before schema merging. */
-  schemaOverrides?: Readonly<Record<string, SchemaOverride>> | undefined;
+  /** Resolve overrides for each object/metalist XML location before schema merging. */
+  schemaOverrides?: SchemaOverrides | undefined;
 }
 
 export type SchemaReference =
@@ -215,7 +219,10 @@ function mergeSchemaEntries(a: SchemaEntry, b: SchemaEntry): SchemaEntry {
   };
 }
 
-type RegisterEntryFn = (entry: SchemaEntry) => SchemaReference;
+type RegisterEntryFn = (
+  entry: SchemaEntry,
+  override: SchemaOverride | undefined,
+) => SchemaReference;
 
 function generateObjectSchema(
   xmlLocation: XmlLocation,
@@ -224,11 +231,18 @@ function generateObjectSchema(
   options: GenerateSchemaOptions,
   metalist?: { readonly itemTag: string; readonly itemRef: SchemaTypeData },
 ): { dependencies: SchemaReference[]; data: SchemaTypeData } {
+  const xmlPath = xmlLocation.join("/");
+  const override =
+    typeof options.schemaOverrides === "function"
+      ? options.schemaOverrides(xmlLocation)
+      : Object.hasOwn(options.schemaOverrides ?? {}, xmlPath)
+        ? options.schemaOverrides![xmlPath]
+        : undefined;
   if (
     !metalist &&
     nodeData.attributes.size === 0 &&
     nodeData.children.size === 0 &&
-    !Object.hasOwn(options.schemaOverrides ?? {}, xmlLocation.join("/"))
+    override === undefined
   ) {
     return {
       dependencies: [],
@@ -292,13 +306,16 @@ function generateObjectSchema(
     }
   }
 
-  const ref = registerEntry({
-    ...(metalist ? { kind: "metalist" as const, ...metalist } : { kind: "object" as const }),
-    xmlLocations: [xmlLocation],
-    properties: properties,
-    attributeOrder: nodeData.attributeOrder,
-    childOrder: nodeData.childOrder,
-  });
+  const ref = registerEntry(
+    {
+      ...(metalist ? { kind: "metalist" as const, ...metalist } : { kind: "object" as const }),
+      xmlLocations: [xmlLocation],
+      properties: properties,
+      attributeOrder: nodeData.attributeOrder,
+      childOrder: nodeData.childOrder,
+    },
+    override,
+  );
 
   return {
     dependencies,
@@ -491,14 +508,19 @@ export function generateSchema(
   options?: GenerateSchemaOptions,
 ): SchemaEntry[] {
   const predefined = flattenPredefinedSchemas(options?.predefinedSchemas ?? {});
-  const overrides = new Map(Object.entries(options?.schemaOverrides ?? {}));
-  const unmatchedOverrides = new Set(overrides.keys());
+  const unmatchedOverrides = new Set(
+    typeof options?.schemaOverrides === "function"
+      ? []
+      : Object.keys(options?.schemaOverrides ?? {}),
+  );
 
   const entries: SchemaEntry[] = [];
 
-  function registerEntry(entry: SchemaEntry): SchemaReference {
+  function registerEntry(
+    entry: SchemaEntry,
+    override: SchemaOverride | undefined,
+  ): SchemaReference {
     const xmlPath = entry.xmlLocations[0]!.join("/");
-    const override = overrides.get(xmlPath);
     if (override) {
       unmatchedOverrides.delete(xmlPath);
       const properties = { ...entry.properties };
