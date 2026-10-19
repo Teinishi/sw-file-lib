@@ -17,7 +17,6 @@ import type {
   MicroprocessorItem,
   MicroprocessorObject,
   MicroprocessorComponent,
-  MicroprocessorInBridge,
   MicroprocessorObjectBridge,
   MicroprocessorComponentBridge,
   MicroprocessorGroup,
@@ -42,7 +41,6 @@ import type {
   MicroprocessorItemSchema,
   MicroprocessorObjectSchema,
   MicroprocessorComponentSchema,
-  MicroprocessorInBridgeSchema,
   MicroprocessorObjectBridgeSchema,
   MicroprocessorComponentBridgeSchema,
   MicroprocessorGroupSchema,
@@ -192,8 +190,9 @@ export interface MicroprocessorGroupDataImmutable {
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in31>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in32>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inoff>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
  *
- * Parent: {@link MicroprocessorObjectImmutable}
+ * Parents: {@link MicroprocessorObject} or {@link MicroprocessorObjectBridge}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link MicroprocessorIn} instead if mutation is required.
@@ -322,24 +321,6 @@ export interface MicroprocessorComponentImmutable {
 }
 
 /**
- * Represents `<in1>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
- *
- * Parent: {@link MicroprocessorObjectBridgeImmutable}
- *
- * This is the recommended type for function parameters when it does not need to modify the value.
- * Use {@link MicroprocessorInBridge} instead if mutation is required.
- *
- * @see {@link MicroprocessorInBridgeSchema}
- * @see {@link MicroprocessorInBridge}
- */
-export interface MicroprocessorInBridgeImmutable {
-  readonly component_id?: number;
-  readonly node_index?: number;
-}
-
-/**
  * Represents `<object>` element in Stormworks vehicle data.
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object>`
@@ -355,7 +336,7 @@ export interface MicroprocessorInBridgeImmutable {
 export interface MicroprocessorObjectBridgeImmutable {
   readonly id?: number;
   readonly pos?: XmlVec2Immutable;
-  readonly in1?: MicroprocessorInBridgeImmutable;
+  readonly in1?: MicroprocessorInImmutable;
   readonly out1?: {};
 }
 

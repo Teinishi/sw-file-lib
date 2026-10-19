@@ -13,7 +13,6 @@ import type {
   MicroprocessorItem,
   MicroprocessorObject,
   MicroprocessorComponent,
-  MicroprocessorInBridge,
   MicroprocessorObjectBridge,
   MicroprocessorComponentBridge,
   MicroprocessorGroup,
@@ -38,7 +37,6 @@ import type {
   MicroprocessorItemImmutable,
   MicroprocessorObjectImmutable,
   MicroprocessorComponentImmutable,
-  MicroprocessorInBridgeImmutable,
   MicroprocessorObjectBridgeImmutable,
   MicroprocessorComponentBridgeImmutable,
   MicroprocessorGroupImmutable,
@@ -199,8 +197,9 @@ const MicroprocessorInShape = {
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in31>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in32>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inoff>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
  *
- * Parent: {@link MicroprocessorObjectSchema}
+ * Parents: {@link MicroprocessorObject} or {@link MicroprocessorObjectBridge}
  *
  * @see {@link MicroprocessorIn}
  * @see {@link MicroprocessorInImmutable}
@@ -330,30 +329,10 @@ export const MicroprocessorComponentSchema: x.ObjectSchema<
   MicroprocessorComponent
 > = x.object(MicroprocessorComponentShape);
 
-const MicroprocessorInBridgeShape = {
-  component_id: x.number().optional(),
-  node_index: x.number().optional(),
-};
-
-/**
- * Represents `<in1>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
- *
- * Parent: {@link MicroprocessorObjectBridgeSchema}
- *
- * @see {@link MicroprocessorInBridge}
- * @see {@link MicroprocessorInBridgeImmutable}
- */
-export const MicroprocessorInBridgeSchema: x.ObjectSchema<
-  typeof MicroprocessorInBridgeShape,
-  MicroprocessorInBridge
-> = x.object(MicroprocessorInBridgeShape);
-
 const MicroprocessorObjectBridgeShape = {
   id: x.number().optional(),
   pos: XmlVec2Schema.optional(),
-  in1: MicroprocessorInBridgeSchema.optional(),
+  in1: MicroprocessorInSchema.optional(),
   out1: x.object({}).optional(),
 };
 

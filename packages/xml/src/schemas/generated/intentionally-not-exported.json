@@ -24,7 +24,6 @@
     "MicroprocessorItemShape",
     "MicroprocessorObjectShape",
     "MicroprocessorComponentShape",
-    "MicroprocessorInBridgeShape",
     "MicroprocessorObjectBridgeShape",
     "MicroprocessorComponentBridgeShape",
     "MicroprocessorGroupShape",
