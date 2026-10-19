@@ -16,7 +16,7 @@ export default defineConfig(async () => {
     predefinedSchemas,
     forceKind: {
       definition: "object",
-      "definition/jet_engine_connections_prev": "list",
+      "definition/jet_engine_connections_prev": ["list", "j"],
     },
     interfaceNames: {
       definition: "ComponentDefinition",
