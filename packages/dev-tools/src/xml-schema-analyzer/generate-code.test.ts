@@ -541,7 +541,7 @@ describe("metalist interfaces", () => {
     const entries = generateSchema(
       analyzeDocument(parseSwXml('<foo><bar text="a"/><bar text="b"/></foo>'), undefined),
       {
-        forceKind: { foo: "metalist" },
+        forceKind: { foo: ["metalist", "bar"] },
       },
     );
     const code = generateCode(entries, { allPropertiesOptional: true });

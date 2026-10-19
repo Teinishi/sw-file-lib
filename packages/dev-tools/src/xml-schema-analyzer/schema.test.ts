@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import consola from "consola";
+import { describe, expect, it, vi } from "vitest";
 import { parseSwXml } from "@sw-file-lib/xml";
 import { analyzeDocument, intersectDocumentData } from "./analyzer/document";
 import { generateCode } from "./generate-code";
@@ -18,6 +19,419 @@ function at(entries: SchemaEntry[], path: string): SchemaEntry {
   expect(entry, `schema at ${path}`).toBeDefined();
   return entry!;
 }
+
+function captureWarnings<T>(action: () => T) {
+  const warn = vi.spyOn(consola, "warn").mockImplementation(() => {});
+  try {
+    const result = action();
+    return { result, warnings: warn.mock.calls.map((args) => args.join(" ")) };
+  } finally {
+    warn.mockRestore();
+  }
+}
+
+describe("forceKind item tags", () => {
+  it("supports readonly tuples returned by a config callback", async () => {
+    const config = await defineConfig({
+      input: "*.xml",
+      out: "schema.ts",
+      forceKind(location) {
+        return location.join("/") === "root/items" ? (["list", "entry"] as const) : undefined;
+      },
+    });
+    const entries = generateSchema(
+      document('<root id="root"><items><entry text="one"/></items></root>'),
+      config,
+    );
+    expect(generateCode(entries)).toContain('// @xml-schema list "entry"\n  items: Entry[];');
+  });
+
+  it("recognizes singleton metalist items without a merge group", () => {
+    const entries = generateSchema(
+      document('<foo size="1"><note title="meta"/><bar text="one"/></foo>'),
+      {
+        forceKind: { foo: ["metalist", "bar"] },
+      },
+    );
+    const foo = at(entries, "foo");
+    expect(foo).toMatchObject({ kind: "metalist", itemTag: "bar" });
+    expect(foo.properties).toHaveProperty("note");
+    expect(foo.properties).not.toHaveProperty("bar");
+    expect(generateCode(entries)).toContain("items: {\n    text: string;");
+  });
+
+  it.each(["list", "metalist"] as const)("rejects legacy bare %s at runtime", (kind) => {
+    expect(() =>
+      generateSchema(document('<root x="3"/>'), {
+        // @ts-expect-error Legacy string-only list/metalist options are intentionally unsupported.
+        forceKind: { root: kind },
+      }),
+    ).toThrow("Invalid forceKind option at root: list/metalist require [kind, itemTag].");
+  });
+
+  it("rejects an empty item tag", () => {
+    expect(() =>
+      generateSchema(document('<root x="3"/>'), { forceKind: { root: ["list", ""] } }),
+    ).toThrow("Invalid forceKind option at root");
+  });
+
+  it("rejects a nonmatching child even if there is only one child tag", () => {
+    expect(() =>
+      generateSchema(document('<items><wrong x="3"/></items>'), {
+        forceKind: { items: ["list", "item"] },
+      }),
+    ).toThrow("expects item tag item, but found unexpected child tags: wrong");
+  });
+
+  it("rejects repeating metadata children outside the specified metalist item tag", () => {
+    expect(() =>
+      generateSchema(
+        document('<foo size="1"><bar x="3"/><note text="one"/><note text="two"/></foo>'),
+        {
+          forceKind: { foo: ["metalist", "bar"] },
+        },
+      ),
+    ).toThrow(
+      "Metalist node at foo has repeating non-item child tags: note. Expected item tag bar.",
+    );
+  });
+
+  it("does not use a different specified tag to resolve an empty list", () => {
+    expect(() =>
+      generateSchema(
+        document('<root id="root"><empty/><full><other x="3"/><other x="4"/></full></root>'),
+        {
+          forceKind: { "root/empty": ["list", "item"] },
+          mergeSchemas: { lists: ["root/empty", "root/full"] },
+        },
+      ),
+    ).toThrow("Cannot merge lists with different item tags or item types");
+  });
+});
+
+describe("empty metalists resolved by merging", () => {
+  it.each([false, true])(
+    "resolves grouped metalists and retains metadata (empty first: %s)",
+    (emptyFirst) => {
+      const empty = '<a size="0"><note title="retained"/></a>';
+      const populated = '<b size="2"><item x="3"/><item x="4"/></b>';
+      const data = document(
+        `<root id="root">${emptyFirst ? empty + populated : populated + empty}</root>`,
+      );
+      const options = {
+        forceKind: { "root/a": ["metalist", "item"] as const },
+        mergeSchemas: { collections: ["root/a", "root/b"] },
+      };
+      const entries = generateSchema(data, options);
+      const shared = at(entries, "root/a");
+      expect(shared).toBe(at(entries, "root/b"));
+      expect(shared).toMatchObject({ kind: "metalist", itemTag: "item" });
+      expect(shared.properties.size).toMatchObject({
+        isOptional: false,
+        numberRange: { min: 0, max: 2 },
+      });
+      expect(shared.properties.note?.isOptional).toBe(true);
+      const code = generateCode(entries, { allPropertiesOptional: true });
+      expect(code).toContain('// @xml-schema metalist "item"');
+      expect(code).toContain("meta: {");
+      expect(code).toContain("items: {\n    x?: number;");
+      expect(code).not.toContain("meta?:");
+      expect(generateCode(generateSchema(data, options))).toBe(generateCode(entries));
+    },
+  );
+
+  it("supports a zero-child metalist using a callback group", () => {
+    const calls: string[] = [];
+    const entries = generateSchema(
+      document('<root id="root"><a size="0"/><b size="2"><item x="3"/><item x="4"/></b></root>'),
+      {
+        forceKind: { "root/a": ["metalist", "item"] },
+        mergeSchemas(location) {
+          const path = location.join("/");
+          calls.push(path);
+          return /^root\/[ab]$/.test(path) ? "collections" : undefined;
+        },
+      },
+    );
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+    expect(calls.filter((path) => path === "root/a")).toHaveLength(1);
+    expect(calls.filter((path) => path === "root/b")).toHaveLength(1);
+  });
+
+  it("uses the configured tag to recognize a singleton item instead of treating it as metadata", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><a size="1"><note title="retained"/><item x="3"/></a><b size="2"><item x="4"/><item x="5"/></b></root>',
+      ),
+      {
+        forceKind: { "root/a": ["metalist", "item"] },
+        mergeSchemas: { collections: /^root\/[ab]$/ },
+      },
+    );
+    const shared = at(entries, "root/a");
+    expect(shared.properties).not.toHaveProperty("item");
+    expect(shared.properties).toHaveProperty("note");
+    expect(shared).toBe(at(entries, "root/b"));
+    expect(generateCode(entries)).toContain("items: {\n    x: number;");
+  });
+
+  it.each([false, true])(
+    "warns and uses empty metalist items after merging (grouped: %s)",
+    (grouped) => {
+      const { result: entries, warnings } = captureWarnings(() =>
+        generateSchema(document('<root id="root"><a size="0"/><b size="0"/></root>'), {
+          forceKind: { "root/a": ["metalist", "item"], "root/b": ["metalist", "item"] },
+          ...(grouped ? { mergeSchemas: { collections: ["root/a", "root/b"] } } : {}),
+        }),
+      );
+      expect(warnings).toHaveLength(grouped ? 1 : 2);
+      expect(warnings.join("\n")).toContain("root/a");
+      expect(warnings.join("\n")).toContain("root/b");
+      expect(warnings.join("\n")).toContain('empty item interface for tag "item"');
+      expect(at(entries, "root/a/item").properties).toEqual({});
+      const code = generateCode(entries, { allPropertiesOptional: true });
+      expect(code).toContain('// @xml-schema metalist "item"');
+      expect(code).toContain("items: {\n  }[];");
+      expect(code).not.toContain("meta?:");
+      expect(code).not.toContain("items?:");
+      expect(code).not.toContain("interface Item");
+    },
+  );
+
+  it("warns for top-level unresolved metalists and retains metadata", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(document('<a size="0"/>'), { forceKind: { a: ["metalist", "item"] } }),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("after merging at XML paths: a;");
+    expect(generateCode(entries)).toContain("size: number;");
+  });
+
+  it("does not use item evidence from a different group", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(
+        document('<root id="root"><a size="0"/><b size="2"><item x="3"/><item x="4"/></b></root>'),
+        {
+          forceKind: { "root/a": ["metalist", "item"] },
+          mergeSchemas: { empty: "root/a", populated: "root/b" },
+        },
+      ),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("after merging at XML paths: root/a;");
+    expect(at(entries, "root/a/item").properties).toEqual({});
+    expect(at(entries, "root/b/item").properties).toHaveProperty("x");
+  });
+
+  it("rejects conflicting item tags even when one member is empty", () => {
+    expect(() =>
+      generateSchema(
+        document(
+          '<root id="root"><a size="0"/><b size="2"><left x="3"/><left x="4"/></b><c size="2"><right x="5"/><right x="6"/></c></root>',
+        ),
+        {
+          forceKind: { "root/a": ["metalist", "item"] },
+          mergeSchemas: { collections: /^root\/[abc]$/ },
+        },
+      ),
+    ).toThrow("Cannot merge metalists with different item tags or item types");
+  });
+});
+
+describe("empty lists resolved by merging", () => {
+  it.each([false, true])(
+    "resolves a list through a merged parent regardless of traversal order (empty first: %s)",
+    (emptyFirst) => {
+      const empty = '<a id="a"><items/></a>';
+      const populated = '<b id="b"><items><item text="test"/><item text="other"/></items></b>';
+      const data = document(
+        `<root id="root">${emptyFirst ? empty + populated : populated + empty}</root>`,
+      );
+      const entries = generateSchema(data, {
+        forceKind: { "root/a/items": ["list", "item"] },
+        mergeSchemas: { parents: ["root/a", "root/b"] },
+      });
+      const parent = at(entries, "root/a");
+      expect(parent).toBe(at(entries, "root/b"));
+      expect(parent.properties.items).toMatchObject({
+        isOptional: false,
+        type: { kind: "list", itemTag: "item" },
+      });
+      expect(generateCode(entries)).toContain('// @xml-schema list "item"\n  items: Item[];');
+    },
+  );
+
+  it.each([false, true])(
+    "resolves directly grouped list containers (empty first: %s)",
+    (emptyFirst) => {
+      const empty = "<empty/>";
+      const populated = '<full><item text="test"/><item text="other"/></full>';
+      const entries = generateSchema(
+        document(`<root id="root">${emptyFirst ? empty + populated : populated + empty}</root>`),
+        {
+          forceKind: { "root/empty": ["list", "item"] },
+          mergeSchemas: { lists: ["root/empty", "root/full"] },
+        },
+      );
+      const parent = at(entries, "root");
+      expect(parent.properties.empty?.type).toEqual(parent.properties.full?.type);
+      expect(generateCode(entries)).toContain('// @xml-schema list "item"\n  empty: Item[];');
+      expect(generateCode(entries)).toContain('// @xml-schema list "item"\n  full: Item[];');
+    },
+  );
+
+  it("supports regex and callback groups for list containers", () => {
+    const data = document(
+      '<root id="root"><a/><b><item text="test"/><item text="other"/></b></root>',
+    );
+    const record = generateSchema(data, {
+      forceKind: { "root/a": ["list", "item"] },
+      mergeSchemas: { lists: /^root\/[ab]$/ },
+    });
+    const calls: string[] = [];
+    const callback = generateSchema(data, {
+      forceKind: { "root/a": ["list", "item"] },
+      mergeSchemas(location) {
+        const path = location.join("/");
+        calls.push(path);
+        return /^root\/[ab]$/.test(path) ? "lists" : undefined;
+      },
+    });
+    expect(generateCode(callback)).toBe(generateCode(record));
+    expect(calls.filter((path) => path === "root/a")).toHaveLength(1);
+    expect(calls.filter((path) => path === "root/b")).toHaveLength(1);
+  });
+
+  it("resolves an empty top-level list from its group without generating a parent interface", () => {
+    expect(() =>
+      generateSchema(document('<empty/><full><item text="test"/><item text="other"/></full>'), {
+        forceKind: { empty: ["list", "item"] },
+        mergeSchemas: { lists: ["empty", "full"] },
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([false, true])(
+    "warns and generates empty item interfaces after merging (grouped: %s)",
+    (grouped) => {
+      const { result: entries, warnings } = captureWarnings(() =>
+        generateSchema(document('<root id="root"><a/><b/></root>'), {
+          forceKind: { "root/a": ["list", "item"], "root/b": ["list", "item"] },
+          ...(grouped ? { mergeSchemas: { lists: ["root/a", "root/b"] } } : {}),
+        }),
+      );
+      expect(warnings).toHaveLength(grouped ? 1 : 2);
+      expect(warnings.join("\n")).toContain("root/a");
+      expect(warnings.join("\n")).toContain("root/b");
+      expect(at(entries, "root/a/item").properties).toEqual({});
+      expect(at(entries, "root/a/item") === at(entries, "root/b/item")).toBe(grouped);
+      expect(generateCode(entries)).toContain('// @xml-schema list "item"');
+      expect(generateCode(entries)).not.toContain("never");
+    },
+  );
+
+  it("generates a named empty interface for an unresolved top-level list", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(document("<empty/>"), { forceKind: { empty: ["list", "item"] } }),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("after merging at XML paths: empty;");
+    expect(generateCode(entries, { interfaceNames: { "empty/item": "MissingItem" } })).toContain(
+      "// @xml-schema\nexport interface MissingItem {\n}",
+    );
+  });
+
+  it("does not borrow evidence from unrelated groups", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(
+        document('<root id="root"><a/><b><item text="test"/><item text="other"/></b></root>'),
+        {
+          forceKind: { "root/a": ["list", "item"] },
+          mergeSchemas: { empty: "root/a", populated: "root/b" },
+        },
+      ),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("after merging at XML paths: root/a;");
+    expect(at(entries, "root/a/item").properties).toEqual({});
+    expect(at(entries, "root/b/item").properties).toHaveProperty("text");
+  });
+
+  it("shares an empty item interface for lists in merged parents", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(
+        document('<root id="root"><a id="a"><items/></a><b id="b"><items/></b></root>'),
+        {
+          forceKind: { "root/a/items": ["list", "item"], "root/b/items": ["list", "item"] },
+          mergeSchemas: { parents: ["root/a", "root/b"] },
+        },
+      ),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("root/a/items, root/b/items");
+    expect(at(entries, "root/a/items/item")).toBe(at(entries, "root/b/items/item"));
+    expect(generateCode(entries)).toContain('// @xml-schema list "item"\n  items: Item[];');
+  });
+
+  it("does not warn when merging supplies the item schema", () => {
+    const { warnings } = captureWarnings(() =>
+      generateSchema(
+        document('<root id="root"><a/><b><item text="test"/><item text="other"/></b></root>'),
+        {
+          forceKind: { "root/a": ["list", "item"] },
+          mergeSchemas: { lists: ["root/a", "root/b"] },
+        },
+      ),
+    );
+    expect(warnings).toEqual([]);
+  });
+
+  it("propagates item evidence from merged parents to other members of the same list group", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><a id="a"><items/></a><b id="b"><items><item text="test"/><item text="other"/></items></b><other/></root>',
+      ),
+      {
+        forceKind: { "root/a/items": ["list", "item"], "root/other": ["list", "item"] },
+        mergeSchemas: { parents: ["root/a", "root/b"], lists: ["root/a/items", "root/other"] },
+      },
+    );
+    expect(generateCode(entries)).toContain('// @xml-schema list "item"\n  other: Item[];');
+  });
+
+  it("still rejects multiple child tags", () => {
+    expect(() =>
+      generateSchema(document('<root id="root"><items><a x="3"/><b y="4"/></items></root>'), {
+        forceKind: { "root/items": ["list", "item"] },
+      }),
+    ).toThrow(
+      "List node at root/items expects item tag item, but found unexpected child tags: a, b",
+    );
+  });
+
+  it("rejects conflicting item tags in grouped lists", () => {
+    expect(() =>
+      generateSchema(
+        document(
+          '<root id="root"><a/><b><left x="3"/><left x="4"/></b><c><right x="5"/><right x="6"/></c></root>',
+        ),
+        {
+          forceKind: { "root/a": ["list", "item"] },
+          mergeSchemas: { lists: ["root/a", "root/b", "root/c"] },
+        },
+      ),
+    ).toThrow("Cannot merge lists with different item tags or item types");
+  });
+
+  it("rejects mixing list containers with object schemas in a group", () => {
+    expect(() =>
+      generateSchema(document('<root id="root"><a/><b x="3"/></root>'), {
+        forceKind: { "root/a": ["list", "item"] },
+        mergeSchemas: { mixed: ["root/a", "root/b"] },
+      }),
+    ).toThrow("Cannot merge list and object/metalist in mergeSchemas group mixed");
+  });
+});
 
 describe("attributeTypes", () => {
   it("overrides present attributes by name without adding missing attributes or changing child elements", async () => {
@@ -244,7 +658,7 @@ describe("mergeSchemas", () => {
     ).toThrow("XML path a matches multiple mergeSchemas groups: first, second");
   });
 
-  it.each(["missing", "root/items"])(
+  it.each(["missing", "root/missing"])(
     "rejects an exact selector with no object or metalist: %s",
     (path) => {
       expect(() =>
@@ -254,7 +668,7 @@ describe("mergeSchemas", () => {
             mergeSchemas: { point: path },
           },
         ),
-      ).toThrow(`No object or metalist schema for mergeSchemas XML paths: ${path}`);
+      ).toThrow(`No schema for mergeSchemas XML paths: ${path}`);
     },
   );
 

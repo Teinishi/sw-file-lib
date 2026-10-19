@@ -142,8 +142,9 @@ export interface MicroprocessorGroupData {
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in31>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in32>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inoff>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
  *
- * Parent: {@link MicroprocessorObject}
+ * Parents: {@link MicroprocessorObject} or {@link MicroprocessorObjectBridge}
  *
  * If your function only reads the value and does not mutate it, prefer
  * {@link MicroprocessorInImmutable} for its parameter type.
@@ -277,25 +278,6 @@ export interface MicroprocessorComponent {
 
 // @xml-schema
 /**
- * Represents `<in1>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
- *
- * Parent: {@link MicroprocessorObjectBridge}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link MicroprocessorInBridgeImmutable} for its parameter type.
- *
- * @see {@link MicroprocessorInBridgeSchema}
- * @see {@link MicroprocessorInBridgeImmutable}
- */
-export interface MicroprocessorInBridge {
-  component_id?: number;
-  node_index?: number;
-}
-
-// @xml-schema
-/**
  * Represents `<object>` element in Stormworks vehicle data.
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object>`
@@ -311,7 +293,7 @@ export interface MicroprocessorInBridge {
 export interface MicroprocessorObjectBridge {
   id?: number;
   pos?: XmlVec2;
-  in1?: MicroprocessorInBridge;
+  in1?: MicroprocessorIn;
   out1?: {};
 }
 

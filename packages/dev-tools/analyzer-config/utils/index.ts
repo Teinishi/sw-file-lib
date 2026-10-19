@@ -39,3 +39,28 @@ export function generateTSDoc(
 
   return doc;
 }
+
+export function xmlLocationMatches(
+  xmlLocation: XmlLocation,
+  pattern: readonly (string | RegExp)[],
+): boolean {
+  if (xmlLocation.length !== pattern.length) {
+    return false;
+  }
+  for (let i = 0; i < xmlLocation.length; i++) {
+    const xmlPart = xmlLocation[i]!;
+    const patternPart = pattern[i]!;
+    if (typeof patternPart === "string") {
+      if (xmlPart !== patternPart) {
+        return false;
+      }
+    } else if (patternPart instanceof RegExp) {
+      if (!patternPart.test(xmlPart)) {
+        return false;
+      }
+    } else {
+      throw new Error(`Invalid pattern part: ${patternPart}`);
+    }
+  }
+  return true;
+}

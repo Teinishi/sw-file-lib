@@ -1,6 +1,10 @@
-import type { XmlLocation } from "./analyzer";
 import type { GenerateCodeOptions } from "./generate-code";
-import type { AttributeTypeRules, SchemaMergeGroups, SchemaOverrides } from "./schema";
+import type {
+  AttributeTypeRules,
+  ForceKindConfig,
+  SchemaMergeGroups,
+  SchemaOverrides,
+} from "./schema";
 
 export * from "./analyzer";
 export * from "./schema";
@@ -28,9 +32,7 @@ export interface Config extends GenerateCodeOptions {
   readonly input: string | readonly string[];
   readonly out: string;
   readonly predefinedSchemas?: Readonly<Record<string, Readonly<Record<string, PredefinedSchema>>>>;
-  readonly forceKind?:
-    | Readonly<Record<string, "object" | "list" | "metalist">>
-    | ((xmlLocation: XmlLocation) => "object" | "list" | "metalist" | undefined);
+  readonly forceKind?: ForceKindConfig;
   readonly mergeNumberSuffix?: boolean;
   readonly schemaOverrides?: SchemaOverrides;
   readonly mergeSchemas?: SchemaMergeGroups;

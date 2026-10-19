@@ -250,7 +250,7 @@ mergeSchemas(xmlLocation) {
 Group keys are matching identifiers, not output interface names. Use
 `interfaceNames` to name the shared interface. All XML locations are retained and
 internal references point to the merged schema. Callbacks run once per
-object/metalist location, before merging.
+object/list/metalist location, before merging.
 
 Grouping `{ x: number }` and `{ y: number }` produces `{ x?: number; y?: number }`.
 Properties missing from either schema become optional. Common properties retain
@@ -260,13 +260,14 @@ forced to merge: group their paths separately if needed. Empty elements can
 participate when selected as objects with `forceKind`.
 
 Explicit groups stay separate from other groups and ungrouped schemas, even when
-their structures match. They take priority over `predefinedSchemas` and generate
-local interfaces. `schemaOverrides` applies before merging. `mergeNumberSuffix`
+their structures match. Object/metalist groups take priority over `predefinedSchemas`
+and generate local interfaces. List groups share item information without creating
+a container interface. `schemaOverrides` applies before merging. `mergeNumberSuffix`
 continues to apply to ungrouped schemas without crossing group boundaries.
 
 A path matching multiple groups is an error. Exact selectors must identify
-existing object or metalist schemas; unmatched paths and list container paths are
-errors. Select the item element to group list items. Regexes and callbacks may
+existing object, list, or metalist schemas; unmatched paths are errors.
+Select the item element to merge differing item schemas themselves. Regexes and callbacks may
 match no elements. Regex `lastIndex` does not affect matching and is not modified,
 including for global/sticky expressions.
 
@@ -277,6 +278,85 @@ Unrepresentable list unions still fail during code generation.
 
 Grouping runs on cached analysis, so changing `mergeSchemas` needs no `--refresh`.
 The same option is accepted by `generateSchema`.
+
+### Explicit element kinds
+
+`forceKind` accepts `"object"`, `["list", itemTag]`, or `["metalist", itemTag]`.
+The list/metalist tuples require a nonempty item tag, including for empty elements:
+
+```ts
+forceKind: {
+  "root/object": "object",
+  "root/list": ["list", "item"],
+  "root/metalist": ["metalist", "entry"],
+},
+```
+
+Callbacks return the same `ForceKindOption` values (readonly tuples are accepted):
+
+```ts
+forceKind(xmlLocation) {
+  return xmlLocation.at(-1) === "entries"
+    ? ["metalist", "entry"]
+    : undefined;
+},
+```
+
+`undefined` preserves automatic inference. Legacy bare `"list"`/`"metalist"` values
+are no longer accepted. A list rejects child tags other than its configured item
+tag. A metalist uses that tag for `items` and keeps attributes and other child
+elements in `meta`; non-item child tags must not repeat. Thus a single item is
+unambiguous without consulting other elements or a merge group.
+
+### Empty lists and metalists
+
+An empty element selected as a list with `forceKind` is kept unresolved until
+merging completes. Its configured tag is retained. A populated list with the same
+tag in the same `mergeSchemas` group supplies the item type:
+
+```ts
+forceKind: { "root/empty": ["list", "item"] },
+mergeSchemas: { lists: ["root/empty", "root/populated"] },
+```
+
+For `<root><empty/><populated><item x="3"/><item x="4"/></populated></root>`,
+both properties become `Item[]` with `// @xml-schema list "item"` markers.
+The empty list remains a present property; emptiness alone does not make it optional.
+
+This also works when merged parent objects contain the same list property: an
+empty `root/a/items` can learn from `root/b/items` when `root/a` and `root/b` are
+grouped. Input order does not matter. Analysis caches are preserved.
+
+If no item type can be determined after merging, schema generation warns with
+the unresolved XML paths and configured item tag, then creates an empty item
+interface and continues. Its XML locations are the container paths followed by
+the item tag, so `interfaceNames` and `generateTSDoc` can also describe it.
+Lists in unrelated groups do not supply evidence.
+Multiple child tags remain invalid. Directly grouped lists with known item types
+must agree on the item tag and type; group their item paths separately if needed.
+List groups cannot be mixed with object/metalist groups.
+
+Metalists selected with `forceKind: ["metalist", itemTag]` likewise defer missing item
+information until merging. Attributes and non-item child elements stay in `meta`.
+A populated metalist with the same tag in the same group supplies the item schema:
+
+```ts
+forceKind: { "root/empty": ["metalist", "item"] },
+mergeSchemas: { collections: ["root/empty", "root/populated"] },
+```
+
+This supports an empty element such as `<empty size="0"/>` and a populated member
+such as `<populated size="2"><item x="3"/><item x="4"/></populated>`, regardless
+of their order. The shared interface keeps required `meta` and `items` wrappers.
+Metadata schemas are merged as usual; fields absent from a member become optional.
+
+The configured tag distinguishes even a single item from metadata children;
+no tag guessing from other group members is performed. If the item type is still
+unknown after merging, a warning lists the unresolved metalist paths and item tag.
+An empty item schema is used, inlined into `items: {}[]` as with other metalist
+items; the required `meta` and `items` wrappers and metadata are preserved.
+Evidence from unrelated groups is not used.
+Conflicting tags/types or multiple repeating child types remain errors.
 
 ## Inferring attribute types
 
