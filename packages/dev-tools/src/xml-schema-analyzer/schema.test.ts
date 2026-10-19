@@ -19,6 +19,102 @@ function at(entries: SchemaEntry[], path: string): SchemaEntry {
   return entry!;
 }
 
+describe("attributeTypes", () => {
+  it("overrides present attributes by name without adding missing attributes or changing child elements", async () => {
+    const config = await defineConfig({
+      input: "*.xml",
+      out: "schema.ts",
+      attributeTypes: { text: "string" },
+    });
+    const data = document(
+      '<root id="test"><a text="123"/><b text="true"/><other value="3"/><text value="4"/></root>',
+    );
+    const original = generateSchema(data);
+    const entries = generateSchema(data, config);
+    expect(at(entries, "root/a").properties.text?.type).toEqual({ kind: "inline", type: "string" });
+    expect(at(entries, "root/a")).toBe(at(entries, "root/b"));
+    expect(at(entries, "root/other").properties).not.toHaveProperty("text");
+    expect(at(entries, "root").properties.text?.type.kind).toBe("object");
+    expect(generateCode(entries)).toContain("text: string;");
+    expect(generateSchema(data)).toEqual(original);
+  });
+
+  it("supports path-aware callbacks and preserves inference when undefined is returned", () => {
+    const calls: string[] = [];
+    const entries = generateSchema(
+      document('<root id="test"><label text="123"/><other text="456"/></root>'),
+      {
+        attributeTypes(name, location) {
+          calls.push(`${location.join("/")}/@${name}`);
+          return name === "text" && location.at(-1) === "label" ? "string" : undefined;
+        },
+      },
+    );
+    expect(at(entries, "root/label").properties.text?.type).toEqual({
+      kind: "inline",
+      type: "string",
+    });
+    expect(at(entries, "root/other").properties.text?.type).toEqual({
+      kind: "inline",
+      type: "number",
+    });
+    expect(calls.toSorted()).toEqual(["root/@id", "root/label/@text", "root/other/@text"]);
+  });
+
+  it("preserves metadata for unchanged types and clears it when replacing a union", () => {
+    const data = document('<a text="123" value="3"/>', '<a text="true" value="5"/>');
+    const original = at(generateSchema(data), "a");
+    const corrected = at(
+      generateSchema(data, { attributeTypes: { text: "string", value: "number" } }),
+      "a",
+    );
+    expect(corrected.properties.value).toEqual(original.properties.value);
+    expect(corrected.properties.text).toMatchObject({
+      type: { kind: "inline", type: "string" },
+      possibleValues: null,
+      numberRange: null,
+    });
+  });
+
+  it("preserves optionality and lets schemaOverrides take precedence", () => {
+    const data = document('<a value="3"/>', '<a value="4" text="123"/>');
+    const entries = generateSchema(data, { attributeTypes: { text: "string" } });
+    expect(at(entries, "a").properties.text?.isOptional).toBe(true);
+    const overridden = generateSchema(data, {
+      attributeTypes: { text: "string" },
+      schemaOverrides: { a: { properties: { text: { type: "number", optional: false } } } },
+    });
+    expect(at(overridden, "a").properties.text).toMatchObject({
+      type: { kind: "inline", type: "number" },
+      isOptional: false,
+    });
+  });
+
+  it("applies before predefined schema matching", () => {
+    const entries = generateSchema(document('<root id="test"><a text="123"/></root>'), {
+      attributeTypes: { text: "string" },
+      predefinedSchemas: {
+        "./shared": {
+          Text: { kind: "object", properties: { text: { type: "string", optional: false } } },
+        },
+      },
+    });
+    expect(generateCode(entries)).toContain('import type { Text } from "./shared";');
+  });
+
+  it("applies to metalist metadata and its inlined items", () => {
+    const entries = generateSchema(
+      document('<foo text="123"><item text="456"/><item text="789"/></foo>'),
+      {
+        attributeTypes: { text: "string" },
+      },
+    );
+    const code = generateCode(entries);
+    expect(code).toContain("meta: {\n    text: string;");
+    expect(code).toContain("items: {\n    text: string;");
+  });
+});
+
 describe("mergeSchemas", () => {
   it.each([false, true])(
     "merges partial objects without absorbing unrelated schemas (unrelated first: %s)",

@@ -301,6 +301,48 @@ sample order. `"0"` and `"1"` are numbers. Observed types are retained even when
 possible-values limit is exceeded; numeric ranges describe only numeric samples.
 `schemaOverrides` takes priority over inferred unions as well as individual types.
 
+### Attribute type rules
+
+Use `attributeTypes` to assign a primitive type to existing attributes by name,
+regardless of their observed values:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  attributeTypes: {
+    text: "string",
+  },
+});
+```
+
+For example, `<label text="123"/>` produces `text: string` rather than
+`text: number`. Supported types are `string`, `number`, and `boolean`. Rules apply
+only to actual attributes, not child elements, and never add missing attributes.
+
+For path-specific rules, use a synchronous callback:
+
+```ts
+attributeTypes(attributeName, xmlLocation) {
+  if (attributeName === "text" && xmlLocation.at(-1) === "label") {
+    return "string";
+  }
+  return undefined;
+},
+```
+
+The callback receives the attribute name and the readonly tag-name array of its
+containing element. Returning `undefined` preserves inference. It runs once per
+attribute per analyzed XML location, including metalist metadata and object items.
+Optionality is preserved. Value candidates and numeric ranges are cleared when
+the inferred type changes; original analysis remains available in the cache and
+TSDoc context.
+
+Rules apply during schema generation, before `schemaOverrides`, predefined schema
+matching, and merging. More specific `schemaOverrides` take priority. Changing
+`attributeTypes` does not require `--refresh`; the option is also supported by
+`generateSchema`.
+
 ### Preferring string in unions
 
 Set `preferStringInUnions: true` in config (or `generateCode` options) to omit
@@ -386,6 +428,7 @@ every run. The following config changes have these effects:
 | `mergeNumberSuffix`     | No                    | Controls schema merging.                                                                       |
 | `mergeSchemas`          | No                    | Groups partially observed object/metalist schemas.                                             |
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
+| `attributeTypes`        | No                    | Overrides attribute types by name or a path-aware callback.                                    |
 | `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
 | `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |
 | `preferStringInUnions`  | No                    | Omits number/boolean from output unions containing string.                                     |

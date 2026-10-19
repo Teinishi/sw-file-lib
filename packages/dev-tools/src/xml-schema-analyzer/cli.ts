@@ -43,6 +43,7 @@ program
     let generateTSDoc: Config["generateTSDoc"];
     let schemaOverrides: Config["schemaOverrides"];
     let mergeSchemas: Config["mergeSchemas"];
+    let attributeTypes: Config["attributeTypes"];
 
     if (options.config) {
       const config = await loadConfig(options.config);
@@ -59,6 +60,7 @@ program
       generateTSDoc = config.generateTSDoc;
       schemaOverrides = config.schemaOverrides;
       mergeSchemas = config.mergeSchemas;
+      attributeTypes = config.attributeTypes;
     } else {
       if (!options.input || !options.out) {
         program.error(
@@ -98,6 +100,7 @@ program
       mergeNumberSuffix,
       schemaOverrides,
       mergeSchemas,
+      attributeTypes,
     });
 
     const code = generateCode(

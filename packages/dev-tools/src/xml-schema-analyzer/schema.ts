@@ -1,4 +1,4 @@
-import type { PredefinedSchema, PredefinedSchemaProperty } from ".";
+import type { PredefinedSchema, PredefinedSchemaProperty, PredefinedSchemaType } from ".";
 import {
   unionRanges,
   type DocumentData,
@@ -20,6 +20,10 @@ export interface SchemaOverride {
 export type SchemaOverrides =
   | Readonly<Record<string, SchemaOverride>>
   | ((xmlLocation: XmlLocation) => SchemaOverride | undefined);
+
+export type AttributeTypeRules =
+  | Readonly<Record<string, PredefinedSchemaType>>
+  | ((attributeName: string, xmlLocation: XmlLocation) => PredefinedSchemaType | undefined);
 
 export type SchemaMergeSelector = string | RegExp;
 export type SchemaMergeGroups =
@@ -60,6 +64,8 @@ export interface GenerateSchemaOptions {
   schemaOverrides?: SchemaOverrides | undefined;
   /** Explicit groups merge partial schemas and stay separate from automatic structural merging. */
   mergeSchemas?: SchemaMergeGroups | undefined;
+  /** Override inferred types of existing XML attributes before schema overrides and merging. */
+  attributeTypes?: AttributeTypeRules | undefined;
 }
 
 export type SchemaReference =
@@ -301,12 +307,29 @@ function generateObjectSchema(
         }),
       );
 
+    const inferredType = createUnionType(types);
+    const rules = options.attributeTypes;
+    const forcedType =
+      typeof rules === "function"
+        ? rules(attrName, xmlLocation)
+        : Object.hasOwn(rules ?? {}, attrName)
+          ? rules![attrName]
+          : undefined;
+    if (forcedType !== undefined && !["string", "number", "boolean"].includes(forcedType)) {
+      throw new Error(
+        `Invalid attributeTypes result for ${xmlPath}/@${attrName}: ${JSON.stringify(forcedType)}.`,
+      );
+    }
+    const type: SchemaTypeData =
+      forcedType === undefined ? inferredType : { kind: "inline", type: forcedType };
+    const sameType = schemaTypeDataEqual(inferredType, type);
     properties[attrName] = {
       key: attrName,
       isOptional: attrData.isOptional,
-      type: createUnionType(types),
-      possibleValues: attrData.possibleValues ? Array.from(attrData.possibleValues) : null,
-      numberRange: attrData.numberRange,
+      type,
+      possibleValues:
+        sameType && attrData.possibleValues ? Array.from(attrData.possibleValues) : null,
+      numberRange: sameType ? attrData.numberRange : null,
     };
   }
 

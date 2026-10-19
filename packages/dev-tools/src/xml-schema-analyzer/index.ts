@@ -1,6 +1,6 @@
 import type { XmlLocation } from "./analyzer";
 import type { GenerateCodeOptions } from "./generate-code";
-import type { SchemaMergeGroups, SchemaOverrides } from "./schema";
+import type { AttributeTypeRules, SchemaMergeGroups, SchemaOverrides } from "./schema";
 
 export * from "./analyzer";
 export * from "./schema";
@@ -34,6 +34,7 @@ export interface Config extends GenerateCodeOptions {
   readonly mergeNumberSuffix?: boolean;
   readonly schemaOverrides?: SchemaOverrides;
   readonly mergeSchemas?: SchemaMergeGroups;
+  readonly attributeTypes?: AttributeTypeRules;
 }
 
 export type AcceptableConfig = (() => Promise<Config>) | Promise<Config> | (() => Config) | Config;
