@@ -36,7 +36,8 @@
     "analyze": "tsx ./src/xml-schema-analyzer/cli.ts",
     "analyze:component": "pnpm run analyze --config analyzer-config/component-definition.ts",
     "analyze:vehicle": "pnpm run analyze --config analyzer-config/vehicle.ts",
-    "analyze:microcontroller": "pnpm run analyze --config analyzer-config/microcontroller.ts"
+    "analyze:microcontroller": "pnpm run analyze --config analyzer-config/microcontroller.ts",
+    "analyze:all": "pnpm run analyze:component && pnpm run analyze:vehicle && pnpm run analyze:microcontroller"
   },
   "dependencies": {
     "@sw-file-lib/test-utils": "workspace:*",

@@ -27,6 +27,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
+    "analyze-xml": "pnpm --filter dev-tools analyze:all",
     "codegen": "xml-schema-codegen --config xml-schema.config.ts",
     "codegen:check": "pnpm codegen --check",
     "check": "pnpm codegen:check && pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
