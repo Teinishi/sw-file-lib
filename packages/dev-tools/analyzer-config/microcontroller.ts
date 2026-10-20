@@ -1,5 +1,5 @@
 import path from "node:path";
-import { loadWorkspaceEnv } from "@sw-file-lib/test-utils";
+import { findWorkspaceRoot, loadWorkspaceEnv } from "@sw-file-lib/test-utils";
 import { defineConfig } from "../src/xml-schema-analyzer";
 import { generateTSDoc, predefinedSchemas } from "./utils";
 
@@ -23,10 +23,11 @@ const FORCE_KIND = [
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_MICROCONTROLLERS_PATH"]!, "*.xml");
+  const root = await findWorkspaceRoot();
 
   return {
     input,
-    out: ".tmp/microcontroller.ts",
+    out: path.join(root, "packages", "xml", "src", "schemas", "microcontroller.ts"),
     precedingCode:
       'export * from "./generated/microcontroller-schema";\nexport * from "./generated/microcontroller-immutable";\n',
     predefinedSchemas,
