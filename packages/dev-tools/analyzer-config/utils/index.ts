@@ -11,19 +11,51 @@ function formatXmlLocation(xmlLocation: XmlLocation): string {
   return xmlLocation.map((tag) => `<${tag}>`).join(" / ");
 }
 
+function reduceNumbersInStrings(strings: Iterable<string>): string[] {
+  const groups = new Map<string, string[][]>();
+
+  for (const str of strings) {
+    const parts = str.split(/(\d+)/);
+    const key = parts.map((p, i) => (i % 2 ? "*" : p)).join("");
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(parts);
+  }
+
+  const result: string[] = [];
+
+  for (const group of groups.values()) {
+    const merged = group[0]!.map((part, i) => {
+      if (i % 2 === 0) return part;
+
+      const values = new Set(group.map((parts) => parts[i]));
+      return values.size > 1 ? "*" : part;
+    });
+
+    result.push(merged.join(""));
+  }
+
+  return result;
+}
+
 export function generateTSDoc(
   dataKind: string,
   { identifier, xmlLocations, parents }: InterfaceTSDocContext,
 ) {
-  const tagNames = new Set(xmlLocations.map((path) => path.at(-1)!));
+  const tagNames = reduceNumbersInStrings(new Set(xmlLocations.map((path) => path.at(-1)!)));
   let doc = `Represents ${disjunctionFormatter.format(tagNames.values().map((t) => `\`<${t}>\` element`))} in ${dataKind}.`;
 
   if (xmlLocations.length === 1) {
     doc += `\n\nXML location: \`${formatXmlLocation(xmlLocations[0]!)}\``;
   } else {
     doc += "\n\nXML locations:";
-    for (const xmlPath of xmlLocations) {
-      doc += `\n- \`${formatXmlLocation(xmlPath)}\``;
+    const reducedPaths = reduceNumbersInStrings(
+      xmlLocations.map((path) => formatXmlLocation(path)),
+    );
+    for (const path of reducedPaths) {
+      doc += `\n- \`${path}\``;
     }
   }
 
