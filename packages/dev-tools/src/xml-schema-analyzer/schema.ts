@@ -86,6 +86,7 @@ export type SchemaTypeData =
   | { readonly kind: "inline"; readonly type: "string" | "number" | "boolean" | "{}" }
   | { readonly kind: "object"; readonly ref: SchemaReference }
   | { readonly kind: "list"; readonly itemTag: string; readonly itemRef: SchemaTypeData }
+  | { readonly kind: "record"; readonly itemRef: SchemaTypeData }
   | { readonly kind: "union"; readonly types: SchemaTypeData[] };
 
 export interface SchemaPropertyData {
@@ -135,7 +136,16 @@ function createUnionType(types: SchemaTypeData[]): SchemaTypeData {
   const knownLists = flattenedTypes.filter(
     (type): type is ListSchemaType => type.kind === "list" && !isUnresolvedItem(type.itemRef),
   );
+  const knownRecords = flattenedTypes.filter(
+    (type): type is Extract<SchemaTypeData, { kind: "record" }> =>
+      type.kind === "record" && !isUnresolvedItem(type.itemRef),
+  );
   for (const type of flattenedTypes) {
+    if (type.kind === "record" && isUnresolvedItem(type.itemRef)) {
+      const known = knownRecords[0];
+      if (known && knownRecords.every((candidate) => schemaTypeDataEqual(candidate, known)))
+        Object.assign(type, { itemRef: known.itemRef });
+    }
     if (type.kind === "list" && isUnresolvedItem(type.itemRef)) {
       const candidates = knownLists.filter((known) => known.itemTag === type.itemTag);
       const known = candidates[0];
@@ -173,6 +183,8 @@ function schemaTypeDataEqual(a: SchemaTypeData, b: SchemaTypeData): boolean {
       return a.type === (b as any).type;
     case "object":
       return schemaReferenceEqual(a.ref, (b as any).ref);
+    case "record":
+      return b.kind === "record" && schemaTypeDataEqual(a.itemRef, b.itemRef);
     case "list":
       if (isUnresolvedItem(a.itemRef) || (b.kind === "list" && isUnresolvedItem(b.itemRef)))
         return a === b;
@@ -295,6 +307,11 @@ type RegisterEntryFn = (
 type ListSchemaType = Extract<SchemaTypeData, { kind: "list" }>;
 interface SchemaBuildOptions extends GenerateSchemaOptions {
   registerList: (xmlLocation: XmlLocation, type: ListSchemaType) => ListSchemaType;
+  registerRecord: (
+    xmlLocation: XmlLocation,
+    group: string | undefined,
+    itemRef?: SchemaTypeData,
+  ) => Extract<SchemaTypeData, { kind: "record" }>;
 }
 
 function generateObjectSchema(
@@ -501,6 +518,66 @@ function generateMetalistSchema(
   return { ...result, dependencies: [...dependencies, ...result.dependencies] };
 }
 
+function generateRecordSchema(
+  xmlLocation: XmlLocation,
+  nodeData: NodeData,
+  registerEntry: RegisterEntryFn,
+  options: SchemaBuildOptions,
+): { dependencies: SchemaReference[]; data: SchemaTypeData } {
+  const xmlPath = xmlLocation.join("/");
+  if (xmlLocation.length === 1) throw new Error(`Root record is not supported at ${xmlPath}.`);
+  if (nodeData.attributes.size > 0)
+    throw new Error(`Record node at ${xmlPath} must not have attributes.`);
+  if ([...nodeData.childCountMap.values()].some((range) => range.max > 1))
+    throw new Error(`Record node at ${xmlPath} must have unique child tags.`);
+
+  const mergeGroup = getMergeGroup(xmlLocation, options.mergeSchemas);
+  const data = options.registerRecord(xmlLocation, mergeGroup);
+  const itemPaths = new Set([...nodeData.children.keys()].map((tag) => `${xmlPath}/${tag}`));
+  const explicitGroups = new Set(
+    [...itemPaths]
+      .map((path) => getMergeGroup(path.split("/"), options.mergeSchemas))
+      .filter((group) => group !== undefined && !group.startsWith("\0record-items:")),
+  );
+  if (explicitGroups.size > 1)
+    throw new Error(`Record items at ${xmlPath} belong to different mergeSchemas groups.`);
+  const group =
+    [...explicitGroups][0] ??
+    `\0record-items:${mergeGroup === undefined ? `path:${xmlPath}` : `group:${mergeGroup}`}`;
+  const itemOptions: SchemaBuildOptions = {
+    ...options,
+    mergeSchemas: (location) => {
+      const path = location.join("/");
+      if (itemPaths.has(path)) return group;
+      const explicit = getMergeGroup(location, options.mergeSchemas);
+      if (explicit !== undefined && !explicit.startsWith("\0record-items:")) return explicit;
+      // The dynamic key is not part of an item's structural path. Merge matching
+      // descendants too, so partial nested objects and metalist items share a type.
+      if (
+        location.length > xmlLocation.length + 1 &&
+        itemPaths.has(location.slice(0, xmlLocation.length + 1).join("/"))
+      )
+        return `${group}/${location.slice(xmlLocation.length + 1).join("/")}`;
+      return explicit;
+    },
+  };
+  const dependencies: SchemaReference[] = [];
+  for (const [tag, child] of nodeData.children) {
+    const item = generateNodeSchema([...xmlLocation, tag], child, registerEntry, itemOptions);
+    if (item.data.kind === "list")
+      throw new Error(`Record values cannot be lists at ${xmlPath}/${tag}.`);
+    if (
+      item.data.kind !== "object" &&
+      item.data.kind !== "record" &&
+      !(item.data.kind === "inline" && item.data.type === "{}")
+    )
+      throw new Error(`Cannot determine a common record item schema at ${xmlPath}.`);
+    dependencies.push(...item.dependencies);
+    options.registerRecord(xmlLocation, mergeGroup, item.data);
+  }
+  return { dependencies, data };
+}
+
 function generateNodeSchema(
   xmlLocation: XmlLocation,
   nodeData: NodeData,
@@ -514,10 +591,10 @@ function generateNodeSchema(
       ? options?.forceKind(xmlLocation)
       : options?.forceKind?.[xmlPath];
 
-  let kind: "object" | "list" | "metalist" | undefined;
+  let kind: "object" | "list" | "metalist" | "record" | undefined;
   let itemTag: string | undefined;
   if (forcedKind !== undefined) {
-    if (forcedKind === "object") kind = "object";
+    if (forcedKind === "object" || forcedKind === "record") kind = forcedKind;
     else if (
       Array.isArray(forcedKind) &&
       forcedKind.length === 2 &&
@@ -550,6 +627,8 @@ function generateNodeSchema(
   }
 
   switch (kind) {
+    case "record":
+      return generateRecordSchema(xmlLocation, nodeData, registerEntry, options);
     case "object":
       return generateObjectSchema(xmlLocation, nodeData, registerEntry, options);
     case "list":
@@ -650,6 +729,11 @@ export function generateSchema(
     { data: { kind: "list"; itemTag: string; itemRef: SchemaTypeData }; locations: XmlLocation[] }
   >();
   const listLocations = new WeakMap<ListSchemaType, readonly XmlLocation[]>();
+  const recordGroups = new Map<
+    string,
+    { data: { kind: "record"; itemRef: SchemaTypeData }; locations: XmlLocation[] }
+  >();
+  const recordMergeGroups = new Set<string>();
   const unmatchedMergePaths = new Set(
     typeof options?.mergeSchemas === "function"
       ? []
@@ -660,12 +744,46 @@ export function generateSchema(
         }),
   );
 
+  function registerRecord(
+    xmlLocation: XmlLocation,
+    group: string | undefined,
+    itemRef?: SchemaTypeData,
+  ): Extract<SchemaTypeData, { kind: "record" }> {
+    const xmlPath = xmlLocation.join("/");
+    if (group !== undefined) {
+      if (listGroups.has(group) || [...mergeGroups.values()].includes(group))
+        throw new Error(
+          `Cannot merge record and other schema kinds in mergeSchemas group ${group} at ${xmlPath}.`,
+        );
+      recordMergeGroups.add(group);
+    }
+    unmatchedMergePaths.delete(xmlPath);
+    const key = group === undefined ? `path:${xmlPath}` : `group:${group}`;
+    let existing = recordGroups.get(key);
+    if (!existing) {
+      existing = { data: { kind: "record", itemRef: { kind: "union", types: [] } }, locations: [] };
+      recordGroups.set(key, existing);
+    }
+    if (!existing.locations.some((location) => location.join("/") === xmlPath))
+      existing.locations.push(xmlLocation);
+    if (itemRef !== undefined) {
+      if (isUnresolvedItem(existing.data.itemRef)) existing.data.itemRef = itemRef;
+      else if (!schemaTypeDataEqual(existing.data.itemRef, itemRef))
+        throw new Error(
+          `Cannot determine a common record item schema at ${xmlPath}; merge item schemas into one element schema.`,
+        );
+    }
+    return existing.data;
+  }
+
   function registerList(xmlLocation: XmlLocation, type: ListSchemaType): ListSchemaType {
     const group = getMergeGroup(xmlLocation, options?.mergeSchemas);
     listLocations.set(type, [xmlLocation]);
     if (group === undefined) return type;
     const xmlPath = xmlLocation.join("/");
     unmatchedMergePaths.delete(xmlPath);
+    if (recordMergeGroups.has(group))
+      throw new Error(`Cannot merge list and record in mergeSchemas group ${group} at ${xmlPath}.`);
     if ([...mergeGroups.values()].includes(group)) {
       throw new Error(
         `Cannot merge list and object/metalist in mergeSchemas group ${group} at ${xmlPath}.`,
@@ -703,6 +821,10 @@ export function generateSchema(
     mergeGroup: string | undefined,
   ): SchemaReference {
     const xmlPath = entry.xmlLocations[0]!.join("/");
+    if (mergeGroup !== undefined && recordMergeGroups.has(mergeGroup))
+      throw new Error(
+        `Cannot merge record and object/metalist in mergeSchemas group ${mergeGroup} at ${xmlPath}.`,
+      );
     if (mergeGroup !== undefined && listGroups.has(mergeGroup)) {
       throw new Error(
         `Cannot merge list and object/metalist in mergeSchemas group ${mergeGroup} at ${xmlPath}.`,
@@ -829,6 +951,7 @@ export function generateSchema(
   const buildOptions: SchemaBuildOptions = {
     ...options,
     registerList,
+    registerRecord,
   };
   for (const [tag, nodeData] of documentData.elements) {
     rootTypes.push(generateNodeSchema([tag], nodeData, registerEntry, buildOptions).data);
@@ -846,7 +969,7 @@ export function generateSchema(
     const normalized =
       type.kind === "union"
         ? createUnionType(type.types.map(normalizeLists))
-        : type.kind === "list" && !isUnresolvedItem(type.itemRef)
+        : (type.kind === "list" || type.kind === "record") && !isUnresolvedItem(type.itemRef)
           ? { ...type, itemRef: normalizeLists(type.itemRef) }
           : type;
     normalizing.delete(type);
@@ -882,7 +1005,9 @@ export function generateSchema(
     missingItems.set(type, uses);
   };
   const checkLists = (type: SchemaTypeData): void => {
-    if (type.kind === "list") {
+    if (type.kind === "record") {
+      if (!isUnresolvedItem(type.itemRef)) checkLists(type.itemRef);
+    } else if (type.kind === "list") {
       if (isUnresolvedItem(type.itemRef)) {
         addMissing(type.itemRef, {
           kind: "List",
@@ -933,6 +1058,13 @@ export function generateSchema(
     missingGroups.set(root, [...(missingGroups.get(root) ?? []), ...uses]);
   }
   const replacements = new Map<SchemaTypeData, SchemaTypeData>();
+  for (const { data, locations } of recordGroups.values()) {
+    if (!isUnresolvedItem(data.itemRef)) continue;
+    replacements.set(data.itemRef, { kind: "inline", type: "{}" });
+    consola.warn(
+      `Record item schema could not be determined after merging at XML paths: ${locations.map((location) => location.join("/")).join(", ")}; using Record<string, {}>.`,
+    );
+  }
   for (const [type, uses] of missingGroups) {
     const itemTag = uses[0]!.itemTag;
     const locations = jsonUnique(uses.flatMap((use) => use.locations));
@@ -955,7 +1087,8 @@ export function generateSchema(
   const replaceMissing = (type: SchemaTypeData): SchemaTypeData => {
     const replacement = replacements.get(canonical(type));
     if (replacement) return replacement;
-    if (type.kind === "list") return { ...type, itemRef: replaceMissing(type.itemRef) };
+    if (type.kind === "list" || type.kind === "record")
+      return { ...type, itemRef: replaceMissing(type.itemRef) };
     if (type.kind === "union") return createUnionType(type.types.map(replaceMissing));
     return type;
   };

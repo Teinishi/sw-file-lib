@@ -154,6 +154,7 @@ function collectImports(type: SchemaTypeData, imports: Map<string, Set<string>>)
         imports.set(type.ref.importPath, names);
       }
       break;
+    case "record":
     case "list":
       collectImports(type.itemRef, imports);
       break;
@@ -170,7 +171,16 @@ function resolveIdentifiers(
 ): string[] {
   const specified = new Map(Object.entries(options.interfaceNames ?? {}));
   const unmatched = new Set(specified.keys());
-  const reserved = new Set<string>();
+  const containsRecord = (type: SchemaTypeData): boolean =>
+    type.kind === "record" ||
+    (type.kind === "list" && containsRecord(type.itemRef)) ||
+    (type.kind === "union" && type.types.some(containsRecord));
+  const usesRecord = entries.some(
+    (entry) =>
+      Object.values(entry.properties).some((property) => containsRecord(property.type)) ||
+      (entry.kind === "metalist" && containsRecord(entry.itemRef)),
+  );
+  const reserved = new Set<string>(usesRecord ? ["Record"] : []);
   for (const names of imports.values()) {
     for (const name of names) {
       if (reserved.has(name)) throw new Error(`Conflicting external import name: ${name}`);
@@ -242,6 +252,18 @@ function generateSchemaTypeCode(
       return { body: type.type };
     case "object":
       return { body: getIdentifier(type.ref) };
+    case "record": {
+      const item = generateSchemaTypeCode(type.itemRef, getIdentifier, location, options);
+      if (
+        item.comment ||
+        item.isUnion ||
+        (type.itemRef.kind === "inline" && type.itemRef.type !== "{}")
+      )
+        throw new Error(
+          `Cannot represent record item type at ${location}; expected one non-list element schema.`,
+        );
+      return { body: `Record<string, ${item.body}>` };
+    }
     case "list":
       const itemCode = generateSchemaTypeCode(type.itemRef, getIdentifier, location, options);
       if (itemCode.comment) {
@@ -380,11 +402,18 @@ function generateCodeEntry(
         } else {
           itemBody = getIdentifier(entry.itemRef.ref);
         }
+      } else if (entry.itemRef.kind === "record") {
+        itemBody = generateSchemaTypeCode(
+          entry.itemRef,
+          getIdentifier,
+          `${identifier}.items`,
+          options,
+        ).body;
       } else if (entry.itemRef.kind === "inline" && entry.itemRef.type === "{}") {
         itemBody = "{}";
       } else {
         throw new Error(
-          `Cannot represent metalist item type at ${identifier}.items: expected an object or metalist reference.`,
+          `Cannot represent metalist item type at ${identifier}.items: expected an object, metalist or record.`,
         );
       }
       return `export interface ${identifier} {\n  meta: ${metaCode.replace(/\n/g, "\n  ")};\n  items: ${itemBody}[];\n}\n`;
@@ -406,6 +435,7 @@ export function generateCode(
       case "object":
         if (type.ref.kind === "internal") referencedEntries.add(type.ref.index);
         break;
+      case "record":
       case "list":
         collectReferences(type.itemRef);
         break;
@@ -485,6 +515,9 @@ export function generateCode(
           break;
         case "list":
           visit(type.itemRef, `${propertyPath}[]`);
+          break;
+        case "record":
+          visit(type.itemRef, `${propertyPath}[key]`);
           break;
         case "union":
           for (const member of type.types) visit(member, propertyPath);

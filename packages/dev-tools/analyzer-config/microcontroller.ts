@@ -17,6 +17,7 @@ const FORCE_KIND = [
     /^microprocessor\/group\/(components\/c\/object|component(_bridge)?_states\/c\d+)\/items$/,
     ["list", "i"],
   ],
+  [/^microprocessor\/group\/component(_bridge)?_states$/, "record"],
 ] as const;
 
 export default defineConfig(async () => {

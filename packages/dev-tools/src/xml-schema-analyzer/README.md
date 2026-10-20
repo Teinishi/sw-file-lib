@@ -281,7 +281,7 @@ The same option is accepted by `generateSchema`.
 
 ### Explicit element kinds
 
-`forceKind` accepts `"object"`, `["list", itemTag]`, or `["metalist", itemTag]`.
+`forceKind` accepts `"object"`, `"record"`, `["list", itemTag]`, or `["metalist", itemTag]`.
 The list/metalist tuples require a nonempty item tag, including for empty elements:
 
 ```ts
@@ -357,6 +357,40 @@ An empty item schema is used, inlined into `items: {}[]` as with other metalist
 items; the required `meta` and `items` wrappers and metadata are preserved.
 Evidence from unrelated groups is not used.
 Conflicting tags/types or multiple repeating child types remain errors.
+
+### Records
+
+Records are selected only by `forceKind`; automatic object/list/metalist detection
+is unchanged. Both record and callback config forms support `"record"`:
+
+```ts
+forceKind: { "root/values": "record" },
+```
+
+For `<root id="root"><values><alpha x="1"/><beta y="2"/></values></root>`,
+the `values` property becomes `Record<string, Alpha>`, with a common item interface
+containing optional `x` and `y` properties. All observed child tags contribute to
+one item schema, including matching nested objects and metalist items. The item
+interface retains all its actual XML locations, so attribute rules, overrides,
+interface names and TSDoc generation remain available. Parent links in TSDoc use
+paths such as `values[key]`. `Record` is reserved as a type name when the generated
+code uses the TypeScript utility type.
+
+Record containers require no attributes and unique child tags within each XML
+element. Repeating a tag in different samples is allowed. Item schemas must merge
+into a single element schema; incompatible kinds are errors. Values that are
+themselves lists and records at the XML root are currently unsupported and produce
+explicit errors. Nested records, metalist values, and records used as list or
+metalist items are supported. Existing ambiguous object/list item detection still
+requires `forceKind` at the item's XML location.
+
+`mergeSchemas` can group record containers to share an item schema. If the item
+type remains unknown after merging, a warning is emitted and the output uses
+`Record<string, {}>` without creating an empty interface. Record fields retain
+normal optionality rules; an empty present container does not make the field
+optional. No record marker or item tag is required. If an explicit merge group
+is assigned to record item paths, the selected item paths must agree on that group.
+Changes to `forceKind` still reuse the raw analysis cache.
 
 ## Inferring attribute types
 
@@ -504,7 +538,7 @@ every run. The following config changes have these effects:
 | ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
 | `input`                 | Yes                   | Selects source XML files.                                                                      |
 | `predefinedSchemas`     | No                    | Matches inferred schemas to external types.                                                    |
-| `forceKind`             | No                    | Selects object/list/metalist during schema generation.                                         |
+| `forceKind`             | No                    | Selects object/list/metalist/record during schema generation.                                  |
 | `mergeNumberSuffix`     | No                    | Controls schema merging.                                                                       |
 | `mergeSchemas`          | No                    | Groups partially observed object/metalist schemas.                                             |
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |

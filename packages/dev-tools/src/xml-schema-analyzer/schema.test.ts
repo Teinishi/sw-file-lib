@@ -30,6 +30,196 @@ function captureWarnings<T>(action: () => T) {
   }
 }
 
+describe("forced records", () => {
+  it("merges partial item objects and preserves paths, overrides and parent links", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><values><alpha x="1" text="123"/><beta y="2" text="hello"/></values></root>',
+      ),
+      {
+        forceKind: { "root/values": "record" },
+        attributeTypes: { text: "string" },
+        schemaOverrides: {
+          "root/values/alpha": { properties: { x: { type: "number", optional: true } } },
+        },
+      },
+    );
+    const item = at(entries, "root/values/alpha");
+    expect(item).toBe(at(entries, "root/values/beta"));
+    expect(item.properties.x?.isOptional).toBe(true);
+    expect(item.properties.y?.isOptional).toBe(true);
+    expect(item.properties.text?.type).toEqual({ kind: "inline", type: "string" });
+    let parents: readonly string[] = [];
+    const code = generateCode(entries, {
+      interfaceNames: { "root/values/alpha": "ValueItem" },
+      generateTSDoc(context) {
+        if (context.schema === item)
+          parents = context.parents.flatMap((parent) => parent.propertyPaths);
+        return "Generated item.";
+      },
+    });
+    expect(code).toContain("values: Record<string, ValueItem>;");
+    expect(code).not.toContain("@xml-schema record");
+    expect(parents).toEqual(["values[key]"]);
+  });
+
+  it("supports callback forceKind and empty inline records without empty interfaces", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(document('<root id="root"><values/></root>'), {
+        forceKind: (location) => (location.join("/") === "root/values" ? "record" : undefined),
+      }),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("root/values");
+    expect(entries).toHaveLength(1);
+    expect(generateCode(entries)).toContain("values: Record<string, {}>;");
+  });
+
+  it.each([false, true])("resolves grouped empty records (empty first: %s)", (emptyFirst) => {
+    const empty = "<empty/>";
+    const full = '<full><one x="1"/><two y="2"/></full>';
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(
+        document(`<root id="root">${emptyFirst ? empty + full : full + empty}</root>`),
+        {
+          forceKind: { "root/empty": "record", "root/full": "record" },
+          mergeSchemas: { records: ["root/empty", "root/full"] },
+        },
+      ),
+    );
+    expect(warnings).toEqual([]);
+    const root = at(entries, "root");
+    expect(root.properties.empty?.type).toEqual(root.properties.full?.type);
+    expect(generateCode(entries)).toContain("empty: Record<string, One>;");
+  });
+
+  it("supports nested records and merges their item schemas", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><values><alpha><one x="1"/></alpha><beta><two y="2"/></beta></values></root>',
+      ),
+      {
+        forceKind: (location) =>
+          location.length === 2 || location.length === 3 ? "record" : undefined,
+      },
+    );
+    expect(at(entries, "root/values/alpha/one")).toBe(at(entries, "root/values/beta/two"));
+    expect(generateCode(entries)).toContain("values: Record<string, Record<string, One>>;");
+  });
+
+  it("supports metalist values", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><values><alpha size="1"><item x="1"/><item x="2"/></alpha><beta size="2"><item x="3"/><item x="4"/></beta></values></root>',
+      ),
+      {
+        forceKind: { "root/values": "record" },
+      },
+    );
+    const code = generateCode(entries);
+    expect(code).toContain("values: Record<string, Alpha>;");
+    expect(code).toContain('// @xml-schema metalist "item"');
+  });
+
+  it.each(["list", "metalist"] as const)("supports records as %s items", (kind) => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><values><item><alpha x="1"/></item><item><beta y="2"/></item></values></root>',
+      ),
+      {
+        forceKind: { "root/values": [kind, "item"], "root/values/item": "record" },
+      },
+    );
+    expect(generateCode(entries)).toContain("Record<string, Alpha>[];");
+  });
+
+  it("merges partial metalist item schemas across record keys", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="root"><values><alpha size="1"><item x="1"/><item x="2"/></alpha><beta size="2"><item y="3"/><item y="4"/></beta></values></root>',
+      ),
+      {
+        forceKind: { "root/values": "record" },
+      },
+    );
+    expect(at(entries, "root/values/alpha/item")).toBe(at(entries, "root/values/beta/item"));
+    const code = generateCode(entries);
+    expect(code).toContain("x?: number;");
+    expect(code).toContain("y?: number;");
+  });
+
+  it("resolves empty record properties through merged parents", () => {
+    const { result: entries, warnings } = captureWarnings(() =>
+      generateSchema(
+        document(
+          '<root id="root"><a id="a"><values/></a><b id="b"><values><alpha x="1"/></values></b></root>',
+        ),
+        {
+          forceKind: { "root/a/values": "record", "root/b/values": "record" },
+          mergeSchemas: { parents: ["root/a", "root/b"] },
+        },
+      ),
+    );
+    expect(warnings).toEqual([]);
+    expect(generateCode(entries)).toContain("values: Record<string, Alpha>;");
+  });
+
+  it("avoids shadowing TypeScript Record with an item interface", () => {
+    const entries = generateSchema(
+      document('<root id="root"><values><record x="1"/></values></root>'),
+      {
+        forceKind: { "root/values": "record" },
+      },
+    );
+    expect(generateCode(entries)).toContain("values: Record<string, Record2>;");
+    expect(() =>
+      generateCode(entries, { interfaceNames: { "root/values/record": "Record" } }),
+    ).toThrow();
+  });
+
+  it.each([
+    ['<root><alpha x="1"/></root>', { root: "record" } as const, "Root record is not supported"],
+    [
+      '<root id="root"><values size="1"><alpha x="1"/></values></root>',
+      { "root/values": "record" } as const,
+      "must not have attributes",
+    ],
+    [
+      '<root id="root"><values><alpha x="1"/><alpha x="2"/></values></root>',
+      { "root/values": "record" } as const,
+      "must have unique child tags",
+    ],
+    [
+      '<root id="root"><values><alpha><item x="1"/><item x="2"/></alpha></values></root>',
+      { "root/values": "record" } as const,
+      "Record values cannot be lists",
+    ],
+    [
+      '<root id="root"><values><alpha x="1"/><beta size="2"><item x="1"/><item x="2"/></beta></values></root>',
+      { "root/values": "record" } as const,
+      "Cannot merge object and metalist",
+    ],
+  ])("rejects unsupported record structures: %s", (xml, forceKind, message) => {
+    expect(() => generateSchema(document(xml), { forceKind })).toThrow(message);
+  });
+
+  it("does not automatically infer records", () => {
+    const entries = generateSchema(
+      document('<root id="root"><values><alpha x="1"/><beta y="2"/></values></root>'),
+    );
+    expect(generateCode(entries)).not.toContain("Record<string,");
+  });
+
+  it("rejects mixing record and object containers in a merge group", () => {
+    expect(() =>
+      generateSchema(document('<root id="root"><a><item x="1"/></a><b text="hello"/></root>'), {
+        forceKind: { "root/a": "record" },
+        mergeSchemas: { mixed: ["root/a", "root/b"] },
+      }),
+    ).toThrow("Cannot merge record and object/metalist");
+  });
+});
+
 describe("forceKind item tags", () => {
   it("supports readonly tuples returned by a config callback", async () => {
     const config = await defineConfig({
