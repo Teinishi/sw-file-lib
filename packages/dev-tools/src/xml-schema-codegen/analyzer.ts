@@ -1,5 +1,4 @@
 import path from "node:path";
-import consola from "consola";
 import ts from "typescript";
 import type { GenerateOptions } from ".";
 import { analyzeJSDocComment } from "./comments";
@@ -20,6 +19,7 @@ interface FileAnalyzeContext {
   checker: ts.TypeChecker;
   sourceFile: ts.SourceFile;
   schemaImports: SetMap<string, string>;
+  inputPaths: ReadonlySet<string>;
 }
 
 export function analyzeFile(
@@ -40,6 +40,7 @@ export function analyzeFile(
     checker,
     sourceFile,
     schemaImports: new SetMap(),
+    inputPaths: new Set(options.input.map((file) => path.resolve(file))),
   };
 
   const schemas: SchemaDeclarationInfo[] = [];
@@ -51,6 +52,10 @@ export function analyzeFile(
         const info = analyzeInterfaceNode(node, args, context);
         schemas.push(info);
       }
+    } else if (ts.isStatement(node) && parseXmlSchemaMarker(node, sourceFile)) {
+      throw new Error(
+        `Only interface declarations support @xml-schema at ${loc(node, sourceFile)}`,
+      );
     }
 
     ts.forEachChild(node, (child) => visit(child));
@@ -74,13 +79,21 @@ function analyzeInterfaceNode(
   context: FileAnalyzeContext,
 ): SchemaDeclarationInfo {
   const name = node.name.text;
+  validateInterface(node);
+  if ((context.checker.getSymbolAtLocation(node.name)?.declarations?.length ?? 0) > 1)
+    throw new Error(
+      `Merged interface declarations are unsupported at ${loc(node, context.sourceFile)}`,
+    );
+  validateMarker(node, args, context.sourceFile);
 
   let schema: ElementSchemaInfo;
 
   const firstArg = args[0];
   switch (args[0]) {
     case "list":
-      throw new Error("Unimplemented");
+      throw new Error(
+        `List interface declarations are unsupported at ${loc(node, context.sourceFile)}`,
+      );
     case "metalist":
       const itemTag = args[1];
       if (!itemTag) {
@@ -116,7 +129,7 @@ function analyzeObjectInterfaceNode(
   const members: ObjectSchemaMemberInfo[] = [];
 
   for (const m of node.members) {
-    if (!ts.isPropertySignature(m)) continue;
+    validateProperty(m, context.sourceFile);
 
     const memberName = m.name.getText(context.sourceFile);
     const optional = !!m.questionToken;
@@ -151,13 +164,16 @@ function analyzeMetalistInterfaceNode(
   let itemsField: ts.TypeElement | undefined;
 
   for (const m of node.members) {
+    validateProperty(m, context.sourceFile);
     const memberName = m.name?.getText(context.sourceFile);
 
     switch (memberName) {
       case "meta":
+        if (metaField) throw new Error(`Duplicate meta member at ${loc(m, context.sourceFile)}`);
         metaField = m;
         break;
       case "items":
+        if (itemsField) throw new Error(`Duplicate items member at ${loc(m, context.sourceFile)}`);
         itemsField = m;
         break;
       default:
@@ -245,6 +261,7 @@ function analyzeElementTypeNode<F extends boolean>(
   context: FileAnalyzeContext,
   force: F,
 ): F extends true ? ElementSchemaInfo : ElementSchemaInfo | undefined {
+  validateMarker(node, args, context.sourceFile);
   switch (args?.[0]) {
     case "list":
       if (!ts.isArrayTypeNode(node)) {
@@ -274,12 +291,14 @@ function analyzeElementTypeNode<F extends boolean>(
       };
 
     case "metalist":
-      throw new Error("Unimplemented");
+      throw new Error(
+        `Inline metalist markers are unsupported at ${loc(node, context.sourceFile)}`,
+      );
 
     case "object":
     case undefined:
       if (!ts.isTypeLiteralNode(node)) {
-        if (!force)
+        if (!force && args?.[0] !== "object")
           return undefined as F extends true ? ElementSchemaInfo : ElementSchemaInfo | undefined;
         throw new Error(
           `Expected type literal for object, got ${node.getText(context.sourceFile)} at ${loc(node, context.sourceFile)}`,
@@ -291,8 +310,6 @@ function analyzeElementTypeNode<F extends boolean>(
       };
 
     default:
-      if (!force)
-        return undefined as F extends true ? ElementSchemaInfo : ElementSchemaInfo | undefined;
       throw new Error(
         `Unknown schema marker argument: ${args?.[0]} at ${loc(node, context.sourceFile)}`,
       );
@@ -335,7 +352,9 @@ function analyzeTypeNode(
     );
   }
 
-  throw new Error(`Unsupported type at ${loc(node, context.sourceFile)}`);
+  throw new Error(
+    `Unsupported type ${node.getText(context.sourceFile)} at ${loc(node, context.sourceFile)}`,
+  );
 }
 
 function analyzeTypeReferenceNode(
@@ -343,13 +362,31 @@ function analyzeTypeReferenceNode(
   context: FileAnalyzeContext,
 ): IdentifierSchemaInfo {
   const typeName = node.typeName.getText(context.sourceFile);
-  const sourceFile = getDefinitionSourceFile(node, context.checker);
-  if (!sourceFile) {
-    consola.warn(
-      `Could not find source file for type reference ${typeName} at ${loc(node, context.sourceFile)}`,
+  const fail = (reason: string): never => {
+    throw new Error(
+      `${reason}: ${node.getText(context.sourceFile)} at ${loc(node, context.sourceFile)}`,
     );
-  }
-  const sourceFileName = sourceFile !== context.sourceFile ? sourceFile?.fileName : undefined;
+  };
+  if (node.typeArguments?.length) fail("Generic type references are unsupported");
+  if (!ts.isIdentifier(node.typeName)) fail("Qualified type references are unsupported");
+  const symbol = context.checker.getSymbolAtLocation(node.typeName);
+  if (!symbol) return fail("Unresolved type reference");
+  const target =
+    symbol.flags & ts.SymbolFlags.Alias ? context.checker.getAliasedSymbol(symbol) : symbol;
+  const declarations = target.declarations;
+  if (!declarations?.length) return fail("Unresolved type reference");
+  if (declarations.length !== 1) return fail("Merged type declarations are unsupported");
+  const declaration = declarations[0]!;
+  if (!ts.isInterfaceDeclaration(declaration))
+    return fail("Type reference must target a marked interface");
+  validateInterface(declaration);
+  const sourceFile = declaration.getSourceFile();
+  if (sourceFile.isDeclarationFile || !context.inputPaths.has(path.resolve(sourceFile.fileName)))
+    fail("Referenced interface is not a generation input");
+  if (!parseXmlSchemaMarker(declaration, sourceFile))
+    fail("Referenced interface has no @xml-schema marker");
+  if (declaration.name.text !== typeName) fail("Renamed type references are unsupported");
+  const sourceFileName = sourceFile !== context.sourceFile ? sourceFile.fileName : undefined;
   if (sourceFileName) {
     const relativePath = relativeImportPath(
       path.resolve(context.sourceFile.fileName),
@@ -371,7 +408,7 @@ function analyzeTypeLiteralNode(
 ): ObjectSchemaMemberInfo[] {
   const members: ObjectSchemaMemberInfo[] = [];
   for (const m of node.members) {
-    if (!ts.isPropertySignature(m)) continue;
+    validateProperty(m, context.sourceFile);
 
     const memberName = m.name.getText(context.sourceFile);
     const optional = !!m.questionToken;
@@ -394,14 +431,40 @@ function analyzeTypeLiteralNode(
   return members;
 }
 
-function getDefinitionSourceFile(
-  node: ts.TypeReferenceNode,
-  checker: ts.TypeChecker,
-): ts.SourceFile | undefined {
-  const symbol = checker.getSymbolAtLocation(node.typeName);
-  if (!symbol) return;
+function validateInterface(node: ts.InterfaceDeclaration): void {
+  const sourceFile = node.getSourceFile();
+  if (!ts.isSourceFile(node.parent))
+    throw new Error(`Nested interface declarations are unsupported at ${loc(node, sourceFile)}`);
+  if (node.typeParameters?.length)
+    throw new Error(`Generic interface declarations are unsupported at ${loc(node, sourceFile)}`);
+  if (node.heritageClauses?.length)
+    throw new Error(`Interface inheritance is unsupported at ${loc(node, sourceFile)}`);
+  if (node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword))
+    throw new Error(`Default interface exports are unsupported at ${loc(node, sourceFile)}`);
+}
 
-  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const decl = target.declarations?.[0];
-  return decl?.getSourceFile();
+function validateProperty(
+  node: ts.TypeElement,
+  sourceFile: ts.SourceFile,
+): asserts node is ts.PropertySignature {
+  if (!ts.isPropertySignature(node))
+    throw new Error(
+      `Unsupported interface member ${node.getText(sourceFile)} at ${loc(node, sourceFile)}`,
+    );
+  if (ts.isComputedPropertyName(node.name))
+    throw new Error(`Computed property names are unsupported at ${loc(node, sourceFile)}`);
+}
+
+function validateMarker(
+  node: ts.Node,
+  args: string[] | undefined,
+  sourceFile: ts.SourceFile,
+): void {
+  if (!args?.length) return;
+  const expected =
+    args[0] === "object" ? 1 : args[0] === "list" || args[0] === "metalist" ? 2 : undefined;
+  if (expected === undefined)
+    throw new Error(`Unknown schema marker argument: ${args[0]} at ${loc(node, sourceFile)}`);
+  if (args.length > expected)
+    throw new Error(`Unexpected schema marker arguments at ${loc(node, sourceFile)}`);
 }
