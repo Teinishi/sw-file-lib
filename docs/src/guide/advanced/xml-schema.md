@@ -8,10 +8,11 @@ For handling vehicle, microcontroller, or component definition XML data, [`@sw-f
 
 ## How Stormworks XML maps to objects
 
-Most Stormworks XML consists of only two kinds of elements:
+Most Stormworks XML consists of three basic kinds of elements:
 
 - **Objects**: elements with unique attributes and child elements
 - **Lists**: elements that contain multiple children of the same tag
+- **Records**: elements whose children have arbitrary unique tags and share a common schema
 
 Unlike ordinary XML, Stormworks XML does **not** use text nodes. This enables the library to convert XML into a clean JavaScript object without requiring special handling for mixed content.
 
@@ -79,10 +80,10 @@ console.log(xml === inputXml); // true
 
 The schema does not require you to explicitly distinguish between XML attributes and child elements.
 
-| Schema type                   | XML representation |
-| ----------------------------- | ------------------ |
-| `string`, `number`, `boolean` | Attribute          |
-| `object`, `list`, `metalist`  | Child element      |
+| Schema type                            | XML representation |
+| -------------------------------------- | ------------------ |
+| `string`, `number`, `boolean`          | Attribute          |
+| `object`, `list`, `metalist`, `record` | Child element      |
 
 For example:
 
@@ -178,9 +179,9 @@ const ExtendedDeepSchema = DeepSchema.extend((s) => ({
 
 This pattern keeps nested extensions concise without duplicating the entire schema.
 
-### Extending lists and metalists
+### Extending lists, metalists, and records
 
-If a `list` or `metalist` contains **object items**, you can extend the item schema with `extendItem()`.
+If a `list`, `metalist`, or `record` contains **object items**, you can extend the item schema with `extendItem()`.
 
 ```ts
 const ItemList = x.list(
@@ -196,7 +197,7 @@ const ExtendedList = ItemList.extendItem({
 ```
 
 :::tip
-`extendItem()` is only available when the list item itself is an `object`. Lists whose items are immediately another `list` or `metalist` cannot be extended.
+`extendItem()` is only available when the item itself is an `object`. Collections whose items are immediately another `list`, `metalist`, or `record` cannot be extended.
 :::
 
 For `metalist`, the metadata object can also be extended independently using `extendMeta()`.
@@ -222,7 +223,7 @@ const RgbaSchema = x.object({
 const RgbSchema = RgbaSchema.omit(["a"]);
 ```
 
-Like `.extend()`, there are also `.omitItem()` and `.omitMeta()` for omitting from lists and metalists.
+Use `.omitItem()` to omit object item fields from lists, metalists, and records. Metalists also provide `.omitMeta()` to omit metadata fields.
 
 ## Union types
 
@@ -251,7 +252,7 @@ type Immutable = x.InferImmutable<typeof Schema>;
 
 ## Parsing XML
 
-Schemas created with `x.object()`, `x.partialObject()`, `x.list()`, and `x.metalist()` provide a `.parse()` method.
+Schemas created with `x.object()`, `x.partialObject()`, `x.list()`, `x.metalist()`, and `x.record()` provide a `.parse()` method.
 
 ```ts
 const data = Schema.parse(xmlString, "root");
@@ -376,3 +377,44 @@ This parses into:
 ```
 
 You can think of `metalist` as a combination of `object` and `list`: the parent element stores metadata, while its children become an array of items.
+
+## Record
+
+Use `x.record(itemSchema)` when child elements have arbitrary tag names but share a common schema. The parent has no attributes. Each child tag becomes an object key, and its parsed contents become the corresponding value.
+
+```ts
+const Values = x.record(x.object({ value: x.number() }));
+
+type Values = x.Infer<typeof Values>;
+// Record<string, { value: number }>
+
+const data = Values.parse('<root><alpha value="1"/><beta value="2"/></root>', "root");
+// { alpha: { value: 1 }, beta: { value: 2 } }
+
+const xml = Values.serialize(data, "root", {
+  xmlDeclaration: false,
+}).toString();
+// <root><alpha value="1"/><beta value="2"/></root>
+```
+
+The item schema must be an element schema (`object`, `list`, `metalist`, or `record`), rather than a primitive, optional, or union schema. Records can also be nested inside these element schemas, and a record field can be made optional with `.optional()`.
+
+```ts
+const Schema = x.object({
+  values: Values.optional(),
+});
+
+const ExtendedValues = Values.extendItem({
+  enabled: x.boolean().optional(),
+});
+
+const OnlyValue = ExtendedValues.omitItem(["enabled"]);
+```
+
+An empty element such as `<root/>` produces `{}`. An absent required record field still produces a missing-field error. `InferImmutable` makes both the dictionary and its values deeply readonly. As with other string-keyed dictionaries, an arbitrary key is not guaranteed to exist at runtime.
+
+Duplicate child tags follow `duplicateChildElement`: the default is an error, while `"first"`, `"last"`, or a callback can select one occurrence. Only the selected occurrence is parsed. Error paths use the child tag as the record key, for example `["values", "alpha", "value"]`.
+
+Parent attributes follow `unknownField`. All child tags are treated as record entries; the item schema validates their contents. `unknownField: "ignore"` does not suppress invalid item values.
+
+Serialization uses own enumerable string keys as child tags and validates that they are XML element names. Arrays and `null` are rejected as record values. When parsing an existing `SwXmlNodeList`, keys such as `__proto__` are stored as ordinary own properties. String and byte inputs still follow the underlying XML parser's reserved-name restrictions; for example, it rejects `__proto__`. Output follows `Object.entries()` order; preserving the original XML child order is not guaranteed.

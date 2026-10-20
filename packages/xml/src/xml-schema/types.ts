@@ -172,8 +172,7 @@ export interface Schema<T> {
   /**
    * Parses one field from an XML record node.
    *
-   * Primitive schemas read attributes. Object and list schemas read child
-   * elements.
+   * Primitive schemas read attributes. Element schemas read child elements.
    *
    * This is primarily intended for schema implementations. Most callers should
    * use {@link ElementSchema.safeParse} on a top-level element schema instead.
