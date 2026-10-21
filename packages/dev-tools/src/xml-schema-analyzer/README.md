@@ -533,6 +533,39 @@ This metadata is derived during schema generation, so existing XML analysis
 caches can be reused. The downstream `xml-schema-codegen` reads declaration-level
 metalist markers and supports referenced item types as well as inline objects.
 
+## Sorting properties at selected XML paths
+
+By default, generated properties follow the observed XML attribute/child order.
+Use `sortProperties` to sort selected interfaces by key name instead:
+
+```ts
+sortProperties: {
+  "root/settings": true,
+},
+```
+
+Like other path-based options, this also accepts a synchronous callback receiving
+the XML location as an array of tag names:
+
+```ts
+sortProperties(xmlLocation) {
+  return xmlLocation.join("/").startsWith("root/settings/");
+},
+```
+
+`false`, `undefined`, and omitted paths retain XML ordering. If multiple XML paths
+share one interface, selecting any of them enables sorting for that interface.
+Selections use XML paths regardless of automatic names or `interfaceNames`.
+Attributes and child properties are sorted together using case-sensitive,
+lexicographic key order (`"10"` before `"2"`), independent of the machine's locale.
+Other referenced interfaces retain their own selection settings.
+
+Selecting a metalist container sorts both its `meta` and inlined object `items`;
+`meta` and `items` remain required and in that order. Selecting just its item XML
+path sorts the inlined item properties without changing metadata order.
+List markers remain attached to their properties. This is an output-only option;
+the XML analysis cache and schema data are unchanged.
+
 ## Cache reuse and config changes
 
 The CLI caches XML analysis, then applies schema and code generation settings on
@@ -548,6 +581,7 @@ every run. The following config changes have these effects:
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
 | `attributeTypes`        | No                    | Overrides attribute types by name or a path-aware callback.                                    |
 | `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
+| `sortProperties`        | No                    | Sorts property keys at selected XML paths during code generation.                              |
 | `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |
 | `preferStringInUnions`  | No                    | Omits number/boolean from output unions containing string.                                     |
 | `generateTSDoc`         | No                    | Generates documentation from the current schema and cached analysis.                           |

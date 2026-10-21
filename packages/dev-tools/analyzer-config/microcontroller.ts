@@ -95,6 +95,9 @@ export default defineConfig(async () => {
         /^microprocessor\/group\/(components(_bridge)?\/c\/object|component(_bridge)?_states\/c\d+)\/(in\d+|inc|inoff|out\d+)\/v$/,
       item: /^microprocessor\/group\/(components\/c\/object|component(_bridge)?_states\/c\d+)\/items\/i$/,
     },
+    sortProperties: {
+      "microprocessor/group/components/c/object/in1/v": true,
+    },
     allPropertiesOptional: true,
     preferStringInUnions: true,
     generateTSDoc(context) {

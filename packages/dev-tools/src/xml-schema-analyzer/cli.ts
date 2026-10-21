@@ -41,6 +41,7 @@ program
     let allPropertiesOptional: Config["allPropertiesOptional"];
     let preferStringInUnions: Config["preferStringInUnions"];
     let generateTSDoc: Config["generateTSDoc"];
+    let sortProperties: Config["sortProperties"];
     let schemaOverrides: Config["schemaOverrides"];
     let mergeSchemas: Config["mergeSchemas"];
     let attributeTypes: Config["attributeTypes"];
@@ -58,6 +59,7 @@ program
       allPropertiesOptional = config.allPropertiesOptional;
       preferStringInUnions = config.preferStringInUnions;
       generateTSDoc = config.generateTSDoc;
+      sortProperties = config.sortProperties;
       schemaOverrides = config.schemaOverrides;
       mergeSchemas = config.mergeSchemas;
       attributeTypes = config.attributeTypes;
@@ -105,7 +107,14 @@ program
 
     const code = generateCode(
       schemaEntries,
-      { precedingCode, interfaceNames, allPropertiesOptional, preferStringInUnions, generateTSDoc },
+      {
+        precedingCode,
+        interfaceNames,
+        allPropertiesOptional,
+        preferStringInUnions,
+        generateTSDoc,
+        sortProperties,
+      },
       {
         documentData,
         inputFiles: analysisInputs.files.map((file) => file.path),

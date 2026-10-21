@@ -1,5 +1,5 @@
 import ts from "typescript";
-import type { DocumentData } from "./analyzer";
+import type { DocumentData, XmlLocation } from "./analyzer";
 import { prefixPriority, type OrderGraph } from "./order-graph";
 import type { SchemaEntry, SchemaPropertyData, SchemaReference, SchemaTypeData } from "./schema";
 
@@ -96,6 +96,10 @@ export interface InterfaceTSDocContext {
   readonly getSchema: (ref: SchemaReference) => SchemaEntry | undefined;
 }
 
+export type PropertySortRules =
+  | Readonly<Record<string, boolean>>
+  | ((xmlLocation: XmlLocation) => boolean | undefined);
+
 export interface GenerateCodeOptions {
   readonly precedingCode?: string | undefined;
   /** Return TSDoc body text (without comment delimiters), or undefined to omit it. Synchronous. */
@@ -106,6 +110,8 @@ export interface GenerateCodeOptions {
   readonly preferStringInUnions?: boolean | undefined;
   /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
   readonly interfaceNames?: Readonly<Record<string, string>> | undefined;
+  /** Sort property keys lexicographically for selected XML paths. Any merged path returning true enables sorting. */
+  readonly sortProperties?: PropertySortRules | undefined;
 }
 
 const invalidTypeNames = new Set([
@@ -328,11 +334,11 @@ function generateObjectTypeCode(
   childOrder: OrderGraph<string>,
   getIdentifier: (ref: SchemaReference) => string,
   options: GenerateCodeOptions,
+  sortProperties = false,
 ): string {
-  const order = mergeArrays(
-    attributeOrder.topoSort(prefixPriority),
-    childOrder.topoSort(prefixPriority),
-  );
+  const order = sortProperties
+    ? Object.keys(properties).sort()
+    : mergeArrays(attributeOrder.topoSort(prefixPriority), childOrder.topoSort(prefixPriority));
 
   let code = `{\n`;
 
@@ -367,6 +373,14 @@ function generateCodeEntry(
   options: GenerateCodeOptions,
   getEntry: (ref: SchemaReference) => SchemaEntry | undefined,
 ): string {
+  const shouldSort = (schema: SchemaEntry): boolean =>
+    schema.xmlLocations.some((location) => {
+      const rules = options.sortProperties;
+      if (typeof rules === "function") return rules(location) === true;
+      const path = location.join("/");
+      return Object.hasOwn(rules ?? {}, path) && rules![path] === true;
+    });
+  const sortProperties = shouldSort(entry);
   switch (entry.kind) {
     case "object":
       return `export interface ${identifier} ${generateObjectTypeCode(
@@ -376,6 +390,7 @@ function generateCodeEntry(
         entry.childOrder,
         getIdentifier,
         options,
+        sortProperties,
       )}\n`;
     case "metalist":
       const metaCode = generateObjectTypeCode(
@@ -385,6 +400,7 @@ function generateCodeEntry(
         entry.childOrder,
         getIdentifier,
         options,
+        sortProperties,
       );
       let itemBody: string;
       if (entry.itemRef.kind === "object") {
@@ -397,6 +413,7 @@ function generateCodeEntry(
             itemEntry.childOrder,
             getIdentifier,
             options,
+            sortProperties || shouldSort(itemEntry),
           );
           itemBody = itemCode.replace(/\n/g, "\n  ");
         } else {
