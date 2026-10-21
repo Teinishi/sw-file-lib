@@ -93,6 +93,10 @@ export function generateSchemaCode(
       code += ` = x.list("${declaration.schema.itemTag}", ${listItemType});`;
       break;
 
+    case "record":
+      code += ` = x.record(${generateTypeSchema(declaration.schema.itemType)});`;
+      break;
+
     case "metalist":
       const metalistShape = generateSchemaShape(declaration.schema.metaMembers, "  ");
       const metalistItemType = generateTypeSchema(declaration.schema.itemType, "  ");
@@ -134,6 +138,8 @@ function generateTypeSchema(type: SchemaTypeInfo, indent: string = ""): string {
       return `x.union([${type.types.map((t) => generateTypeSchema(t, indent)).join(", ")}])`;
     case "identifier":
       return `${type.name}Schema`;
+    case "record":
+      return `x.record(${generateTypeSchema(type.itemType, indent)})`;
     case "object":
       const objectShape = generateSchemaShape(type.members, indent);
       return `x.object(${objectShape})`;
@@ -215,6 +221,8 @@ function generateImmutableInterfaceType(type: SchemaTypeInfo, indent: string = "
       return `${type.types.map((t) => generateImmutableInterfaceType(t, indent)).join(" | ")}`;
     case "identifier":
       return `${type.name}Immutable`;
+    case "record":
+      return `Readonly<Record<string, ${generateImmutableInterfaceType(type.itemType, indent)}>>`;
     case "object":
       return generateImmutableInterfaceShape(type.members, indent);
     case "list":

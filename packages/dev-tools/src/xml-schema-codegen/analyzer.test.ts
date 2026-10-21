@@ -1,15 +1,17 @@
 import path from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import * as x from "@sw-file-lib/xml/xml-schema";
 import { analyzeFile } from "./analyzer";
 import { generateImmutableInterfaceCode, generateSchemaCode } from "./generate-code";
 
 function analyze(source: string, otherFiles: Record<string, string> = {}, inputs?: string[]) {
   const files = new Map(
-    Object.entries({ "input.ts": source, ...otherFiles }).map(([file, content]) => [
-      path.resolve(file),
-      content,
-    ]),
+    Object.entries({
+      [ts.getDefaultLibFilePath({})]: "type Record<K extends keyof any, T> = { [P in K]: T };",
+      "input.ts": source,
+      ...otherFiles,
+    }).map(([file, content]) => [path.resolve(file), content]),
   );
   const options: ts.CompilerOptions = {
     noLib: true,
@@ -38,14 +40,11 @@ function member(source: string) {
 }
 
 describe("unsupported codegen inputs", () => {
-  it.each(["Record<string, Item>", "Array<Item>", "Promise<Item>", "Box<Item>"])(
-    "rejects generic reference %s",
-    (type) => {
-      expect(() => analyze(member(`value: ${type};`))).toThrow(
-        /Generic type references are unsupported: .*input\.ts\(/,
-      );
-    },
-  );
+  it.each(["Array<Item>", "Promise<Item>", "Box<Item>"])("rejects generic reference %s", (type) => {
+    expect(() => analyze(member(`value: ${type};`))).toThrow(
+      /Generic type references are unsupported: .*input\.ts\(/,
+    );
+  });
 
   it.each(["value: Missing;", '// @xml-schema list "item"\nvalue: Missing[];'])(
     "rejects unresolved references: %s",
@@ -213,5 +212,135 @@ export interface Example {
     expect(
       analyze("type Example = Record<string, unknown>; interface Other { run(): void }"),
     ).toBeUndefined();
+  });
+});
+
+describe("record schemas", () => {
+  it("parses and serializes XML with the generated record schema", () => {
+    const example = analyze(member("values: Record<string, { value: number }>;"))!.schemas[0]!;
+    const { outputText } = ts.transpileModule(generateSchemaCode(example).code, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ESNext },
+    });
+    const exports: { ExampleSchema?: x.ElementSchema<unknown> } = {};
+    new Function("x", "exports", outputText)(x, exports);
+    const schema = exports.ExampleSchema!;
+    const xml = '<root><values><alpha value="1"/><beta value="2"/></values></root>';
+    const data = schema.parse(xml, "root");
+    expect(data).toEqual({ values: { alpha: { value: 1 }, beta: { value: 2 } } });
+    expect(schema.parse(schema.serialize(data, "root").toString(), "root")).toEqual(data);
+  });
+
+  it("generates record schemas and deeply immutable dictionary values", () => {
+    const result = analyze(`// @xml-schema
+export interface Item { nested: { count: number }; }
+${member("values?: Record<string, Item>;")}`)!;
+    const example = result.schemas[1]!;
+    expect(example.schema).toMatchObject({
+      members: [{ type: { kind: "record", itemType: { kind: "identifier", name: "Item" } } }],
+    });
+    expect(generateSchemaCode(example).code).toContain("values: x.record(ItemSchema).optional()");
+    expect(generateImmutableInterfaceCode(example)).toContain(
+      "readonly values?: Readonly<Record<string, ItemImmutable>>;",
+    );
+    expect(generateImmutableInterfaceCode(result.schemas[0]!)).toContain("readonly count: number");
+    expect([...result.schemaImports.entries()]).toEqual([]);
+  });
+
+  it("supports inline and empty object values", () => {
+    const example = analyze(
+      member("values: Record<string, { x: number }>; empty: Record<string, {}>;"),
+    )!.schemas[0]!;
+    const schema = generateSchemaCode(example).code;
+    expect(schema).toContain("values: x.record(x.object({");
+    expect(schema).toContain("x: x.number()");
+    expect(schema).toContain("empty: x.record(x.object({}))");
+    const immutable = generateImmutableInterfaceCode(example);
+    expect(immutable).toContain("Readonly<Record<string, {");
+    expect(immutable).toContain("readonly x: number");
+    expect(immutable).toContain("Readonly<Record<string, {}>>");
+  });
+
+  it("supports nested records", () => {
+    const example = analyze(member("values: Record<string, Record<string, {}>>;"))!.schemas[0]!;
+    expect(generateSchemaCode(example).code).toContain("x.record(x.record(x.object({})))");
+    expect(generateImmutableInterfaceCode(example)).toContain(
+      "Readonly<Record<string, Readonly<Record<string, {}>>>>",
+    );
+  });
+
+  it("imports the item schema without importing Record", () => {
+    const result = analyze(
+      `import { Item } from "./items";\n${member("values: Record<string, Item>;")}`,
+      {
+        "items.ts": "// @xml-schema\nexport interface Item { x: number }",
+      },
+    )!;
+    expect([...result.schemaImports.entries()].map(([file, names]) => [file, [...names]])).toEqual([
+      ["./items", ["Item"]],
+    ]);
+  });
+
+  it("supports metalist values and records as list and metalist items", () => {
+    const result = analyze(`// @xml-schema metalist "item"
+export interface Collection { meta: {}; items: Record<string, {}>[]; }
+${member('values: Record<string, Collection>;\n// @xml-schema list "item"\nlist: Record<string, {}>[];')}`)!;
+    expect(generateSchemaCode(result.schemas[0]!).code).toContain("x.record(x.object({}))");
+    expect(generateImmutableInterfaceCode(result.schemas[0]!)).toContain(
+      "readonly items: readonly Readonly<Record<string, {}>>[];",
+    );
+    expect(generateSchemaCode(result.schemas[1]!).code).toContain(
+      "values: x.record(CollectionSchema)",
+    );
+    expect(generateSchemaCode(result.schemas[1]!).code).toContain(
+      'list: x.list("item", x.record(x.object({})))',
+    );
+    expect(generateImmutableInterfaceCode(result.schemas[1]!)).toContain(
+      "Readonly<Record<string, CollectionImmutable>>",
+    );
+  });
+
+  it.each(["number", "symbol", '"key"', "string | number", "any", "never", "Key"])(
+    "rejects non-string keys: %s",
+    (key) => {
+      expect(() => analyze(`type Key = string;\n${member(`values: Record<${key}, {}>;`)}`)).toThrow(
+        /Record keys must be string: .*input\.ts\(/,
+      );
+    },
+  );
+
+  it.each(["Record", "Record<string>", "Record<string, {}, {}>"])(
+    "requires exactly two arguments: %s",
+    (type) => {
+      expect(() => analyze(member(`values: ${type};`))).toThrow(
+        "Record requires exactly two type arguments",
+      );
+    },
+  );
+
+  it.each([
+    "string",
+    "number",
+    "boolean",
+    "any",
+    "unknown",
+    "{} | { x: number }",
+    "{}[]",
+    "Array<{}>",
+  ])("rejects unsupported record values: %s", (type) => {
+    expect(() => analyze(member(`values: Record<string, ${type}>;`))).toThrow();
+  });
+
+  it("rejects unresolved record item references", () => {
+    expect(() => analyze(member("values: Record<string, Missing>;"))).toThrow(
+      "Unresolved type reference",
+    );
+  });
+
+  it("does not recognize a custom generic named Record as the built-in type", () => {
+    expect(() =>
+      analyze(`import { Record } from "./custom";\n${member("values: Record<string, {}>;")}`, {
+        "custom.ts": "export type Record<K, V> = { value: V };",
+      }),
+    ).toThrow("Generic type references are unsupported");
   });
 });

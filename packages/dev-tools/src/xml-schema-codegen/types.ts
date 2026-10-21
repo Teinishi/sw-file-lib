@@ -39,6 +39,11 @@ export type MetalistSchemaInfo = {
   itemType: ElementSchemaInfo | IdentifierSchemaInfo;
 };
 
+export type RecordSchemaInfo = {
+  kind: "record";
+  itemType: ElementSchemaInfo | IdentifierSchemaInfo;
+};
+
 export type SchemaTypeInfo =
   | { kind: "boolean" }
   | { kind: "number" }
@@ -47,9 +52,14 @@ export type SchemaTypeInfo =
   | IdentifierSchemaInfo
   | ObjectSchemaInfo
   | ListSchemaInfo
-  | MetalistSchemaInfo;
+  | MetalistSchemaInfo
+  | RecordSchemaInfo;
 
-export type ElementSchemaInfo = ObjectSchemaInfo | ListSchemaInfo | MetalistSchemaInfo;
+export type ElementSchemaInfo =
+  | ObjectSchemaInfo
+  | ListSchemaInfo
+  | MetalistSchemaInfo
+  | RecordSchemaInfo;
 
 export interface JSDocParagraph {
   text: string;

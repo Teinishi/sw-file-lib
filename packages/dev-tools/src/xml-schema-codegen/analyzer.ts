@@ -10,6 +10,7 @@ import {
   type MetalistSchemaInfo,
   type ObjectSchemaInfo,
   type ObjectSchemaMemberInfo,
+  type RecordSchemaInfo,
   type SchemaDeclarationInfo,
   type SchemaTypeInfo,
 } from "./types";
@@ -360,19 +361,41 @@ function analyzeTypeNode(
 function analyzeTypeReferenceNode(
   node: ts.TypeReferenceNode,
   context: FileAnalyzeContext,
-): IdentifierSchemaInfo {
+): IdentifierSchemaInfo | RecordSchemaInfo {
   const typeName = node.typeName.getText(context.sourceFile);
   const fail = (reason: string): never => {
     throw new Error(
       `${reason}: ${node.getText(context.sourceFile)} at ${loc(node, context.sourceFile)}`,
     );
   };
+  const symbol = context.checker.getSymbolAtLocation(node.typeName);
+  const target =
+    symbol &&
+    (symbol.flags & ts.SymbolFlags.Alias ? context.checker.getAliasedSymbol(symbol) : symbol);
+  if (
+    typeName === "Record" &&
+    target?.declarations?.some(
+      (declaration) =>
+        ts.isTypeAliasDeclaration(declaration) &&
+        declaration.getSourceFile().isDeclarationFile &&
+        path.dirname(path.resolve(declaration.getSourceFile().fileName)) ===
+          path.dirname(path.resolve(ts.getDefaultLibFilePath({}))),
+    )
+  ) {
+    if (node.typeArguments?.length !== 2) return fail("Record requires exactly two type arguments");
+    const key = node.typeArguments[0]!;
+    const value = node.typeArguments[1]!;
+    if (key.kind !== ts.SyntaxKind.StringKeyword) return fail("Record keys must be string");
+    if (!ts.isTypeReferenceNode(value) && !ts.isTypeLiteralNode(value))
+      return fail("Record values must be object, metalist or record element schemas");
+    const itemType = ts.isTypeReferenceNode(value)
+      ? analyzeTypeReferenceNode(value, context)
+      : analyzeElementTypeNode(value, undefined, context, true);
+    return { kind: "record", itemType };
+  }
   if (node.typeArguments?.length) fail("Generic type references are unsupported");
   if (!ts.isIdentifier(node.typeName)) fail("Qualified type references are unsupported");
-  const symbol = context.checker.getSymbolAtLocation(node.typeName);
-  if (!symbol) return fail("Unresolved type reference");
-  const target =
-    symbol.flags & ts.SymbolFlags.Alias ? context.checker.getAliasedSymbol(symbol) : symbol;
+  if (!target) return fail("Unresolved type reference");
   const declarations = target.declarations;
   if (!declarations?.length) return fail("Unresolved type reference");
   if (declarations.length !== 1) return fail("Merged type declarations are unsupported");
