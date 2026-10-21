@@ -1107,5 +1107,49 @@ export function generateSchema(
     }
   }
 
-  return entries;
+  // Keep grouped entries local until all members have contributed their fields.
+  // A completed group can then reuse a predefined schema without losing evidence.
+  const references = new Map<number, SchemaReference>();
+  const retained: SchemaEntry[] = [];
+  for (const [index, entry] of entries.entries()) {
+    const match =
+      entry.kind === "object"
+        ? predefined.find(({ entry: candidate }) =>
+            entryPropertiesCompatible(entry.properties, candidate.properties, "loose"),
+          )
+        : undefined;
+    if (match) {
+      references.set(index, { kind: "external", importPath: match.importPath, name: match.name });
+    } else {
+      references.set(index, { kind: "internal", index: retained.length });
+      retained.push(entry);
+    }
+  }
+  if (retained.length === entries.length) return entries;
+
+  const remapType = (type: SchemaTypeData): SchemaTypeData => {
+    switch (type.kind) {
+      case "object":
+        return type.ref.kind === "internal"
+          ? { ...type, ref: references.get(type.ref.index)! }
+          : type;
+      case "list":
+      case "record":
+        return { ...type, itemRef: remapType(type.itemRef) };
+      case "union":
+        return createUnionType(type.types.map(remapType));
+      case "inline":
+        return type;
+    }
+  };
+  return retained.map((entry) => ({
+    ...entry,
+    properties: Object.fromEntries(
+      Object.entries(entry.properties).map(([key, property]) => [
+        key,
+        { ...property, type: remapType(property.type) },
+      ]),
+    ),
+    ...(entry.kind === "metalist" ? { itemRef: remapType(entry.itemRef) } : {}),
+  }));
 }

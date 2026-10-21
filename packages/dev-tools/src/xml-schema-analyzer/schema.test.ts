@@ -827,6 +827,155 @@ describe("mergeSchemas", () => {
     expect(code).toContain('"item"\n  second: Point[];');
   });
 
+  it.each([false, true])(
+    "matches predefined schemas after overrides and explicit merging (callback: %s)",
+    (callback) => {
+      const override = { properties: { y: { type: "string" as const, optional: true } } };
+      const entries = generateSchema(document('<root id="test"><a x="3"/><b x="4"/></root>'), {
+        mergeSchemas: { point: ["root/a", "root/b"] },
+        schemaOverrides: callback
+          ? (location) => (/^root\/[ab]$/.test(location.join("/")) ? override : undefined)
+          : { "root/a": override, "root/b": override },
+        predefinedSchemas: {
+          "./shared": {
+            Point: {
+              kind: "object",
+              properties: {
+                x: { type: "number", optional: false },
+                y: { type: "string", optional: true },
+              },
+            },
+          },
+        },
+      });
+      const code = generateCode(entries);
+      expect(code).toContain('import type { Point } from "./shared";');
+      expect(code).toContain("a: Point;");
+      expect(code).toContain("b: Point;");
+      expect(entries).toHaveLength(1);
+    },
+  );
+
+  it("matches predefined schemas after overrides and automatic record item merging", () => {
+    const entries = generateSchema(
+      document('<root id="test"><values><alpha x="3"/><beta x="4"/></values></root>'),
+      {
+        forceKind: { "root/values": "record" },
+        schemaOverrides: (location) =>
+          location.length === 3
+            ? { properties: { y: { type: "string", optional: true } } }
+            : undefined,
+        predefinedSchemas: {
+          "./shared": {
+            Point: {
+              kind: "object",
+              properties: {
+                x: { type: "number", optional: false },
+                y: { type: "string", optional: true },
+              },
+            },
+          },
+        },
+      },
+    );
+    const code = generateCode(entries);
+    expect(code).toContain('import type { Point } from "./shared";');
+    expect(code).toContain("values: Record<string, Point>;");
+    expect(entries).toHaveLength(1);
+  });
+
+  it("matches predefined schemas only after the whole override and merge group is complete", () => {
+    const entries = generateSchema(document('<root id="test"><a x="3"/><b y="4"/></root>'), {
+      mergeSchemas: { point: ["root/a", "root/b"] },
+      schemaOverrides: { "root/a": { properties: { x: { type: "string", optional: false } } } },
+      predefinedSchemas: {
+        "./shared": {
+          Point: {
+            kind: "object",
+            properties: {
+              x: { type: "string", optional: true },
+              y: { type: "number", optional: true },
+            },
+          },
+        },
+      },
+    });
+    const code = generateCode(entries);
+    expect(code).toContain('import type { Point } from "./shared";');
+    expect(code).toContain("a: Point;");
+    expect(code).toContain("b: Point;");
+    expect(entries).toHaveLength(1);
+  });
+
+  it.each(["list", "metalist"] as const)(
+    "updates predefined item references inside %s and preserves other local references",
+    (kind) => {
+      const entries = generateSchema(
+        document(
+          `<root id="test"><values${kind === "metalist" ? ' size="2"' : ""}><item x="3"/><item x="4"/></values><tail label="retained"/></root>`,
+        ),
+        {
+          forceKind: { "root/values": [kind, "item"] },
+          mergeSchemas: { point: "root/values/item" },
+          schemaOverrides: {
+            "root/values/item": { properties: { x: { type: "string", optional: true } } },
+          },
+          predefinedSchemas: {
+            "./shared": {
+              Point: { kind: "object", properties: { x: { type: "string", optional: true } } },
+            },
+          },
+        },
+      );
+      const code = generateCode(entries);
+      expect(code).toContain('import type { Point } from "./shared";');
+      expect(code).toContain(kind === "list" ? "values: Point[];" : "items: Point[];");
+      expect(code).toContain("tail: Tail;");
+      expect(code).toContain("label: string;");
+      expect(code).not.toContain("interface Item");
+      expect(
+        entries.some((entry) =>
+          entry.xmlLocations.some((location) => location.join("/") === "root/values/item"),
+        ),
+      ).toBe(false);
+    },
+  );
+
+  it("deduplicates unions whose grouped members resolve to the same predefined schema", () => {
+    const entries = generateSchema(
+      document(
+        '<root id="test"><a id="a"><point x="3"/></a><b id="b"><point x="4"/></b><tail label="retained"/></root>',
+      ),
+      {
+        mergeSchemas: {
+          parents: ["root/a", "root/b"],
+          first: "root/a/point",
+          second: "root/b/point",
+        },
+        schemaOverrides: (location) =>
+          location.at(-1) === "point"
+            ? { properties: { x: { type: "string", optional: true } } }
+            : undefined,
+        predefinedSchemas: {
+          "./shared": {
+            Point: { kind: "object", properties: { x: { type: "string", optional: true } } },
+          },
+        },
+      },
+    );
+    const parent = at(entries, "root/a");
+    expect(parent).toBe(at(entries, "root/b"));
+    expect(parent.properties.point?.type).toEqual({
+      kind: "object",
+      ref: { kind: "external", importPath: "./shared", name: "Point" },
+    });
+    const code = generateCode(entries);
+    expect(code).toContain("point: Point;");
+    expect(code).toContain("tail: Tail;");
+    expect(code).toContain("a: A;");
+    expect(code).toContain("b: A;");
+  });
+
   it("prioritizes explicit groups over predefined schema matching", () => {
     const entries = generateSchema(document('<root id="test"><a x="3"/><b y="4"/></root>'), {
       mergeSchemas: { point: ["root/a", "root/b"] },

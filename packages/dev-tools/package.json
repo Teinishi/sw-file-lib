@@ -32,6 +32,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsdown",
+    "test": "vitest",
+    "test:run": "vitest run",
     "dev": "tsdown --watch",
     "analyze": "tsx ./src/xml-schema-analyzer/cli.ts",
     "analyze:component": "pnpm run analyze --config analyzer-config/component-definition.ts",

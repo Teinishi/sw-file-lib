@@ -260,8 +260,12 @@ forced to merge: group their paths separately if needed. Empty elements can
 participate when selected as objects with `forceKind`.
 
 Explicit groups stay separate from other groups and ungrouped schemas, even when
-their structures match. Object/metalist groups take priority over `predefinedSchemas`
-and generate local interfaces. List groups share item information without creating
+their structures match. Object groups are compared with `predefinedSchemas` after
+all members have merged; a matching group uses the predefined type instead of
+generating a local interface. This also applies to implicitly merged record items
+and schemas corrected by `schemaOverrides`. Metalist containers retain their own
+interfaces. References inside lists, metalists, records and unions are updated,
+and unused matching local definitions are removed. List groups share item information without creating
 a container interface. `schemaOverrides` applies before merging. `mergeNumberSuffix`
 continues to apply to ungrouped schemas without crossing group boundaries.
 

@@ -199,7 +199,7 @@ export interface Out {
  */
 export interface Item {
   l?: string;
-  v?: TextValuePair | IV;
+  v?: TextValuePair;
 }
 
 // @xml-schema
@@ -243,11 +243,11 @@ export interface Object {
   u?: number;
   vp?: number;
   ip?: boolean;
-  e?: string | TextValuePair | E;
-  n?: string | TextValuePair | C0N;
-  v?: string | TextValuePair | C0V;
-  i?: number | TextValuePair | C0I;
-  pos?: XmlVec2 | Pos;
+  e?: string | TextValuePair;
+  n?: string | TextValuePair;
+  v?: string | TextValuePair;
+  i?: number | TextValuePair;
+  pos?: XmlVec2;
   inc?: In;
   in1?: In;
   in2?: In;
@@ -286,13 +286,13 @@ export interface Object {
   out2?: Out;
   // @xml-schema list "i"
   items?: Item[];
-  kp?: TextValuePair | Kp;
-  ki?: TextValuePair | Ki;
-  kd?: TextValuePair | Kd;
-  r?: TextValuePair | R;
-  min?: TextValuePair | Min;
-  max?: TextValuePair | Max;
-  int?: TextValuePair | Int;
+  kp?: TextValuePair;
+  ki?: TextValuePair;
+  kd?: TextValuePair;
+  r?: TextValuePair;
+  min?: TextValuePair;
+  max?: TextValuePair;
+  int?: TextValuePair;
 }
 
 // @xml-schema
@@ -332,7 +332,7 @@ export interface Component {
  */
 export interface ObjectBridge {
   id?: number;
-  pos?: XmlVec2 | C0Pos;
+  pos?: XmlVec2;
   in1?: In;
   out1?: Out;
 }
@@ -354,286 +354,6 @@ export interface ObjectBridge {
 export interface ComponentBridge {
   type?: number;
   object?: ObjectBridge;
-}
-
-// @xml-schema
-/**
- * Represents `<pos>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <pos>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link PosImmutable} for its parameter type.
- *
- * @see {@link PosSchema}
- * @see {@link PosImmutable}
- */
-export interface Pos {
-  x?: number;
-  y?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<v>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <items> / <i> / <v>`
- *
- * Parent: {@link Item}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link IVImmutable} for its parameter type.
- *
- * @see {@link IVSchema}
- * @see {@link IVImmutable}
- */
-export interface IV {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<n>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <n>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link C0NImmutable} for its parameter type.
- *
- * @see {@link C0NSchema}
- * @see {@link C0NImmutable}
- */
-export interface C0N {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<kp>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <kp>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link KpImmutable} for its parameter type.
- *
- * @see {@link KpSchema}
- * @see {@link KpImmutable}
- */
-export interface Kp {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<ki>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <ki>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link KiImmutable} for its parameter type.
- *
- * @see {@link KiSchema}
- * @see {@link KiImmutable}
- */
-export interface Ki {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<kd>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <kd>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link KdImmutable} for its parameter type.
- *
- * @see {@link KdSchema}
- * @see {@link KdImmutable}
- */
-export interface Kd {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<r>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <r>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link RImmutable} for its parameter type.
- *
- * @see {@link RSchema}
- * @see {@link RImmutable}
- */
-export interface R {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<i>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <i>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link C0IImmutable} for its parameter type.
- *
- * @see {@link C0ISchema}
- * @see {@link C0IImmutable}
- */
-export interface C0I {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<min>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <min>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link MinImmutable} for its parameter type.
- *
- * @see {@link MinSchema}
- * @see {@link MinImmutable}
- */
-export interface Min {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<max>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <max>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link MaxImmutable} for its parameter type.
- *
- * @see {@link MaxSchema}
- * @see {@link MaxImmutable}
- */
-export interface Max {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<v>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <v>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link C0VImmutable} for its parameter type.
- *
- * @see {@link C0VSchema}
- * @see {@link C0VImmutable}
- */
-export interface C0V {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<int>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <int>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link IntImmutable} for its parameter type.
- *
- * @see {@link IntSchema}
- * @see {@link IntImmutable}
- */
-export interface Int {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<e>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_states> / <c*> / <e>`
- *
- * Parent: {@link Object}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link EImmutable} for its parameter type.
- *
- * @see {@link ESchema}
- * @see {@link EImmutable}
- */
-export interface E {
-  text?: string;
-  value?: number;
-}
-
-// @xml-schema
-/**
- * Represents `<pos>` element in Stormworks microcontroller data.
- *
- * XML locations:
- * - `<microprocessor> / <group> / <component_bridge_states> / <c*> / <pos>`
- *
- * Parent: {@link ObjectBridge}
- *
- * If your function only reads the value and does not mutate it, prefer
- * {@link C0PosImmutable} for its parameter type.
- *
- * @see {@link C0PosSchema}
- * @see {@link C0PosImmutable}
- */
-export interface C0Pos {
-  x?: number;
-  y?: number;
 }
 
 // @xml-schema
