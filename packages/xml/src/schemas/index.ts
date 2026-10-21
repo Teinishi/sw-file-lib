@@ -6,6 +6,11 @@ import {
   type ComponentDefinition,
   type ComponentDefinitionImmutable,
 } from "./component-definition";
+import {
+  MicroprocessorSchema,
+  type Microprocessor,
+  type MicroprocessorImmutable,
+} from "./microcontroller";
 import { VehicleSchema, type Vehicle, type VehicleImmutable } from "./vehicle";
 
 export * from "./common";
@@ -121,4 +126,49 @@ export function safeSerializeVehicleXml(
   options?: XmlWriterOptions,
 ): x.Result<string, x.SchemaSerializeError> {
   return safeSerialize(VehicleSchema, "vehicle", data, options);
+}
+
+/**
+ * Parses a Stormworks microprocessor XML document.
+ *
+ * @throws {@link SchemaError} when the XML content
+ * does not match the microprocessor schema.
+ */
+export function parseMicroprocessorXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options?: ParseOptions,
+): Microprocessor {
+  return MicroprocessorSchema.parse(input, "microprocessor", options);
+}
+
+/**
+ * Parses a Stormworks microprocessor XML document without throwing schema errors.
+ */
+export function safeParseMicroprocessorXml(
+  input: string | Uint8Array<ArrayBuffer>,
+  options?: ParseOptions,
+): x.Result<Microprocessor, x.SchemaError> {
+  return MicroprocessorSchema.safeParse(input, "microprocessor", options);
+}
+
+/**
+ * Serializes a Stormworks microprocessor into an XML document.
+ *
+ * @throws {@link SchemaSerializeError} when the microprocessor cannot be serialized.
+ */
+export function serializeMicroprocessorXml(
+  data: MicroprocessorImmutable,
+  options?: XmlWriterOptions,
+): string {
+  return MicroprocessorSchema.serialize(data, "microprocessor", options).toString();
+}
+
+/**
+ * Serializes a Stormworks microprocessor into an XML document without throwing schema errors.
+ */
+export function safeSerializeMicroprocessorXml(
+  data: MicroprocessorImmutable,
+  options?: XmlWriterOptions,
+): x.Result<string, x.SchemaSerializeError> {
+  return safeSerialize(MicroprocessorSchema, "microprocessor", data, options);
 }

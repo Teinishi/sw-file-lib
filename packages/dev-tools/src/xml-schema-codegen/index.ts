@@ -78,7 +78,7 @@ export function generate(options: GenerateOptions): GenerateResult {
 
   const typedocJson = JSON.stringify(
     {
-      intentionallyNotExported: Array.from(shapeSymbols),
+      intentionallyNotExported: Array.from(shapeSymbols).sort(),
     },
     null,
     2,

@@ -29,7 +29,7 @@ describe("vehicle", () => {
   });
 
   test.skipIf(process.env.CI)(
-    "integration with actual stormworks asset",
+    "integration with actual stormworks files",
     async () => {
       const files = await searchEnvPath("STORMWORKS_VEHICLES_PATH", "", [".xml"]);
 
@@ -38,9 +38,18 @@ describe("vehicle", () => {
 
         try {
           parseVehicleXml(buf, {
-            duplicateChildElement(data, _ctx) {
-              // bodies[*].components[*].o.microprocessor_definition.group.components[*].object.out1
-              return data.tag === "out1" ? "last" : "error";
+            duplicateChildElement(data, ctx) {
+              const xmlPath = ctx.xmlPath
+                .map((seg) => seg.tag)
+                .concat(data.tag)
+                .join("/");
+              if (
+                /^vehicle\/bodies\/body\/components\/c\/o\/microprocessor_definition\/group\/components\/c\/object\/out1$/.test(
+                  xmlPath,
+                )
+              )
+                return "last";
+              return "error";
             },
           });
         } catch (e) {
