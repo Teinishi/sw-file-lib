@@ -35,6 +35,18 @@
     "ComponentShape",
     "BodyShape",
     "LogicNodeLinkShape",
-    "VehicleShape"
+    "VehicleShape",
+    "NodeShape",
+    "NShape",
+    "DataShape",
+    "CompositeValueShape",
+    "InShape",
+    "OutShape",
+    "ItemShape",
+    "ObjectShape",
+    "ObjectBridgeShape",
+    "ComponentBridgeShape",
+    "GroupShape",
+    "MicroprocessorShape"
   ]
 }

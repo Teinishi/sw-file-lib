@@ -95,6 +95,15 @@ export interface Data {
  * @see {@link CompositeValueImmutable}
  */
 export interface CompositeValue {
+  "01"?: number;
+  "02"?: number;
+  "03"?: number;
+  "04"?: number;
+  "05"?: number;
+  "06"?: number;
+  "07"?: number;
+  "08"?: number;
+  "09"?: number;
   "10"?: number;
   "11"?: number;
   "12"?: number;
@@ -119,15 +128,6 @@ export interface CompositeValue {
   "31"?: number;
   "32"?: number;
   bools?: number;
-  "01"?: number;
-  "02"?: number;
-  "03"?: number;
-  "04"?: number;
-  "05"?: number;
-  "06"?: number;
-  "07"?: number;
-  "08"?: number;
-  "09"?: number;
 }
 
 // @xml-schema
