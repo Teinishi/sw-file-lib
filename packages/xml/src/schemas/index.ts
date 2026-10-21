@@ -15,12 +15,16 @@ import { VehicleSchema, type Vehicle, type VehicleImmutable } from "./vehicle";
 
 export * from "./common";
 export * as ComponentDefinitionSchemas from "./component-definition";
+export * as MicrocontrollerSchemas from "./microcontroller";
 export * as VehicleSchemas from "./vehicle";
 
 export {
   ComponentDefinitionSchema,
   type ComponentDefinition,
   type ComponentDefinitionImmutable,
+  MicroprocessorSchema,
+  type Microprocessor,
+  type MicroprocessorImmutable,
   VehicleSchema,
   type Vehicle,
   type VehicleImmutable,
@@ -129,12 +133,15 @@ export function safeSerializeVehicleXml(
 }
 
 /**
- * Parses a Stormworks microprocessor XML document.
+ * Parses a standalone Stormworks microcontroller XML document rooted at `<microprocessor>`.
+ *
+ * Definitions embedded in vehicle components use a different schema and are
+ * parsed as part of {@link parseVehicleXml}.
  *
  * @throws {@link SchemaError} when the XML content
- * does not match the microprocessor schema.
+ * does not match the microcontroller schema.
  */
-export function parseMicroprocessorXml(
+export function parseMicrocontrollerXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): Microprocessor {
@@ -142,9 +149,9 @@ export function parseMicroprocessorXml(
 }
 
 /**
- * Parses a Stormworks microprocessor XML document without throwing schema errors.
+ * Parses a standalone Stormworks microcontroller XML document without throwing schema errors.
  */
-export function safeParseMicroprocessorXml(
+export function safeParseMicrocontrollerXml(
   input: string | Uint8Array<ArrayBuffer>,
   options?: ParseOptions,
 ): x.Result<Microprocessor, x.SchemaError> {
@@ -152,11 +159,11 @@ export function safeParseMicroprocessorXml(
 }
 
 /**
- * Serializes a Stormworks microprocessor into an XML document.
+ * Serializes a standalone Stormworks microcontroller into an XML document rooted at `<microprocessor>`.
  *
- * @throws {@link SchemaSerializeError} when the microprocessor cannot be serialized.
+ * @throws {@link SchemaSerializeError} when the microcontroller cannot be serialized.
  */
-export function serializeMicroprocessorXml(
+export function serializeMicrocontrollerXml(
   data: MicroprocessorImmutable,
   options?: XmlWriterOptions,
 ): string {
@@ -164,9 +171,9 @@ export function serializeMicroprocessorXml(
 }
 
 /**
- * Serializes a Stormworks microprocessor into an XML document without throwing schema errors.
+ * Serializes a standalone Stormworks microcontroller into an XML document without throwing schema errors.
  */
-export function safeSerializeMicroprocessorXml(
+export function safeSerializeMicrocontrollerXml(
   data: MicroprocessorImmutable,
   options?: XmlWriterOptions,
 ): x.Result<string, x.SchemaSerializeError> {

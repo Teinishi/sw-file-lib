@@ -3,7 +3,7 @@
 Stormworks XML is highly structured, making it much closer to JSON than general-purpose XML. The [`@sw-file-lib/xml/xml-schema`](/api/@sw-file-lib/xml/xml-schema/) package provides a schema-based API that lets you parse XML into fully typed TypeScript objects and serialize those objects back into XML.
 
 :::tip
-For handling vehicle, microcontroller, or component definition XML data, [`@sw-file-lib/xml`](/api/@sw-file-lib/xml/) provides built-in schemas, parse functions, and serialize functions.
+For handling vehicle, microcontroller, or component definition XML data, [`@sw-file-lib/xml`](/api/@sw-file-lib/xml/) provides built-in schemas, parse functions, and serialize functions. See [Reading and Writing XML](/guide/read-write-xml) for the supported formats and the distinction between standalone microcontrollers and definitions embedded in vehicles.
 :::
 
 ## How Stormworks XML maps to objects

@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import { describe, test } from "vitest";
 import { searchEnvPath } from "@sw-file-lib/test-utils";
-import { parseMicroprocessorXml } from "../../src";
+import { parseMicrocontrollerXml } from "../../src";
 
-describe("microprocessor", () => {
+describe("microcontroller", () => {
   test.skipIf(process.env.CI)(
     "integration with actual stormworks files",
     async () => {
@@ -13,7 +13,7 @@ describe("microprocessor", () => {
         const buf = await fs.readFile(file);
 
         try {
-          parseMicroprocessorXml(buf, {
+          parseMicrocontrollerXml(buf, {
             duplicateChildElement(data, ctx) {
               const xmlPath = ctx.xmlPath
                 .map((seg) => seg.tag)
