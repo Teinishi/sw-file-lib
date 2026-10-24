@@ -5,7 +5,7 @@ import { XmlVec3Schema, TextValuePairSchema, XmlVec2Schema } from "./common-sche
 /* oxlint-disable no-unused-vars */
 import type {
   Node,
-  N,
+  NodeItem,
   Data,
   CompositeValue,
   In,
@@ -20,7 +20,7 @@ import type {
 } from "../microcontroller";
 import type {
   NodeImmutable,
-  NImmutable,
+  NodeItemImmutable,
   DataImmutable,
   CompositeValueImmutable,
   InImmutable,
@@ -50,14 +50,14 @@ const NodeShape = {
  *
  * XML location: `<microprocessor> / <nodes> / <n> / <node>`
  *
- * Parent: {@link NSchema}
+ * Parent: {@link NodeItemSchema}
  *
  * @see {@link Node}
  * @see {@link NodeImmutable}
  */
 export const NodeSchema: x.ObjectSchema<typeof NodeShape, Node> = x.object(NodeShape);
 
-const NShape = {
+const NodeItemShape = {
   id: x.number().optional(),
   component_id: x.number().optional(),
   built_slot_index: x.number().optional(),
@@ -71,10 +71,11 @@ const NShape = {
  *
  * Parent: {@link MicroprocessorSchema}
  *
- * @see {@link N}
- * @see {@link NImmutable}
+ * @see {@link NodeItem}
+ * @see {@link NodeItemImmutable}
  */
-export const NSchema: x.ObjectSchema<typeof NShape, N> = x.object(NShape);
+export const NodeItemSchema: x.ObjectSchema<typeof NodeItemShape, NodeItem> =
+  x.object(NodeItemShape);
 
 const DataShape = {
   type: x.number().optional(),
@@ -418,7 +419,7 @@ const MicroprocessorShape = {
   sym13: x.number().optional(),
   sym14: x.number().optional(),
   sym15: x.number().optional(),
-  nodes: x.list("n", NSchema).optional(),
+  nodes: x.list("n", NodeItemSchema).optional(),
   group: GroupSchema.optional(),
 };
 

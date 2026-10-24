@@ -47,7 +47,7 @@ export interface MicroprocessorNodePosition {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <nodes> / <n> / <node>`
  *
- * Parent: {@link MicroprocessorN}
+ * Parent: {@link MicroprocessorNodeItem}
  *
  * If your function only reads the value and does not mutate it, prefer
  * {@link MicroprocessorNodeImmutable} for its parameter type.
@@ -72,12 +72,12 @@ export interface MicroprocessorNode {
  * Parent: {@link MicroprocessorDefinition}
  *
  * If your function only reads the value and does not mutate it, prefer
- * {@link MicroprocessorNImmutable} for its parameter type.
+ * {@link MicroprocessorNodeItemImmutable} for its parameter type.
  *
- * @see {@link MicroprocessorNSchema}
- * @see {@link MicroprocessorNImmutable}
+ * @see {@link MicroprocessorNodeItemSchema}
+ * @see {@link MicroprocessorNodeItemImmutable}
  */
-export interface MicroprocessorN {
+export interface MicroprocessorNodeItem {
   id?: number;
   component_id?: number;
   node?: MicroprocessorNode;
@@ -347,7 +347,7 @@ export interface MicroprocessorDefinition {
   sym14?: number;
   sym15?: number;
   // @xml-schema list "n"
-  nodes?: MicroprocessorN[];
+  nodes?: MicroprocessorNodeItem[];
   group?: MicroprocessorGroup;
 }
 

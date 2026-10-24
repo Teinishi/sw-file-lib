@@ -8,7 +8,7 @@ import type {
 /* oxlint-disable no-unused-vars */
 import type {
   Node,
-  N,
+  NodeItem,
   Data,
   CompositeValue,
   In,
@@ -23,7 +23,7 @@ import type {
 } from "../microcontroller";
 import type {
   NodeSchema,
-  NSchema,
+  NodeItemSchema,
   DataSchema,
   CompositeValueSchema,
   InSchema,
@@ -43,7 +43,7 @@ import type {
  *
  * XML location: `<microprocessor> / <nodes> / <n> / <node>`
  *
- * Parent: {@link NImmutable}
+ * Parent: {@link NodeItemImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link Node} instead if mutation is required.
@@ -69,12 +69,12 @@ export interface NodeImmutable {
  * Parent: {@link MicroprocessorImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
- * Use {@link N} instead if mutation is required.
+ * Use {@link NodeItem} instead if mutation is required.
  *
- * @see {@link NSchema}
- * @see {@link N}
+ * @see {@link NodeItemSchema}
+ * @see {@link NodeItem}
  */
-export interface NImmutable {
+export interface NodeItemImmutable {
   readonly id?: number;
   readonly component_id?: number;
   readonly built_slot_index?: number;
@@ -440,6 +440,6 @@ export interface MicroprocessorImmutable {
   readonly sym13?: number;
   readonly sym14?: number;
   readonly sym15?: number;
-  readonly nodes?: readonly NImmutable[];
+  readonly nodes?: readonly NodeItemImmutable[];
   readonly group?: GroupImmutable;
 }

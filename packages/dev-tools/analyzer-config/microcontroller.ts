@@ -3,23 +3,6 @@ import { findWorkspaceRoot, loadWorkspaceEnv } from "@sw-file-lib/test-utils";
 import { defineConfig } from "../src/xml-schema-analyzer";
 import { generateTSDoc, predefinedSchemas } from "./utils";
 
-const FORCE_KIND = [
-  ["microprocessor/group/data/inputs", "object"],
-  ["microprocessor/group/data/outputs", "object"],
-  ["microprocessor/group/groups", "object"],
-  ["microprocessor/group/group_states", "object"],
-  ["microprocessor/group/components/c/object", "object"],
-  ["microprocessor/group/components/c/object/out2/v", "object"],
-  [/^microprocessor\/group\/component(_bridge)?_states\/c\d+$/, "object"],
-  [/^microprocessor\/group\/component(_bridge)?_states\/c\d+\/(in\d+|out\d+|inc)$/, "object"],
-  [/^microprocessor\/group\/component(_bridge)?_states\/c\d+\/(in\d+|out\d+|inc)\/v$/, "object"],
-  [
-    /^microprocessor\/group\/(components\/c\/object|component(_bridge)?_states\/c\d+)\/items$/,
-    ["list", "i"],
-  ],
-  [/^microprocessor\/group\/component(_bridge)?_states$/, "record"],
-] as const;
-
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
   const input = path.join(process.env["STORMWORKS_MICROCONTROLLERS_PATH"]!, "*.xml");
@@ -33,19 +16,27 @@ export default defineConfig(async () => {
     predefinedSchemas,
     forceKind(xmlLocation) {
       const xmlPath = xmlLocation.join("/");
-      for (const [pattern, kind] of FORCE_KIND) {
-        if (typeof pattern === "string") {
-          if (xmlPath === pattern) {
-            return kind;
-          }
-        } else if (pattern instanceof RegExp) {
-          if (pattern.test(xmlPath)) {
-            return kind;
-          }
-        }
+      if (
+        /^microprocessor\/group\/(data\/(inputs|outputs)|groups|group_states|components\/c\/object(\/out\d+\/v)?)$/.test(
+          xmlPath,
+        ) ||
+        /^microprocessor\/group\/component(_bridge)?_states\/c\d+(\/(in\d+|out\d+|inc)(\/v)?)?$/.test(
+          xmlPath,
+        )
+      ) {
+        return "object";
+      } else if (
+        /^microprocessor\/group\/(components\/c\/object|component(_bridge)?_states\/c\d+)\/items$/.test(
+          xmlPath,
+        )
+      ) {
+        return ["list", "i"];
+      } else if (/^microprocessor\/group\/component(_bridge)?_states$/.test(xmlPath)) {
+        return "record";
       }
     },
     interfaceNames: {
+      "microprocessor/nodes/n": "NodeItem",
       "microprocessor/group/components/c": "Component",
       "microprocessor/group/components/c/object/in1": "In",
       "microprocessor/group/components/c/object/out1": "Out",

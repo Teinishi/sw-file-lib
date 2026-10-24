@@ -11,7 +11,7 @@ import type {
   Author,
   MicroprocessorNodePosition,
   MicroprocessorNode,
-  MicroprocessorN,
+  MicroprocessorNodeItem,
   MicroprocessorGroupData,
   MicroprocessorIn,
   MicroprocessorItem,
@@ -35,7 +35,7 @@ import type {
   AuthorSchema,
   MicroprocessorNodePositionSchema,
   MicroprocessorNodeSchema,
-  MicroprocessorNSchema,
+  MicroprocessorNodeItemSchema,
   MicroprocessorGroupDataSchema,
   MicroprocessorInSchema,
   MicroprocessorItemSchema,
@@ -98,7 +98,7 @@ export interface MicroprocessorNodePositionImmutable {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <nodes> / <n> / <node>`
  *
- * Parent: {@link MicroprocessorNImmutable}
+ * Parent: {@link MicroprocessorNodeItemImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link MicroprocessorNode} instead if mutation is required.
@@ -122,12 +122,12 @@ export interface MicroprocessorNodeImmutable {
  * Parent: {@link MicroprocessorDefinitionImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
- * Use {@link MicroprocessorN} instead if mutation is required.
+ * Use {@link MicroprocessorNodeItem} instead if mutation is required.
  *
- * @see {@link MicroprocessorNSchema}
- * @see {@link MicroprocessorN}
+ * @see {@link MicroprocessorNodeItemSchema}
+ * @see {@link MicroprocessorNodeItem}
  */
-export interface MicroprocessorNImmutable {
+export interface MicroprocessorNodeItemImmutable {
   readonly id?: number;
   readonly component_id?: number;
   readonly node?: MicroprocessorNodeImmutable;
@@ -384,7 +384,7 @@ export interface MicroprocessorDefinitionImmutable {
   readonly sym13?: number;
   readonly sym14?: number;
   readonly sym15?: number;
-  readonly nodes?: readonly MicroprocessorNImmutable[];
+  readonly nodes?: readonly MicroprocessorNodeItemImmutable[];
   readonly group?: MicroprocessorGroupImmutable;
 }
 

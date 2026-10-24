@@ -7,7 +7,7 @@ import type {
   Author,
   MicroprocessorNodePosition,
   MicroprocessorNode,
-  MicroprocessorN,
+  MicroprocessorNodeItem,
   MicroprocessorGroupData,
   MicroprocessorIn,
   MicroprocessorItem,
@@ -31,7 +31,7 @@ import type {
   AuthorImmutable,
   MicroprocessorNodePositionImmutable,
   MicroprocessorNodeImmutable,
-  MicroprocessorNImmutable,
+  MicroprocessorNodeItemImmutable,
   MicroprocessorGroupDataImmutable,
   MicroprocessorInImmutable,
   MicroprocessorItemImmutable,
@@ -103,7 +103,7 @@ const MicroprocessorNodeShape = {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <nodes> / <n> / <node>`
  *
- * Parent: {@link MicroprocessorNSchema}
+ * Parent: {@link MicroprocessorNodeItemSchema}
  *
  * @see {@link MicroprocessorNode}
  * @see {@link MicroprocessorNodeImmutable}
@@ -113,7 +113,7 @@ export const MicroprocessorNodeSchema: x.ObjectSchema<
   MicroprocessorNode
 > = x.object(MicroprocessorNodeShape);
 
-const MicroprocessorNShape = {
+const MicroprocessorNodeItemShape = {
   id: x.number().optional(),
   component_id: x.number().optional(),
   node: MicroprocessorNodeSchema.optional(),
@@ -126,11 +126,13 @@ const MicroprocessorNShape = {
  *
  * Parent: {@link MicroprocessorDefinitionSchema}
  *
- * @see {@link MicroprocessorN}
- * @see {@link MicroprocessorNImmutable}
+ * @see {@link MicroprocessorNodeItem}
+ * @see {@link MicroprocessorNodeItemImmutable}
  */
-export const MicroprocessorNSchema: x.ObjectSchema<typeof MicroprocessorNShape, MicroprocessorN> =
-  x.object(MicroprocessorNShape);
+export const MicroprocessorNodeItemSchema: x.ObjectSchema<
+  typeof MicroprocessorNodeItemShape,
+  MicroprocessorNodeItem
+> = x.object(MicroprocessorNodeItemShape);
 
 const MicroprocessorGroupDataShape = {
   type: x.number().optional(),
@@ -386,7 +388,7 @@ const MicroprocessorDefinitionShape = {
   sym13: x.number().optional(),
   sym14: x.number().optional(),
   sym15: x.number().optional(),
-  nodes: x.list("n", MicroprocessorNSchema).optional(),
+  nodes: x.list("n", MicroprocessorNodeItemSchema).optional(),
   group: MicroprocessorGroupSchema.optional(),
 };
 

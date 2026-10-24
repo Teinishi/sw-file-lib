@@ -9,7 +9,7 @@ import type { XmlVec3, TextValuePair, XmlVec2 } from "./common";
  *
  * XML location: `<microprocessor> / <nodes> / <n> / <node>`
  *
- * Parent: {@link N}
+ * Parent: {@link NodeItem}
  *
  * If your function only reads the value and does not mutate it, prefer
  * {@link NodeImmutable} for its parameter type.
@@ -36,12 +36,12 @@ export interface Node {
  * Parent: {@link Microprocessor}
  *
  * If your function only reads the value and does not mutate it, prefer
- * {@link NImmutable} for its parameter type.
+ * {@link NodeItemImmutable} for its parameter type.
  *
- * @see {@link NSchema}
- * @see {@link NImmutable}
+ * @see {@link NodeItemSchema}
+ * @see {@link NodeItemImmutable}
  */
-export interface N {
+export interface NodeItem {
   id?: number;
   component_id?: number;
   built_slot_index?: number;
@@ -422,6 +422,6 @@ export interface Microprocessor {
   sym14?: number;
   sym15?: number;
   // @xml-schema list "n"
-  nodes?: N[];
+  nodes?: NodeItem[];
   group?: Group;
 }

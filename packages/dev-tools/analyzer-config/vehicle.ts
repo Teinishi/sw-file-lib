@@ -1,30 +1,7 @@
 import path from "node:path";
 import { findWorkspaceRoot, loadWorkspaceEnv } from "@sw-file-lib/test-utils";
 import { defineConfig, type XmlLocation } from "../src/xml-schema-analyzer";
-import { generateTSDoc, predefinedSchemas, xmlLocationMatches } from "./utils";
-
-const O_LOCATION = ["vehicle", "bodies", "body", "components", "c", "o"] as const;
-const MC_GROUP_LOCATION = [...O_LOCATION, "microprocessor_definition", "group"] as const;
-const MC_OBJECT_LOCATION = [...MC_GROUP_LOCATION, "components", "c", "object"] as const;
-
-const FORCE_KIND_PATTERNS = [
-  [
-    ["vehicle", "authors"],
-    ["list", "author"],
-  ],
-  [[...MC_GROUP_LOCATION, "data", "inputs"], "object"],
-  [[...MC_GROUP_LOCATION, "data", "outputs"], "object"],
-  [[...MC_OBJECT_LOCATION], "object"],
-  [[...MC_OBJECT_LOCATION, /^out\d+$/], "object"],
-  [[...MC_GROUP_LOCATION, "components_bridge", "c"], "object"],
-  [[...MC_GROUP_LOCATION, "components_bridge", "c", "object", /^out\d+$/], "object"],
-  [[...MC_GROUP_LOCATION, "groups"], "object"],
-  [[...O_LOCATION, "logic_slots", "slot", "value"], "object"],
-  [[...O_LOCATION, /display_\d+/, "col_extra", "c"], "object"],
-] as const;
-
-const componentOPath = O_LOCATION.join("/");
-const microprocessorGroupPath = MC_GROUP_LOCATION.join("/");
+import { generateTSDoc, predefinedSchemas } from "./utils";
 
 export default defineConfig(async () => {
   await loadWorkspaceEnv(".env.local");
@@ -38,30 +15,46 @@ export default defineConfig(async () => {
       'export * from "./generated/vehicle-schema";\nexport * from "./generated/vehicle-immutable";\n',
     predefinedSchemas,
     forceKind(xmlLocation: XmlLocation) {
-      for (const [pattern, kind] of FORCE_KIND_PATTERNS) {
-        if (xmlLocationMatches(xmlLocation, pattern)) {
-          return kind;
-        }
+      const xmlPath = xmlLocation.join("/");
+      if (xmlPath === "vehicle/authors") {
+        return ["list", "author"];
+      } else if (
+        /^vehicle\/bodies\/body\/components\/c\/o\/microprocessor_definition\/group(\/(data\/(inputs|outputs)|components(_bridge)?\/c\/object(\/out\d+)?|groups))?$/.test(
+          xmlPath,
+        ) ||
+        /^vehicle\/bodies\/body\/components\/c\/o\/(logic_slots\/slot\/value|display_\d+\/col_extra\/c)$/.test(
+          xmlPath,
+        )
+      ) {
+        return "object";
       }
-      return undefined;
     },
     interfaceNames: {
-      ["vehicle/bodies/body/components/c"]: "Component",
-      [componentOPath]: "ComponentO",
-      [`${componentOPath}/logic_slots/slot`]: "LogicSlot",
-      [`${componentOPath}/display_1`]: "Display",
-      [`${componentOPath}/microprocessor_definition/nodes/n`]: "MicroprocessorN",
-      [`${componentOPath}/microprocessor_definition/nodes/n/node`]: "MicroprocessorNode",
-      [`${componentOPath}/microprocessor_definition/nodes/n/node/position`]:
+      "vehicle/bodies/body/components/c": "Component",
+      "vehicle/bodies/body/components/c/o": "ComponentO",
+      "vehicle/bodies/body/components/c/o/logic_slots/slot": "LogicSlot",
+      "vehicle/bodies/body/components/c/o/display_1": "Display",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n":
+        "MicroprocessorNodeItem",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node":
+        "MicroprocessorNode",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/nodes/n/node/position":
         "MicroprocessorNodePosition",
-      [`${microprocessorGroupPath}`]: "MicroprocessorGroup",
-      [`${microprocessorGroupPath}/data`]: "MicroprocessorGroupData",
-      [`${microprocessorGroupPath}/components/c`]: "MicroprocessorComponent",
-      [`${microprocessorGroupPath}/components/c/object`]: "MicroprocessorObject",
-      [`${microprocessorGroupPath}/components/c/object/in1`]: "MicroprocessorIn",
-      [`${microprocessorGroupPath}/components/c/object/items/i`]: "MicroprocessorItem",
-      [`${microprocessorGroupPath}/components_bridge/c`]: "MicroprocessorComponentBridge",
-      [`${microprocessorGroupPath}/components_bridge/c/object`]: "MicroprocessorObjectBridge",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group": "MicroprocessorGroup",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/data":
+        "MicroprocessorGroupData",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c":
+        "MicroprocessorComponent",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object":
+        "MicroprocessorObject",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/in1":
+        "MicroprocessorIn",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components/c/object/items/i":
+        "MicroprocessorItem",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components_bridge/c":
+        "MicroprocessorComponentBridge",
+      "vehicle/bodies/body/components/c/o/microprocessor_definition/group/components_bridge/c/object":
+        "MicroprocessorObjectBridge",
     },
     schemaOverrides(xmlLocation) {
       const xmlPath = xmlLocation.join("/");
