@@ -166,6 +166,32 @@ export default defineConfig({
 });
 ```
 
+Like `forceKind`, `schemaOverrides` also accepts a synchronous callback receiving
+the XML location as a readonly array of tag names:
+
+```ts
+schemaOverrides(xmlLocation) {
+  if (xmlLocation.at(-1) === "position") {
+    return {
+      properties: {
+        y: { type: "number", optional: true },
+      },
+    };
+  }
+  return undefined;
+},
+```
+
+The callback runs once per object or metalist location before schema merging.
+Return `undefined` to leave that location unchanged. Empty elements selected as
+objects can also be supplemented. Metalist overrides apply to metadata; callbacks
+also run for its object items and metadata children. List container locations are
+not passed to the callback, but their object item locations are.
+
+Record entries for nonexistent/non-object paths still produce errors. Callbacks
+have no enumerated keys, so there is no unused-path check for them. Both forms
+apply to cached analysis without `--refresh` and are accepted by `generateSchema`.
+
 For example, an inferred `{ x: number }` becomes `{ x?: string; y?: number }`.
 Supported property types are `string`, `number`, and `boolean`; `optional` is
 required and controls whether the property is optional, even if it was always
@@ -192,6 +218,184 @@ analysis is preserved, so changing overrides does not require `--refresh`.
 
 The same option is available through `generateSchema(documentData, options)`.
 
+## Merging partially observed schemas
+
+Use `mergeSchemas` to group XML elements whose differing sample properties should
+belong to one schema. Group selectors can be exact XML paths, regular expressions,
+or arrays mixing both:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  mergeSchemas: {
+    positions: ["vehicle/position", "vehicle/previous_position"],
+    components: /^vehicle\/components\/component\d+$/,
+  },
+});
+```
+
+Alternatively, use a synchronous callback that returns a group key, or `undefined`
+for ordinary automatic schema matching:
+
+```ts
+mergeSchemas(xmlLocation) {
+  const tag = xmlLocation.at(-1);
+  return tag === "position" || tag === "previous_position"
+    ? "positions"
+    : undefined;
+},
+```
+
+Group keys are matching identifiers, not output interface names. Use
+`interfaceNames` to name the shared interface. All XML locations are retained and
+internal references point to the merged schema. Callbacks run once per
+object/list/metalist location, before merging.
+
+Grouping `{ x: number }` and `{ y: number }` produces `{ x?: number; y?: number }`.
+Properties missing from either schema become optional. Common properties retain
+their types and optionality; conflicting types form a union. Ordering, possible
+values, and numeric ranges are merged. Nested child schemas are not recursively
+forced to merge: group their paths separately if needed. Empty elements can
+participate when selected as objects with `forceKind`.
+
+Explicit groups stay separate from other groups and ungrouped schemas, even when
+their structures match. Object groups are compared with `predefinedSchemas` after
+all members have merged; a matching group uses the predefined type instead of
+generating a local interface. This also applies to implicitly merged record items
+and schemas corrected by `schemaOverrides`. Metalist containers retain their own
+interfaces. References inside lists, metalists, records and unions are updated,
+and unused matching local definitions are removed. List groups share item information without creating
+a container interface. `schemaOverrides` applies before merging. `mergeNumberSuffix`
+continues to apply to ungrouped schemas without crossing group boundaries.
+
+A path matching multiple groups is an error. Exact selectors must identify
+existing object, list, or metalist schemas; unmatched paths are errors.
+Select the item element to merge differing item schemas themselves. Regexes and callbacks may
+match no elements. Regex `lastIndex` does not affect matching and is not modified,
+including for global/sticky expressions.
+
+Objects and metalists cannot merge with each other. Metalists must have the same
+item tag and item schema; group their item paths too when those schemas differ
+because of sample coverage. Incompatible metalists report an error.
+Unrepresentable list unions still fail during code generation.
+
+Grouping runs on cached analysis, so changing `mergeSchemas` needs no `--refresh`.
+The same option is accepted by `generateSchema`.
+
+### Explicit element kinds
+
+`forceKind` accepts `"object"`, `"record"`, `["list", itemTag]`, or `["metalist", itemTag]`.
+The list/metalist tuples require a nonempty item tag, including for empty elements:
+
+```ts
+forceKind: {
+  "root/object": "object",
+  "root/list": ["list", "item"],
+  "root/metalist": ["metalist", "entry"],
+},
+```
+
+Callbacks return the same `ForceKindOption` values (readonly tuples are accepted):
+
+```ts
+forceKind(xmlLocation) {
+  return xmlLocation.at(-1) === "entries"
+    ? ["metalist", "entry"]
+    : undefined;
+},
+```
+
+`undefined` preserves automatic inference. Legacy bare `"list"`/`"metalist"` values
+are no longer accepted. A list rejects child tags other than its configured item
+tag. A metalist uses that tag for `items` and keeps attributes and other child
+elements in `meta`; non-item child tags must not repeat. Thus a single item is
+unambiguous without consulting other elements or a merge group.
+
+### Empty lists and metalists
+
+An empty element selected as a list with `forceKind` is kept unresolved until
+merging completes. Its configured tag is retained. A populated list with the same
+tag in the same `mergeSchemas` group supplies the item type:
+
+```ts
+forceKind: { "root/empty": ["list", "item"] },
+mergeSchemas: { lists: ["root/empty", "root/populated"] },
+```
+
+For `<root><empty/><populated><item x="3"/><item x="4"/></populated></root>`,
+both properties become `Item[]` with `// @xml-schema list "item"` markers.
+The empty list remains a present property; emptiness alone does not make it optional.
+
+This also works when merged parent objects contain the same list property: an
+empty `root/a/items` can learn from `root/b/items` when `root/a` and `root/b` are
+grouped. Input order does not matter. Analysis caches are preserved.
+
+If no item type can be determined after merging, schema generation warns with
+the unresolved XML paths and configured item tag, then creates an empty item
+interface and continues. Its XML locations are the container paths followed by
+the item tag, so `interfaceNames` and `generateTSDoc` can also describe it.
+Lists in unrelated groups do not supply evidence.
+Multiple child tags remain invalid. Directly grouped lists with known item types
+must agree on the item tag and type; group their item paths separately if needed.
+List groups cannot be mixed with object/metalist groups.
+
+Metalists selected with `forceKind: ["metalist", itemTag]` likewise defer missing item
+information until merging. Attributes and non-item child elements stay in `meta`.
+A populated metalist with the same tag in the same group supplies the item schema:
+
+```ts
+forceKind: { "root/empty": ["metalist", "item"] },
+mergeSchemas: { collections: ["root/empty", "root/populated"] },
+```
+
+This supports an empty element such as `<empty size="0"/>` and a populated member
+such as `<populated size="2"><item x="3"/><item x="4"/></populated>`, regardless
+of their order. The shared interface keeps required `meta` and `items` wrappers.
+Metadata schemas are merged as usual; fields absent from a member become optional.
+
+The configured tag distinguishes even a single item from metadata children;
+no tag guessing from other group members is performed. If the item type is still
+unknown after merging, a warning lists the unresolved metalist paths and item tag.
+An empty item schema is used, inlined into `items: {}[]` as with other metalist
+items; the required `meta` and `items` wrappers and metadata are preserved.
+Evidence from unrelated groups is not used.
+Conflicting tags/types or multiple repeating child types remain errors.
+
+### Records
+
+Records are selected only by `forceKind`; automatic object/list/metalist detection
+is unchanged. Both record and callback config forms support `"record"`:
+
+```ts
+forceKind: { "root/values": "record" },
+```
+
+For `<root id="root"><values><alpha x="1"/><beta y="2"/></values></root>`,
+the `values` property becomes `Record<string, Alpha>`, with a common item interface
+containing optional `x` and `y` properties. All observed child tags contribute to
+one item schema, including matching nested objects and metalist items. The item
+interface retains all its actual XML locations, so attribute rules, overrides,
+interface names and TSDoc generation remain available. Parent links in TSDoc use
+paths such as `values[key]`. `Record` is reserved as a type name when the generated
+code uses the TypeScript utility type.
+
+Record containers require no attributes and unique child tags within each XML
+element. Repeating a tag in different samples is allowed. Item schemas must merge
+into a single element schema; incompatible kinds are errors. Values that are
+themselves lists and records at the XML root are currently unsupported and produce
+explicit errors. Nested records, metalist values, and records used as list or
+metalist items are supported. Existing ambiguous object/list item detection still
+requires `forceKind` at the item's XML location.
+
+`mergeSchemas` can group record containers to share an item schema. If the item
+type remains unknown after merging, a warning is emitted and the output uses
+`Record<string, {}>` without creating an empty interface. Record fields retain
+normal optionality rules; an empty present container does not make the field
+optional. No record marker or item tag is required. If an explicit merge group
+is assigned to record item paths, the selected item paths must agree on that group.
+Changes to `forceKind` still reuse the raw analysis cache.
+
 ## Inferring attribute types
 
 Each observed attribute value is classified as `boolean` (`"true"` or `"false"`),
@@ -214,6 +418,48 @@ Union members always appear in `boolean`, `number`, `string` order regardless of
 sample order. `"0"` and `"1"` are numbers. Observed types are retained even when the
 possible-values limit is exceeded; numeric ranges describe only numeric samples.
 `schemaOverrides` takes priority over inferred unions as well as individual types.
+
+### Attribute type rules
+
+Use `attributeTypes` to assign a primitive type to existing attributes by name,
+regardless of their observed values:
+
+```ts
+export default defineConfig({
+  input: "./vehicles/*.xml",
+  out: "./vehicle.ts",
+  attributeTypes: {
+    text: "string",
+  },
+});
+```
+
+For example, `<label text="123"/>` produces `text: string` rather than
+`text: number`. Supported types are `string`, `number`, and `boolean`. Rules apply
+only to actual attributes, not child elements, and never add missing attributes.
+
+For path-specific rules, use a synchronous callback:
+
+```ts
+attributeTypes(attributeName, xmlLocation) {
+  if (attributeName === "text" && xmlLocation.at(-1) === "label") {
+    return "string";
+  }
+  return undefined;
+},
+```
+
+The callback receives the attribute name and the readonly tag-name array of its
+containing element. Returning `undefined` preserves inference. It runs once per
+attribute per analyzed XML location, including metalist metadata and object items.
+Optionality is preserved. Value candidates and numeric ranges are cleared when
+the inferred type changes; original analysis remains available in the cache and
+TSDoc context.
+
+Rules apply during schema generation, before `schemaOverrides`, predefined schema
+matching, and merging. More specific `schemaOverrides` take priority. Changing
+`attributeTypes` does not require `--refresh`; the option is also supported by
+`generateSchema`.
 
 ### Preferring string in unions
 
@@ -287,6 +533,39 @@ This metadata is derived during schema generation, so existing XML analysis
 caches can be reused. The downstream `xml-schema-codegen` reads declaration-level
 metalist markers and supports referenced item types as well as inline objects.
 
+## Sorting properties at selected XML paths
+
+By default, generated properties follow the observed XML attribute/child order.
+Use `sortProperties` to sort selected interfaces by key name instead:
+
+```ts
+sortProperties: {
+  "root/settings": true,
+},
+```
+
+Like other path-based options, this also accepts a synchronous callback receiving
+the XML location as an array of tag names:
+
+```ts
+sortProperties(xmlLocation) {
+  return xmlLocation.join("/").startsWith("root/settings/");
+},
+```
+
+`false`, `undefined`, and omitted paths retain XML ordering. If multiple XML paths
+share one interface, selecting any of them enables sorting for that interface.
+Selections use XML paths regardless of automatic names or `interfaceNames`.
+Attributes and child properties are sorted together using case-sensitive,
+lexicographic key order (`"10"` before `"2"`), independent of the machine's locale.
+Other referenced interfaces retain their own selection settings.
+
+Selecting a metalist container sorts both its `meta` and inlined object `items`;
+`meta` and `items` remain required and in that order. Selecting just its item XML
+path sorts the inlined item properties without changing metadata order.
+List markers remain attached to their properties. This is an output-only option;
+the XML analysis cache and schema data are unchanged.
+
 ## Cache reuse and config changes
 
 The CLI caches XML analysis, then applies schema and code generation settings on
@@ -296,10 +575,13 @@ every run. The following config changes have these effects:
 | ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
 | `input`                 | Yes                   | Selects source XML files.                                                                      |
 | `predefinedSchemas`     | No                    | Matches inferred schemas to external types.                                                    |
-| `forceKind`             | No                    | Selects object/list/metalist during schema generation.                                         |
+| `forceKind`             | No                    | Selects object/list/metalist/record during schema generation.                                  |
 | `mergeNumberSuffix`     | No                    | Controls schema merging.                                                                       |
+| `mergeSchemas`          | No                    | Groups partially observed object/metalist schemas.                                             |
 | `schemaOverrides`       | No                    | Adds/corrects properties during schema generation.                                             |
+| `attributeTypes`        | No                    | Overrides attribute types by name or a path-aware callback.                                    |
 | `interfaceNames`        | No                    | Names generated TypeScript interfaces.                                                         |
+| `sortProperties`        | No                    | Sorts property keys at selected XML paths during code generation.                              |
 | `allPropertiesOptional` | No                    | Makes all generated interface properties optional.                                             |
 | `preferStringInUnions`  | No                    | Omits number/boolean from output unions containing string.                                     |
 | `generateTSDoc`         | No                    | Generates documentation from the current schema and cached analysis.                           |

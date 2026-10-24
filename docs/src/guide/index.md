@@ -9,7 +9,7 @@ This guide walks through the library from installation to building a complete ve
 
 - **Modular packages** — Install only the features you need with minimal dependencies.
 - **Binary formats** — Parse and serialize Stormworks mesh, physics, and other binary assets.
-- **Type-safe XML** — Read and write vehicle and component XML with fully typed schemas.
+- **Type-safe XML** — Read and write vehicle, microcontroller, and component definition XML with fully typed schemas.
 - **Geometry generation** — Build 3D geometry that can be saved as Stormworks' mesh format, and/or rendered with Three.js.
 - **Three.js integration** — Create meshes and materials that match Stormworks rendering.
 
@@ -51,12 +51,12 @@ bun add @sw-file-lib/three
 
 ### Available packages
 
-| Package                                                | Description                                                            |
-| ------------------------------------------------------ | ---------------------------------------------------------------------- |
-| [`@sw-file-lib/core`](/api/@sw-file-lib/core/)         | Binary parsers, serializers, math utilities, and shared types.         |
-| [`@sw-file-lib/xml`](/api/@sw-file-lib/xml/)           | Type-safe Stormworks XML schemas and serialization.                    |
-| [`@sw-file-lib/geometry`](/api/@sw-file-lib/geometry/) | Geometry generation for component and surface processing for vehicles. |
-| [`@sw-file-lib/three`](/api/@sw-file-lib/three/)       | Three.js helpers for meshes, materials, and rendering.                 |
+| Package                                                | Description                                                                                         |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| [`@sw-file-lib/core`](/api/@sw-file-lib/core/)         | Binary parsers, serializers, math utilities, and shared types.                                      |
+| [`@sw-file-lib/xml`](/api/@sw-file-lib/xml/)           | Typed schemas, parsers, and serializers for vehicle, microcontroller, and component definition XML. |
+| [`@sw-file-lib/geometry`](/api/@sw-file-lib/geometry/) | Geometry generation for component and surface processing for vehicles.                              |
+| [`@sw-file-lib/three`](/api/@sw-file-lib/three/)       | Three.js helpers for meshes, materials, and rendering.                                              |
 
 Additional packages can be installed together:
 

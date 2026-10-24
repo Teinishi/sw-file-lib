@@ -11,13 +11,12 @@ import type {
   Author,
   MicroprocessorNodePosition,
   MicroprocessorNode,
-  MicroprocessorN,
+  MicroprocessorNodeItem,
   MicroprocessorGroupData,
   MicroprocessorIn,
   MicroprocessorItem,
   MicroprocessorObject,
   MicroprocessorComponent,
-  MicroprocessorInBridge,
   MicroprocessorObjectBridge,
   MicroprocessorComponentBridge,
   MicroprocessorGroup,
@@ -36,13 +35,12 @@ import type {
   AuthorSchema,
   MicroprocessorNodePositionSchema,
   MicroprocessorNodeSchema,
-  MicroprocessorNSchema,
+  MicroprocessorNodeItemSchema,
   MicroprocessorGroupDataSchema,
   MicroprocessorInSchema,
   MicroprocessorItemSchema,
   MicroprocessorObjectSchema,
   MicroprocessorComponentSchema,
-  MicroprocessorInBridgeSchema,
   MicroprocessorObjectBridgeSchema,
   MicroprocessorComponentBridgeSchema,
   MicroprocessorGroupSchema,
@@ -100,7 +98,7 @@ export interface MicroprocessorNodePositionImmutable {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <nodes> / <n> / <node>`
  *
- * Parent: {@link MicroprocessorNImmutable}
+ * Parent: {@link MicroprocessorNodeItemImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link MicroprocessorNode} instead if mutation is required.
@@ -124,12 +122,12 @@ export interface MicroprocessorNodeImmutable {
  * Parent: {@link MicroprocessorDefinitionImmutable}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
- * Use {@link MicroprocessorN} instead if mutation is required.
+ * Use {@link MicroprocessorNodeItem} instead if mutation is required.
  *
- * @see {@link MicroprocessorNSchema}
- * @see {@link MicroprocessorN}
+ * @see {@link MicroprocessorNodeItemSchema}
+ * @see {@link MicroprocessorNodeItem}
  */
-export interface MicroprocessorNImmutable {
+export interface MicroprocessorNodeItemImmutable {
   readonly id?: number;
   readonly component_id?: number;
   readonly node?: MicroprocessorNodeImmutable;
@@ -155,45 +153,15 @@ export interface MicroprocessorGroupDataImmutable {
 }
 
 /**
- * Represents `<inc>` element, `<in1>` element, `<in2>` element, `<in3>` element, `<in4>` element, `<in5>` element, `<in6>` element, `<in7>` element, `<in8>` element, `<in9>` element, `<in10>` element, `<in11>` element, `<in12>` element, `<in13>` element, `<in14>` element, `<in15>` element, `<in16>` element, `<in17>` element, `<in18>` element, `<in19>` element, `<in20>` element, `<in21>` element, `<in22>` element, `<in23>` element, `<in24>` element, `<in25>` element, `<in26>` element, `<in27>` element, `<in28>` element, `<in29>` element, `<in30>` element, `<in31>` element, `<in32>` element, or `<inoff>` element in Stormworks vehicle data.
+ * Represents `<inc>` element, `<in*>` element, or `<inoff>` element in Stormworks vehicle data.
  *
  * XML locations:
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inc>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in1>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in2>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in3>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in4>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in5>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in6>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in7>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in8>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in9>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in10>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in11>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in12>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in13>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in14>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in15>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in16>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in17>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in18>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in19>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in20>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in21>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in22>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in23>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in24>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in25>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in26>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in27>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in28>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in29>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in30>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in31>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in32>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in*>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inoff>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
  *
- * Parent: {@link MicroprocessorObjectImmutable}
+ * Parents: {@link MicroprocessorObject} or {@link MicroprocessorObjectBridge}
  *
  * This is the recommended type for function parameters when it does not need to modify the value.
  * Use {@link MicroprocessorIn} instead if mutation is required.
@@ -322,24 +290,6 @@ export interface MicroprocessorComponentImmutable {
 }
 
 /**
- * Represents `<in1>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
- *
- * Parent: {@link MicroprocessorObjectBridgeImmutable}
- *
- * This is the recommended type for function parameters when it does not need to modify the value.
- * Use {@link MicroprocessorInBridge} instead if mutation is required.
- *
- * @see {@link MicroprocessorInBridgeSchema}
- * @see {@link MicroprocessorInBridge}
- */
-export interface MicroprocessorInBridgeImmutable {
-  readonly component_id?: number;
-  readonly node_index?: number;
-}
-
-/**
  * Represents `<object>` element in Stormworks vehicle data.
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object>`
@@ -355,7 +305,7 @@ export interface MicroprocessorInBridgeImmutable {
 export interface MicroprocessorObjectBridgeImmutable {
   readonly id?: number;
   readonly pos?: XmlVec2Immutable;
-  readonly in1?: MicroprocessorInBridgeImmutable;
+  readonly in1?: MicroprocessorInImmutable;
   readonly out1?: {};
 }
 
@@ -434,7 +384,7 @@ export interface MicroprocessorDefinitionImmutable {
   readonly sym13?: number;
   readonly sym14?: number;
   readonly sym15?: number;
-  readonly nodes?: readonly MicroprocessorNImmutable[];
+  readonly nodes?: readonly MicroprocessorNodeItemImmutable[];
   readonly group?: MicroprocessorGroupImmutable;
 }
 
@@ -460,10 +410,7 @@ export interface LogicSlotImmutable {
  * Represents `<col_extra>` element in Stormworks vehicle data.
  *
  * XML locations:
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_1> / <col_extra>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_2> / <col_extra>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_3> / <col_extra>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_4> / <col_extra>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
  *
  * Parent: {@link DisplayImmutable}
  *
@@ -483,13 +430,10 @@ export interface ColExtraImmutable {
 }
 
 /**
- * Represents `<display_1>` element, `<display_2>` element, `<display_3>` element, or `<display_4>` element in Stormworks vehicle data.
+ * Represents `<display_*>` element in Stormworks vehicle data.
  *
  * XML locations:
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_1>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_2>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_3>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_4>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
  *
  * Parent: {@link ComponentOImmutable}
  *

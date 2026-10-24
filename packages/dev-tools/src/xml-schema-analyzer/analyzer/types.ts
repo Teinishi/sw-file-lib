@@ -44,7 +44,11 @@ export interface DocumentData {
 
 export type XmlLocation = readonly string[];
 
-export type ForceKindOption = "object" | ["list", string] | ["metalist", string];
+export type ForceKindOption =
+  | "object"
+  | "record"
+  | readonly ["list", string]
+  | readonly ["metalist", string];
 
 export interface AnalyzeOptions {
   forceKindRoot?: ForceKindOption | undefined;

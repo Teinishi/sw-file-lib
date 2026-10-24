@@ -55,7 +55,7 @@ export class ObjectSchema<
    * Parses an XML element as a record without throwing an error.
    *
    * Known fields are parsed with the configured field schemas. Primitive fields
-   * read attributes, while object and list fields read child elements.
+   * read attributes, while element schemas read child elements.
    */
   safeParseValue(
     input: SchemaInput,

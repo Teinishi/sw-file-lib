@@ -7,13 +7,12 @@ import type {
   Author,
   MicroprocessorNodePosition,
   MicroprocessorNode,
-  MicroprocessorN,
+  MicroprocessorNodeItem,
   MicroprocessorGroupData,
   MicroprocessorIn,
   MicroprocessorItem,
   MicroprocessorObject,
   MicroprocessorComponent,
-  MicroprocessorInBridge,
   MicroprocessorObjectBridge,
   MicroprocessorComponentBridge,
   MicroprocessorGroup,
@@ -32,13 +31,12 @@ import type {
   AuthorImmutable,
   MicroprocessorNodePositionImmutable,
   MicroprocessorNodeImmutable,
-  MicroprocessorNImmutable,
+  MicroprocessorNodeItemImmutable,
   MicroprocessorGroupDataImmutable,
   MicroprocessorInImmutable,
   MicroprocessorItemImmutable,
   MicroprocessorObjectImmutable,
   MicroprocessorComponentImmutable,
-  MicroprocessorInBridgeImmutable,
   MicroprocessorObjectBridgeImmutable,
   MicroprocessorComponentBridgeImmutable,
   MicroprocessorGroupImmutable,
@@ -105,7 +103,7 @@ const MicroprocessorNodeShape = {
  *
  * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <nodes> / <n> / <node>`
  *
- * Parent: {@link MicroprocessorNSchema}
+ * Parent: {@link MicroprocessorNodeItemSchema}
  *
  * @see {@link MicroprocessorNode}
  * @see {@link MicroprocessorNodeImmutable}
@@ -115,7 +113,7 @@ export const MicroprocessorNodeSchema: x.ObjectSchema<
   MicroprocessorNode
 > = x.object(MicroprocessorNodeShape);
 
-const MicroprocessorNShape = {
+const MicroprocessorNodeItemShape = {
   id: x.number().optional(),
   component_id: x.number().optional(),
   node: MicroprocessorNodeSchema.optional(),
@@ -128,11 +126,13 @@ const MicroprocessorNShape = {
  *
  * Parent: {@link MicroprocessorDefinitionSchema}
  *
- * @see {@link MicroprocessorN}
- * @see {@link MicroprocessorNImmutable}
+ * @see {@link MicroprocessorNodeItem}
+ * @see {@link MicroprocessorNodeItemImmutable}
  */
-export const MicroprocessorNSchema: x.ObjectSchema<typeof MicroprocessorNShape, MicroprocessorN> =
-  x.object(MicroprocessorNShape);
+export const MicroprocessorNodeItemSchema: x.ObjectSchema<
+  typeof MicroprocessorNodeItemShape,
+  MicroprocessorNodeItem
+> = x.object(MicroprocessorNodeItemShape);
 
 const MicroprocessorGroupDataShape = {
   type: x.number().optional(),
@@ -162,45 +162,15 @@ const MicroprocessorInShape = {
 };
 
 /**
- * Represents `<inc>` element, `<in1>` element, `<in2>` element, `<in3>` element, `<in4>` element, `<in5>` element, `<in6>` element, `<in7>` element, `<in8>` element, `<in9>` element, `<in10>` element, `<in11>` element, `<in12>` element, `<in13>` element, `<in14>` element, `<in15>` element, `<in16>` element, `<in17>` element, `<in18>` element, `<in19>` element, `<in20>` element, `<in21>` element, `<in22>` element, `<in23>` element, `<in24>` element, `<in25>` element, `<in26>` element, `<in27>` element, `<in28>` element, `<in29>` element, `<in30>` element, `<in31>` element, `<in32>` element, or `<inoff>` element in Stormworks vehicle data.
+ * Represents `<inc>` element, `<in*>` element, or `<inoff>` element in Stormworks vehicle data.
  *
  * XML locations:
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inc>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in1>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in2>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in3>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in4>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in5>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in6>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in7>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in8>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in9>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in10>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in11>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in12>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in13>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in14>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in15>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in16>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in17>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in18>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in19>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in20>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in21>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in22>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in23>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in24>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in25>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in26>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in27>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in28>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in29>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in30>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in31>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in32>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <in*>`
  * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components> / <c> / <object> / <inoff>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
  *
- * Parent: {@link MicroprocessorObjectSchema}
+ * Parents: {@link MicroprocessorObject} or {@link MicroprocessorObjectBridge}
  *
  * @see {@link MicroprocessorIn}
  * @see {@link MicroprocessorInImmutable}
@@ -330,30 +300,10 @@ export const MicroprocessorComponentSchema: x.ObjectSchema<
   MicroprocessorComponent
 > = x.object(MicroprocessorComponentShape);
 
-const MicroprocessorInBridgeShape = {
-  component_id: x.number().optional(),
-  node_index: x.number().optional(),
-};
-
-/**
- * Represents `<in1>` element in Stormworks vehicle data.
- *
- * XML location: `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <microprocessor_definition> / <group> / <components_bridge> / <c> / <object> / <in1>`
- *
- * Parent: {@link MicroprocessorObjectBridgeSchema}
- *
- * @see {@link MicroprocessorInBridge}
- * @see {@link MicroprocessorInBridgeImmutable}
- */
-export const MicroprocessorInBridgeSchema: x.ObjectSchema<
-  typeof MicroprocessorInBridgeShape,
-  MicroprocessorInBridge
-> = x.object(MicroprocessorInBridgeShape);
-
 const MicroprocessorObjectBridgeShape = {
   id: x.number().optional(),
   pos: XmlVec2Schema.optional(),
-  in1: MicroprocessorInBridgeSchema.optional(),
+  in1: MicroprocessorInSchema.optional(),
   out1: x.object({}).optional(),
 };
 
@@ -438,7 +388,7 @@ const MicroprocessorDefinitionShape = {
   sym13: x.number().optional(),
   sym14: x.number().optional(),
   sym15: x.number().optional(),
-  nodes: x.list("n", MicroprocessorNSchema).optional(),
+  nodes: x.list("n", MicroprocessorNodeItemSchema).optional(),
   group: MicroprocessorGroupSchema.optional(),
 };
 
@@ -479,10 +429,7 @@ export const LogicSlotSchema: x.ObjectSchema<typeof LogicSlotShape, LogicSlot> =
  * Represents `<col_extra>` element in Stormworks vehicle data.
  *
  * XML locations:
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_1> / <col_extra>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_2> / <col_extra>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_3> / <col_extra>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_4> / <col_extra>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*> / <col_extra>`
  *
  * Parent: {@link DisplaySchema}
  *
@@ -513,13 +460,10 @@ const DisplayShape = {
 };
 
 /**
- * Represents `<display_1>` element, `<display_2>` element, `<display_3>` element, or `<display_4>` element in Stormworks vehicle data.
+ * Represents `<display_*>` element in Stormworks vehicle data.
  *
  * XML locations:
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_1>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_2>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_3>`
- * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_4>`
+ * - `<vehicle> / <bodies> / <body> / <components> / <c> / <o> / <display_*>`
  *
  * Parent: {@link ComponentOSchema}
  *

@@ -1,5 +1,5 @@
 import ts from "typescript";
-import type { DocumentData } from "./analyzer";
+import type { DocumentData, XmlLocation } from "./analyzer";
 import { prefixPriority, type OrderGraph } from "./order-graph";
 import type { SchemaEntry, SchemaPropertyData, SchemaReference, SchemaTypeData } from "./schema";
 
@@ -96,6 +96,10 @@ export interface InterfaceTSDocContext {
   readonly getSchema: (ref: SchemaReference) => SchemaEntry | undefined;
 }
 
+export type PropertySortRules =
+  | Readonly<Record<string, boolean>>
+  | ((xmlLocation: XmlLocation) => boolean | undefined);
+
 export interface GenerateCodeOptions {
   readonly precedingCode?: string | undefined;
   /** Return TSDoc body text (without comment delimiters), or undefined to omit it. Synchronous. */
@@ -106,6 +110,8 @@ export interface GenerateCodeOptions {
   readonly preferStringInUnions?: boolean | undefined;
   /** Exact XML paths (root/child) mapped to interface names. Merged paths share one name. */
   readonly interfaceNames?: Readonly<Record<string, string>> | undefined;
+  /** Sort property keys lexicographically for selected XML paths. Any merged path returning true enables sorting. */
+  readonly sortProperties?: PropertySortRules | undefined;
 }
 
 const invalidTypeNames = new Set([
@@ -154,6 +160,7 @@ function collectImports(type: SchemaTypeData, imports: Map<string, Set<string>>)
         imports.set(type.ref.importPath, names);
       }
       break;
+    case "record":
     case "list":
       collectImports(type.itemRef, imports);
       break;
@@ -170,7 +177,16 @@ function resolveIdentifiers(
 ): string[] {
   const specified = new Map(Object.entries(options.interfaceNames ?? {}));
   const unmatched = new Set(specified.keys());
-  const reserved = new Set<string>();
+  const containsRecord = (type: SchemaTypeData): boolean =>
+    type.kind === "record" ||
+    (type.kind === "list" && containsRecord(type.itemRef)) ||
+    (type.kind === "union" && type.types.some(containsRecord));
+  const usesRecord = entries.some(
+    (entry) =>
+      Object.values(entry.properties).some((property) => containsRecord(property.type)) ||
+      (entry.kind === "metalist" && containsRecord(entry.itemRef)),
+  );
+  const reserved = new Set<string>(usesRecord ? ["Record"] : []);
   for (const names of imports.values()) {
     for (const name of names) {
       if (reserved.has(name)) throw new Error(`Conflicting external import name: ${name}`);
@@ -242,6 +258,18 @@ function generateSchemaTypeCode(
       return { body: type.type };
     case "object":
       return { body: getIdentifier(type.ref) };
+    case "record": {
+      const item = generateSchemaTypeCode(type.itemRef, getIdentifier, location, options);
+      if (
+        item.comment ||
+        item.isUnion ||
+        (type.itemRef.kind === "inline" && type.itemRef.type !== "{}")
+      )
+        throw new Error(
+          `Cannot represent record item type at ${location}; expected one non-list element schema.`,
+        );
+      return { body: `Record<string, ${item.body}>` };
+    }
     case "list":
       const itemCode = generateSchemaTypeCode(type.itemRef, getIdentifier, location, options);
       if (itemCode.comment) {
@@ -266,7 +294,14 @@ function generateSchemaTypeCode(
               member.kind !== "inline" || (member.type !== "number" && member.type !== "boolean"),
           )
         : types;
-      const members = filtered.map((t) =>
+      const isPrimitive = (member: SchemaTypeData) =>
+        member.kind === "inline" && member.type !== "{}";
+      // Stable partition: preserve the relative order within each group.
+      const ordered = [
+        ...filtered.filter(isPrimitive),
+        ...filtered.filter((member) => !isPrimitive(member)),
+      ];
+      const members = ordered.map((t) =>
         generateSchemaTypeCode(t, getIdentifier, location, options),
       );
       if (members.some((member) => member.comment)) {
@@ -299,11 +334,11 @@ function generateObjectTypeCode(
   childOrder: OrderGraph<string>,
   getIdentifier: (ref: SchemaReference) => string,
   options: GenerateCodeOptions,
+  sortProperties = false,
 ): string {
-  const order = mergeArrays(
-    attributeOrder.topoSort(prefixPriority),
-    childOrder.topoSort(prefixPriority),
-  );
+  const order = sortProperties
+    ? Object.keys(properties).sort()
+    : mergeArrays(attributeOrder.topoSort(prefixPriority), childOrder.topoSort(prefixPriority));
 
   let code = `{\n`;
 
@@ -338,6 +373,14 @@ function generateCodeEntry(
   options: GenerateCodeOptions,
   getEntry: (ref: SchemaReference) => SchemaEntry | undefined,
 ): string {
+  const shouldSort = (schema: SchemaEntry): boolean =>
+    schema.xmlLocations.some((location) => {
+      const rules = options.sortProperties;
+      if (typeof rules === "function") return rules(location) === true;
+      const path = location.join("/");
+      return Object.hasOwn(rules ?? {}, path) && rules![path] === true;
+    });
+  const sortProperties = shouldSort(entry);
   switch (entry.kind) {
     case "object":
       return `export interface ${identifier} ${generateObjectTypeCode(
@@ -347,6 +390,7 @@ function generateCodeEntry(
         entry.childOrder,
         getIdentifier,
         options,
+        sortProperties,
       )}\n`;
     case "metalist":
       const metaCode = generateObjectTypeCode(
@@ -356,6 +400,7 @@ function generateCodeEntry(
         entry.childOrder,
         getIdentifier,
         options,
+        sortProperties,
       );
       let itemBody: string;
       if (entry.itemRef.kind === "object") {
@@ -368,16 +413,24 @@ function generateCodeEntry(
             itemEntry.childOrder,
             getIdentifier,
             options,
+            sortProperties || shouldSort(itemEntry),
           );
           itemBody = itemCode.replace(/\n/g, "\n  ");
         } else {
           itemBody = getIdentifier(entry.itemRef.ref);
         }
+      } else if (entry.itemRef.kind === "record") {
+        itemBody = generateSchemaTypeCode(
+          entry.itemRef,
+          getIdentifier,
+          `${identifier}.items`,
+          options,
+        ).body;
       } else if (entry.itemRef.kind === "inline" && entry.itemRef.type === "{}") {
         itemBody = "{}";
       } else {
         throw new Error(
-          `Cannot represent metalist item type at ${identifier}.items: expected an object or metalist reference.`,
+          `Cannot represent metalist item type at ${identifier}.items: expected an object, metalist or record.`,
         );
       }
       return `export interface ${identifier} {\n  meta: ${metaCode.replace(/\n/g, "\n  ")};\n  items: ${itemBody}[];\n}\n`;
@@ -399,6 +452,7 @@ export function generateCode(
       case "object":
         if (type.ref.kind === "internal") referencedEntries.add(type.ref.index);
         break;
+      case "record":
       case "list":
         collectReferences(type.itemRef);
         break;
@@ -478,6 +532,9 @@ export function generateCode(
           break;
         case "list":
           visit(type.itemRef, `${propertyPath}[]`);
+          break;
+        case "record":
+          visit(type.itemRef, `${propertyPath}[key]`);
           break;
         case "union":
           for (const member of type.types) visit(member, propertyPath);

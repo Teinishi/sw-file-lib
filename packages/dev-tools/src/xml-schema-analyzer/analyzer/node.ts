@@ -37,7 +37,7 @@ export function analyzePossibleElementKinds(
       couldBeObject ||
       couldBeList ||
       childCountMap.values().reduce((acc, c) => acc + (c > 1 ? 1 : 0), 0) <= 1;
-  } else if (forceKind === "object") {
+  } else if (forceKind === "object" || forceKind === "record") {
     couldBeObject = true;
     couldBeList = false;
     couldBeMetalist = false;

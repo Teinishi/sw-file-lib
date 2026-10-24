@@ -33,6 +33,138 @@ function entry(paths: string[], properties: Record<string, SchemaTypeData> = {})
   };
 }
 
+describe("selective property sorting", () => {
+  it("sorts attributes and children together only at selected XML paths", () => {
+    const entries = generateSchema(
+      analyzeDocument(parseSwXml('<root z="1" b="2"><child z="3" a="4"/></root>'), undefined),
+    );
+    const original = generateCode(entries);
+    expect(original).toContain("z: number;\n  b: number;\n  child: Child;");
+    const sorted = generateCode(entries, { sortProperties: { root: true } });
+    expect(sorted).toContain("b: number;\n  child: Child;\n  z: number;");
+    expect(sorted).toContain("interface Child {\n  z: number;\n  a: number;");
+    expect(generateCode(entries)).toBe(original);
+    expect(generateCode(entries, { sortProperties: { root: false } })).toBe(original);
+  });
+
+  it("accepts path-based config regardless of interface names and sorts lexicographically", async () => {
+    const schema = entry(
+      ["root"],
+      Object.fromEntries(
+        ["z", "a-key", "A", "2", "10"].map((key) => [
+          key,
+          { kind: "inline", type: "number" } as const,
+        ]),
+      ),
+    );
+    const config = await defineConfig({
+      input: "*.xml",
+      out: "schema.ts",
+      interfaceNames: { root: "Settings" },
+      sortProperties: { root: true },
+    });
+    expect(generateCode([schema], config)).toContain(
+      'interface Settings {\n  "10": number;\n  "2": number;\n  A: number;\n  "a-key": number;\n  z: number;',
+    );
+  });
+
+  it.each([false, true])(
+    "sorts merged interfaces if any XML path is selected (callback: %s)",
+    (callback) => {
+      const entries = generateSchema(
+        analyzeDocument(
+          parseSwXml('<root id="root"><a z="1" a="2"/><b z="3" a="4"/></root>'),
+          undefined,
+        ),
+      );
+      const code = generateCode(entries, {
+        sortProperties: callback
+          ? (xmlLocation) => (xmlLocation.join("/") === "root/b" ? true : undefined)
+          : { "root/a": false, "root/b": true },
+      });
+      expect(code).toContain("interface A {\n  a: number;\n  z: number;");
+    },
+  );
+
+  it("sorts metalist meta and inline items while keeping wrappers required", () => {
+    const entries = generateSchema(
+      analyzeDocument(
+        parseSwXml('<foo z="1" a="2"><item z="3" a="4"/><item z="5" a="6"/></foo>'),
+        undefined,
+      ),
+    );
+    const code = generateCode(entries, {
+      sortProperties: { foo: true },
+      allPropertiesOptional: true,
+    });
+    expect(code).toContain('// @xml-schema metalist "item"');
+    expect(code).toContain("meta: {\n    a?: number;\n    z?: number;");
+    expect(code).toContain("items: {\n    a?: number;\n    z?: number;");
+    const itemsOnly = generateCode(entries, {
+      sortProperties: (xmlLocation) => xmlLocation.join("/") === "foo/item",
+    });
+    expect(itemsOnly).toContain("meta: {\n    z: number;\n    a: number;");
+    expect(itemsOnly).toContain("items: {\n    a: number;\n    z: number;");
+  });
+
+  it("keeps list markers attached to sorted properties", () => {
+    const entries = generateSchema(
+      analyzeDocument(
+        parseSwXml('<root z="1"><items><item x="2"/><item x="3"/></items></root>'),
+        undefined,
+      ),
+    );
+    expect(generateCode(entries, { sortProperties: { root: true } })).toContain(
+      'interface Root {\n  // @xml-schema list "item"\n  items: Item[];\n  z: number;',
+    );
+  });
+});
+
+describe("union output order", () => {
+  it.each([false, true])(
+    "puts primitives before interface references (preferStringInUnions: %s)",
+    (preferStringInUnions) => {
+      const type: SchemaTypeData = {
+        kind: "union",
+        types: [
+          { kind: "object", ref: { kind: "internal", index: 0 } },
+          { kind: "inline", type: "number" },
+          {
+            kind: "union",
+            types: [
+              {
+                kind: "object",
+                ref: { kind: "external", importPath: "./shared", name: "External" },
+              },
+              { kind: "inline", type: "string" },
+            ],
+          },
+          { kind: "inline", type: "boolean" },
+          { kind: "object", ref: { kind: "internal", index: 1 } },
+        ],
+      };
+      const original = [...type.types];
+      const code = generateCode(
+        [
+          entry(["first"]),
+          entry(["second"]),
+          entry(["container"], {
+            value: type,
+            values: { kind: "list", itemTag: "item", itemRef: type },
+          }),
+        ],
+        { preferStringInUnions },
+      );
+      const expected = preferStringInUnions
+        ? "string | First | External | Second"
+        : "number | string | boolean | First | External | Second";
+      expect(code).toContain(`value: ${expected};`);
+      expect(code).toContain(`values: (${expected})[];`);
+      expect(type.types).toEqual(original);
+    },
+  );
+});
+
 describe("preferStringInUnions", () => {
   it.each([
     { values: ["123", "abc"], original: "number | string", result: "string" },
@@ -496,7 +628,7 @@ describe("metalist interfaces", () => {
     const entries = generateSchema(
       analyzeDocument(parseSwXml('<foo><bar text="a"/><bar text="b"/></foo>'), undefined),
       {
-        forceKind: { foo: "metalist" },
+        forceKind: { foo: ["metalist", "bar"] },
       },
     );
     const code = generateCode(entries, { allPropertiesOptional: true });
