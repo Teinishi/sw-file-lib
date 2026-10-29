@@ -15,9 +15,8 @@
   "out": "./docs/src/api",
 
   "plugin": [
-    "@sw-file-lib/docs-plugins/xml-schema-infer",
     "typedoc-plugin-markdown",
-    "@sw-file-lib/docs-plugins/markdown-codeblock",
+    "@sw-file-lib/dev-tools/typedoc-markdown-codeblock",
     "typedoc-vitepress-theme"
   ],
   "docsRoot": "./docs/src",

@@ -1,3 +1,16 @@
+import type { Plugin } from "vite";
+
+export default function tableColumnClassesPlugin(): Plugin {
+  return {
+    name: "table-column-classes",
+    enforce: "pre",
+    transform(code, id) {
+      if (!id.includes("/api/") || !id.endsWith(".md")) return;
+      return addTableColumnClasses(code);
+    },
+  };
+}
+
 type TagName = "table" | "thead" | "tbody" | "tfoot" | "tr" | "th" | "td";
 
 interface TagMatch {
@@ -36,7 +49,7 @@ interface Edit {
 
 const TAG_RE = /<(\/)?\s*(table|thead|tbody|tfoot|tr|th|td)((?:\s+[^<>]*)?)\s*(\/)?>/gi;
 
-export function addTableColumnClasses(markdown: string): string {
+function addTableColumnClasses(markdown: string): string {
   const regions = findTableRegions(markdown);
   let result = markdown;
 

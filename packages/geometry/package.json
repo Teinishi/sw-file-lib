@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "description": "Geometry utilities for handling Stormworks 3D geometry operations.",
   "keywords": [],
+  "homepage": "https://teinishi.github.io/sw-file-lib/",
   "license": "MIT",
   "author": "Teinishi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Teinishi/sw-file-lib.git",
+    "directory": "packages/geometry"
+  },
   "files": [
     "dist"
   ],

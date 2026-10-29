@@ -23,6 +23,7 @@ import {
   type SchemaPath,
   type UnknownFieldData,
   type DuplicateChildElementData,
+  type Infer,
 } from "..";
 import { parseSwXml, SwXmlNode, SwXmlNodeList, type DuplicateChildElementMode } from "../../parser";
 import { escapeXmlAttribute, XmlWriter, type XmlWriterOptions } from "../../writer";
@@ -187,15 +188,15 @@ export function parseShape<T extends Shape>(
 /**
  * itemTag, itemSchema をもとに子要素をリストアイテムとしてパースしてデータ配列を作成
  */
-export function parseList<T>(
+export function parseList<S extends ElementSchema<any>>(
   value: SwXmlNodeList,
   itemTag: string,
-  itemSchema: ElementSchema<T>,
+  itemSchema: S,
   ctx: SchemaParseContext,
   options?: SchemaParseOptions,
   prependPath: string[] = [],
-) {
-  const items: T[] = [];
+): { items: Infer<S>[]; issues: AnySchemaIssue[] } {
+  const items: Infer<S>[] = [];
   const issues: AnySchemaIssue[] = [];
 
   for (const [index, child] of value.nodes.entries()) {
@@ -218,16 +219,13 @@ export function parseList<T>(
   return { items, issues };
 }
 
-/**
- * 未処理の属性・子要素を見つけて issues にまとめる
- */
-export function checkUnknownFields(
+/** Finds unknown attributes. */
+export function checkUnknownAttributes(
   value: SwXmlNode,
   dataSource: Record<string, DataSource> | null,
-  itemTag: string | null,
   ctx: SchemaParseContext,
   options?: SchemaParseOptions,
-) {
+): AnySchemaIssue[] {
   const issues: AnySchemaIssue[] = [];
 
   if (options?.unknownField === "ignore") return issues;
@@ -253,6 +251,20 @@ export function checkUnknownFields(
       }),
     );
   }
+
+  return issues;
+}
+
+/** Finds unknown attributes and child elements. */
+export function checkUnknownFields(
+  value: SwXmlNode,
+  dataSource: Record<string, DataSource> | null,
+  itemTag: string | null,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+) {
+  const issues = checkUnknownAttributes(value, dataSource, ctx, options);
+  if (options?.unknownField === "ignore") return issues;
 
   for (const [index, child] of value.nodes.entries()) {
     if (child.tag === itemTag) {
@@ -318,18 +330,28 @@ function selectChild(
   | { kind: "ok"; value: SwXmlNode; siblingIndex: number }
   | { kind: "duplicate"; tag: string; candidates: SwXmlNode[] }
   | { kind: "missing" } {
+  const candidates: { node: SwXmlNode; index: number }[] = [];
+  for (const [index, node] of nodeList.nodes.entries()) {
+    if (node.tag === tag) candidates.push({ node, index });
+  }
+  return selectChildCandidates(candidates, tag, ctx, options);
+}
+
+/** Selects a child from pre-grouped candidates, retaining its original sibling index. */
+export function selectChildCandidates(
+  entries: readonly { node: SwXmlNode; index: number }[],
+  tag: string,
+  ctx: SchemaParseContext,
+  options?: SchemaParseOptions,
+):
+  | { kind: "ok"; value: SwXmlNode; siblingIndex: number }
+  | { kind: "duplicate"; tag: string; candidates: SwXmlNode[] }
+  | { kind: "missing" } {
   let selected: SwXmlNode;
   let siblingIndex: number;
-
-  const candidates: SwXmlNode[] = [];
-  let firstIndex = -1;
-  let lastIndex = -1;
-  for (const [index, child] of nodeList.nodes.entries()) {
-    if (child.tag !== tag) continue;
-    if (firstIndex === -1) firstIndex = index;
-    lastIndex = index;
-    candidates.push(child);
-  }
+  const candidates = entries.map((entry) => entry.node);
+  const firstIndex = entries[0]?.index ?? -1;
+  const lastIndex = entries[entries.length - 1]?.index ?? -1;
 
   if (candidates.length === 0) {
     return { kind: "missing" };

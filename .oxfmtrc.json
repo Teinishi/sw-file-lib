@@ -3,6 +3,8 @@
   "ignorePatterns": [],
   "sortImports": {
     "internalPattern": ["@sw-file-lib/"],
-    "newlinesBetween": false
+    "newlinesBetween": false,
+    "partitionByComment": true,
+    "partitionByNewline": true
   }
 }

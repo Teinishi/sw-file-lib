@@ -172,8 +172,7 @@ export interface Schema<T> {
   /**
    * Parses one field from an XML record node.
    *
-   * Primitive schemas read attributes. Object and list schemas read child
-   * elements.
+   * Primitive schemas read attributes. Element schemas read child elements.
    *
    * This is primarily intended for schema implementations. Most callers should
    * use {@link ElementSchema.safeParse} on a top-level element schema instead.
@@ -330,12 +329,23 @@ export type PartialShape<T extends Shape> = {
 /**
  * The shape produced by extending one shape with another.
  */
-export type ExtendShape<T extends Shape, U extends Shape> = Omit<T, keyof U> & U;
+export type ExtendShape<S extends Shape, U extends Shape> = Omit<S, keyof U> & U;
 
 /**
  * The object schema type produced by extending an object schema.
  */
-export type ExtendObjectSchema<T extends Shape, U extends Shape> = ObjectSchema<ExtendShape<T, U>>;
+export type ExtendObjectSchema<S extends Shape, U extends Shape> = ObjectSchema<
+  ExtendShape<S, U>,
+  InferShape<ExtendShape<S, U>>
+>;
+
+/**
+ * The object schema type produced by omitting keys from an object schema.
+ */
+export type OmitObjectSchema<S extends Shape, U extends keyof S> = ObjectSchema<
+  Omit<S, U>,
+  InferShape<Omit<S, U>>
+>;
 
 /**
  * Extracts the shape from an object schema.

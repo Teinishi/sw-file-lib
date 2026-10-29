@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "TypeScript libraries for working with Stormworks files.",
-  "homepage": "https://github.com/Teinishi/sw-file-lib#readme",
+  "homepage": "https://github.com/Teinishi/sw-file-lib/",
   "bugs": {
     "url": "https://github.com/Teinishi/sw-file-lib/issues"
   },
@@ -27,7 +27,10 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "check": "pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
+    "analyze-xml": "pnpm --filter dev-tools analyze:all",
+    "codegen": "xml-schema-codegen --config xml-schema.config.ts",
+    "codegen:check": "pnpm codegen --check",
+    "check": "pnpm codegen:check && pnpm lint && pnpm fmt:check && pnpm typecheck && pnpm test:run",
     "release": "bumpp --recursive",
     "prepublishOnly": "pnpm run build",
     "typedoc": "typedoc",
@@ -39,7 +42,7 @@
     "vitepress-plugin-group-icons": "^1.7.6"
   },
   "devDependencies": {
-    "@sw-file-lib/docs-plugins": "workspace:*",
+    "@sw-file-lib/dev-tools": "workspace:*",
     "@sw-file-lib/three": "workspace:*",
     "@sw-file-lib/xml": "workspace:*",
     "@types/node": "^26.1.2",
@@ -50,6 +53,7 @@
     "three": "^0.185.1",
     "ts-essentials": "^10.2.1",
     "tsdown": "^0.22.5",
+    "tsx": "^4.23.13",
     "typedoc": "^0.28.20",
     "typedoc-plugin-markdown": "^4.12.0",
     "typedoc-vitepress-theme": "^1.1.3",
