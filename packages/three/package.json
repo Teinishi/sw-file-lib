@@ -1,6 +1,6 @@
 {
   "name": "@sw-file-lib/three",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Stormworks-style materials and geometry conversion for three.js.",
   "keywords": [],
   "homepage": "https://teinishi.github.io/sw-file-lib/",
