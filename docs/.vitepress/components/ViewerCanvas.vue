@@ -60,6 +60,8 @@ function init(container: HTMLElement) {
   renderer.setPixelRatio(window.devicePixelRatio);
 
   const canvas = renderer.domElement;
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
 
   canvas.addEventListener("pointerdown", pointerPreventDefault);
   canvas.addEventListener("auxclick", pointerPreventDefault);
