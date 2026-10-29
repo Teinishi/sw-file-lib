@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "TypeScript libraries for working with Stormworks files.",
-  "homepage": "https://github.com/Teinishi/sw-file-lib#readme",
+  "homepage": "https://github.com/Teinishi/sw-file-lib/",
   "bugs": {
     "url": "https://github.com/Teinishi/sw-file-lib/issues"
   },

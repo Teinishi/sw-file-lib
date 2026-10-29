@@ -1,6 +1,6 @@
 # sw-file-lib
 
-TypeScript libraries for reading, writing **Stormworks** assets.
+TypeScript libraries for reading, writing **Stormworks** files.
 
 `sw-file-lib` is a modular monorepo that provides strongly typed APIs for working with Stormworks file formats. Each package can be used independently, and packages only depend on the functionality they need.
 

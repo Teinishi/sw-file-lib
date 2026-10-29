@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "description": "TypeScript library for reading and writing Stormworks binary file formats.",
   "keywords": [],
+  "homepage": "https://teinishi.github.io/sw-file-lib/",
   "license": "MIT",
   "author": "Teinishi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Teinishi/sw-file-lib.git",
+    "directory": "packages/core"
+  },
   "files": [
     "dist"
   ],
