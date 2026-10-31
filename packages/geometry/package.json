@@ -1,6 +1,6 @@
 {
   "name": "@sw-file-lib/geometry",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Geometry utilities for handling Stormworks 3D geometry operations.",
   "keywords": [],
   "homepage": "https://teinishi.github.io/sw-file-lib/",
