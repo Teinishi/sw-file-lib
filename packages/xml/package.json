@@ -17,12 +17,12 @@
   "type": "module",
   "exports": {
     ".": {
-      "development": "./src/index.ts",
+      "sw-file-lib-dev": "./src/index.ts",
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
     "./xml-schema": {
-      "development": "./src/xml-schema/index.ts",
+      "sw-file-lib-dev": "./src/xml-schema/index.ts",
       "types": "./dist/xml-schema/index.d.mts",
       "import": "./dist/xml-schema/index.mjs"
     },
