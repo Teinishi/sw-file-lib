@@ -17,17 +17,17 @@
   "type": "module",
   "exports": {
     ".": {
-      "development": "./src/index.ts",
+      "sw-file-lib-dev": "./src/index.ts",
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
     "./math": {
-      "development": "./src/math/index.ts",
+      "sw-file-lib-dev": "./src/math/index.ts",
       "types": "./dist/math/index.d.mts",
       "import": "./dist/math/index.mjs"
     },
     "./color": {
-      "development": "./src/color/index.ts",
+      "sw-file-lib-dev": "./src/color/index.ts",
       "types": "./dist/color/index.d.mts",
       "import": "./dist/color/index.mjs"
     },
