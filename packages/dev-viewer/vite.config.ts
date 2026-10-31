@@ -21,7 +21,7 @@ export default defineConfig(async ({ mode }) => {
       },
     ],
     resolve: {
-      conditions: ["development"],
+      conditions: ["sw-file-lib-dev"],
     },
   };
 });
