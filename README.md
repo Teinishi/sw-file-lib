@@ -82,6 +82,22 @@ pnpm typecheck
 - three.js integration provided as a separate package.
 - Strongly typed APIs.
 
+## Update Procedure
+
+- Create issues for changes
+- Create a branch for the issue
+- Make changes on the branch
+- Run `pnpm check` before push
+- Create a pull request to merge the branch to `develop`
+- Check the GitHub Actions status and merge
+- Close the issue
+- Create a pull request to merge `develop` to `main`
+- Run `pnpm release` to bump the version and create a tag and `git push origin main`
+- Run `pnpm build`
+- Run `npm whoami` and `npm login` if necessary
+- Run `pnpm -r publish --access public`
+- Run `git switch develop`, `git merge main`, `git push origin develop`
+
 ## License
 
 MIT
