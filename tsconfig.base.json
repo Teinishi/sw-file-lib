@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "customConditions": ["development"],
+    "customConditions": ["sw-file-lib-dev"],
 
     "target": "esnext",
     "moduleDetection": "force",
