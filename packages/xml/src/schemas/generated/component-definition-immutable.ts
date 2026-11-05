@@ -324,6 +324,7 @@ export interface ComponentDefinitionImmutable {
   readonly wheel_width?: number;
   readonly torque_component_type?: number;
   readonly jet_engine_component_type?: number;
+  readonly jet_engine_efficiency?: number;
   readonly particle_speed?: number;
   readonly inventory_class?: number;
   readonly inventory_default_item?: number;
@@ -356,6 +357,7 @@ export interface ComponentDefinitionImmutable {
   readonly radar_type?: number;
   readonly piston_len?: number;
   readonly piston_cam?: number;
+  readonly lua_filename?: string;
   readonly sfx_datas?: readonly SfxDataImmutable[];
   readonly surfaces?: readonly SurfaceImmutable[];
   readonly buoyancy_surfaces?: readonly SurfaceImmutable[];
