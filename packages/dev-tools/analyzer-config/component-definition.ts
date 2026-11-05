@@ -22,6 +22,16 @@ export default defineConfig(async () => {
       definition: "ComponentDefinition",
       "definition/jet_engine_connections_prev/j": "JetEngineConnection",
     },
+    schemaOverrides: {
+      definition: {
+        properties: {
+          lua_filename: {
+            type: "string",
+            optional: true,
+          },
+        },
+      },
+    },
     allPropertiesOptional: true,
     preferStringInUnions: true,
     generateTSDoc(context) {
