@@ -98,7 +98,7 @@ export interface AddFaceOptions {
    */
   readonly materialIndex?: number;
   /**
-   * Vertex color applied to the generated face.
+   * Vertex color applied to the generated face. (Range: 0-255)
    *
    * Defaults to white.
    */
@@ -405,7 +405,7 @@ export class GeometryBuilder {
     return {
       position: new Float32Array(this.positions.map((v, i) => (i % 3 === 2 ? -v : v))),
       normal: new Float32Array(this.normals.map((v, i) => (i % 3 === 2 ? -v : v))),
-      color: new Float32Array(this.colors),
+      color: new Float32Array(this.colors.map((v) => v / 255)),
       index: this.indices,
       groups: this.groups.map((g) => ({ ...g })),
     };
