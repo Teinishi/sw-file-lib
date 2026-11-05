@@ -310,6 +310,7 @@ export interface ComponentDefinition {
   wheel_width?: number;
   torque_component_type?: number;
   jet_engine_component_type?: number;
+  jet_engine_efficiency?: number;
   particle_speed?: number;
   inventory_class?: number;
   inventory_default_item?: number;
@@ -342,6 +343,7 @@ export interface ComponentDefinition {
   radar_type?: number;
   piston_len?: number;
   piston_cam?: number;
+  lua_filename?: string;
   // @xml-schema list "sfx_data"
   sfx_datas?: SfxData[];
   // @xml-schema list "surface"
