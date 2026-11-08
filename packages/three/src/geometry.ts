@@ -17,13 +17,7 @@ export function applyBuilderOnBufferGeometry(builder: GeometryBuilder, buffer: B
 
   buffer.setAttribute("position", new BufferAttribute(position, 3));
   buffer.setAttribute("normal", new BufferAttribute(normal, 3));
-  buffer.setAttribute(
-    "color",
-    new BufferAttribute(
-      color.map((v) => v / 255),
-      4,
-    ),
-  );
+  buffer.setAttribute("color", new BufferAttribute(color, 4));
   buffer.setIndex(new BufferAttribute(new Uint32Array(index), 1));
   for (const { start, length, materialIndex } of groups) {
     buffer.addGroup(start, length, materialIndex);
