@@ -1,6 +1,6 @@
 {
   "name": "@sw-file-lib/dev-tools",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "Internal tools for library development.",
   "keywords": [],
